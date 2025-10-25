@@ -8,13 +8,12 @@ export const BaseMaterial = (width: number, height: number) => {
 		height
 	});
 
-	function draw() {
+	function draw(mouseX: number) {
 		ctx.fillStyle = "#0000ff";
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 		// Hue shift to visualise when the canvas is drawing vs when not
-		const time = performance.now() * 500;
-		const hue = (time / 1000) % 360;
+		const hue = (mouseX * 0.5) % 360;
 		ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
 		ctx.font = `500 ${Math.max(canvas.width, canvas.height)}px "Times"`;
 		ctx.textAlign = "center";

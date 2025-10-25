@@ -81,7 +81,7 @@ export function init2DScene(
 	}
 
 	function onResize(newW: number, newH: number) {
-		renderer.setSize(newW, newH);
+		configRenderer(renderer, newW, newH, window.devicePixelRatio);
 		const newPlaneSize = { w: newW / 100, h: newH / 100 };
 		plane.scale.set(newPlaneSize.w, newPlaneSize.h, 1);
 		camera.left = -newPlaneSize.w / 2;

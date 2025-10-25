@@ -1,11 +1,12 @@
-import { type ShaderNodeFn } from "three/src/nodes/TSL.js";
+import { type ShaderNodeObject } from "three/tsl";
 import {
 	CanvasTexture,
 	MeshBasicNodeMaterial,
-	NodeMaterial
+	NodeMaterial,
+	TextureNode
 } from "three/webgpu";
 import { initCanvas } from "./canvas";
-import { Fn, uv, texture } from "three/tsl";
+import { uv, texture } from "three/tsl";
 
 export class TSLMaterial<T extends unknown[] = []> {
 	canvas: HTMLCanvasElement;
@@ -15,8 +16,9 @@ export class TSLMaterial<T extends unknown[] = []> {
 
 	private drawFn: (...args: T) => void;
 	private resizeFn: (w: number, h: number) => void;
-	private outFn?: (canvasTexture: CanvasTexture) => ShaderNodeFn<[]>;
-	private outputNodeFn: ShaderNodeFn<[]>;
+	private outFn?: (
+		canvasTexture: CanvasTexture
+	) => ShaderNodeObject<TextureNode>;
 
 	constructor(
 		width: number,
@@ -24,7 +26,9 @@ export class TSLMaterial<T extends unknown[] = []> {
 		options: {
 			initCanvas?: typeof initCanvas;
 			draw?: (material: TSLMaterial<unknown[]>, ...args: T) => void;
-			outputNode?: (canvasTexture: CanvasTexture) => ShaderNodeFn<[]>;
+			outputNode?: (
+				canvasTexture: CanvasTexture
+			) => ShaderNodeObject<TextureNode>;
 			resize?: (material: TSLMaterial<T>, w: number, h: number) => void;
 		} = {}
 	) {
@@ -42,12 +46,10 @@ export class TSLMaterial<T extends unknown[] = []> {
 		this.ctx = ctx;
 		this.canvasTexture = canvasTexture;
 
-		this.outputNodeFn = outFn
-			? outFn(this.canvasTexture)
-			: Fn(() => texture(this.canvasTexture, uv()));
-
 		this.material = new MeshBasicNodeMaterial({
-			colorNode: this.outputNodeFn()
+			colorNode: outFn
+				? outFn(this.canvasTexture)
+				: texture(this.canvasTexture, uv())
 		});
 
 		this.drawFn = drawFn
@@ -91,10 +93,9 @@ export class TSLMaterial<T extends unknown[] = []> {
 		material.canvas = canvas;
 		material.ctx = ctx;
 		material.canvasTexture = newCanvasTexture;
-		material.outputNodeFn = material.outFn
+		material.material.colorNode = material.outFn
 			? material.outFn(material.canvasTexture)
-			: Fn(() => texture(material.canvasTexture, uv()));
-		material.material.colorNode = material.outputNodeFn();
+			: texture(material.canvasTexture, uv());
 		material.material.needsUpdate = true;
 	}
 }

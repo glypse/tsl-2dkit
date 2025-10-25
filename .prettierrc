@@ -1,0 +1,6 @@
+{
+	"tabWidth": 4,
+	"useTabs": true,
+	"trailingComma": "none",
+	"plugins": ["@prettier/plugin-oxc"]
+}

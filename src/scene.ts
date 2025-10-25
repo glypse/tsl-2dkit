@@ -116,6 +116,7 @@ export function init2DScene(
 
 	return {
 		canvas,
-		onDrawScene
+		onDrawScene,
+		onResize
 	};
 }

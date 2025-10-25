@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { WebGPURenderer } from "three/webgpu";
-import type { TSLMaterial } from "./materials";
+import { type TSLMaterial } from "./materials";
 
 function configRenderer(
 	renderer: WebGPURenderer,
@@ -16,7 +16,7 @@ export function Scene2D<T extends unknown[] = []>(
 	parentNode: HTMLElement,
 	width: number,
 	height: number,
-	materialInfo: TSLMaterial<T>,
+	TSLMaterial: TSLMaterial<T>,
 	resizeable?: boolean,
 	forceWebGL = false
 ) {
@@ -24,7 +24,7 @@ export function Scene2D<T extends unknown[] = []>(
 	const renderer = new WebGPURenderer({ forceWebGL });
 	renderer.setClearColor(new THREE.Color(0x808080));
 
-	const { material, resize: resizeMaterial } = materialInfo;
+	const { material, resize: resizeMaterial } = TSLMaterial;
 
 	let container: HTMLDivElement | undefined;
 

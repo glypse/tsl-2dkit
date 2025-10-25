@@ -2,15 +2,15 @@ import "./style.css";
 import { BaseMaterial } from "./materials";
 import { Scene2D } from "$lib";
 
-let width = 800;
-let height = 800;
+const initWidth = 800;
+const initHeight = 800;
 
-const materialInfo = BaseMaterial(width, height);
+const materialInfo = BaseMaterial(initWidth, initHeight);
 
 const { canvas, onDrawScene } = Scene2D(
 	document.querySelector("#app")!,
-	width,
-	height,
+	initWidth,
+	initHeight,
 	materialInfo,
 	true
 );

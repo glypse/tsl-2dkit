@@ -12,11 +12,11 @@ function configRenderer(
 	renderer.setPixelRatio(dpr);
 }
 
-export function Scene2D(
+export function Scene2D<T extends unknown[] = []>(
 	parentNode: HTMLElement,
 	width: number,
 	height: number,
-	materialInfo: TSLMaterial,
+	materialInfo: TSLMaterial<T>,
 	resizeable?: boolean,
 	forceWebGL = false
 ) {

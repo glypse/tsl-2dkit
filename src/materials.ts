@@ -7,14 +7,13 @@ import {
 import { initCanvas } from "./canvas";
 import { Fn, uv, texture } from "three/tsl";
 
-export class TSLMaterial {
+export class TSLMaterial<T extends unknown[] = []> {
 	canvas: HTMLCanvasElement;
 	ctx: CanvasRenderingContext2D;
 	canvasTexture: CanvasTexture;
 	material: NodeMaterial;
 
-	// oxlint-disable-next-line no-explicit-any
-	private drawFn: (...args: any[]) => void;
+	private drawFn: (...args: T) => void;
 	private resizeFn: (w: number, h: number) => void;
 	private outFn?: (canvasTexture: CanvasTexture) => ShaderNodeFn<[]>;
 	private outputNodeFn: ShaderNodeFn<[]>;
@@ -24,10 +23,9 @@ export class TSLMaterial {
 		height: number,
 		options: {
 			initCanvas?: typeof initCanvas;
-			// oxlint-disable-next-line no-explicit-any
-			draw?: (this: TSLMaterial, ...args: any[]) => void;
+			draw?: (material: TSLMaterial<unknown[]>, ...args: T) => void;
 			outputNode?: (canvasTexture: CanvasTexture) => ShaderNodeFn<[]>;
-			resize?: (this: TSLMaterial, w: number, h: number) => void;
+			resize?: (material: TSLMaterial<T>, w: number, h: number) => void;
 		} = {}
 	) {
 		const {
@@ -53,20 +51,20 @@ export class TSLMaterial {
 		});
 
 		this.drawFn = drawFn
-			? // oxlint-disable-next-line no-explicit-any
-				(...args: any[]) => drawFn.call(this, ...args)
-			: this.defaultDraw.bind(this);
+			? (...args: T) =>
+					drawFn(this as unknown as TSLMaterial<unknown[]>, ...args)
+			: () => this.defaultDraw(this);
 
 		this.resizeFn = resizeFn
-			? (w: number, h: number) => resizeFn.call(this, w, h)
-			: this.defaultResize.bind(this);
+			? (w: number, h: number) =>
+					resizeFn(this as unknown as TSLMaterial<unknown[]>, w, h)
+			: (w: number, h: number) => this.defaultResize(this, w, h);
 
 		this.draw = this.draw.bind(this);
 		this.resize = this.resize.bind(this);
 	}
 
-	// oxlint-disable-next-line no-explicit-any
-	draw(...args: any[]) {
+	draw(...args: T) {
 		this.drawFn(...args);
 	}
 
@@ -74,24 +72,29 @@ export class TSLMaterial {
 		this.resizeFn(w, h);
 	}
 
-	private defaultDraw() {
-		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+	private defaultDraw(material: TSLMaterial<T>) {
+		material.ctx.clearRect(
+			0,
+			0,
+			material.canvas.width,
+			material.canvas.height
+		);
 	}
 
-	private defaultResize(w: number, h: number) {
-		this.canvasTexture.dispose();
+	private defaultResize(material: TSLMaterial<T>, w: number, h: number) {
+		material.canvasTexture.dispose();
 		const {
 			canvas,
 			ctx,
 			canvasTexture: newCanvasTexture
 		} = initCanvas({ width: w, height: h });
-		this.canvas = canvas;
-		this.ctx = ctx;
-		this.canvasTexture = newCanvasTexture;
-		this.outputNodeFn = this.outFn
-			? this.outFn(this.canvasTexture)
-			: Fn(() => texture(this.canvasTexture, uv()));
-		this.material.colorNode = this.outputNodeFn();
-		this.material.needsUpdate = true;
+		material.canvas = canvas;
+		material.ctx = ctx;
+		material.canvasTexture = newCanvasTexture;
+		material.outputNodeFn = material.outFn
+			? material.outFn(material.canvasTexture)
+			: Fn(() => texture(material.canvasTexture, uv()));
+		material.material.colorNode = material.outputNodeFn();
+		material.material.needsUpdate = true;
 	}
 }

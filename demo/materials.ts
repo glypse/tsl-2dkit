@@ -1,46 +1,30 @@
-import { MeshBasicNodeMaterial } from "three/webgpu";
 import { Fn, uv, texture } from "three/tsl";
-import { initCanvas, handleCanvasResize } from "$lib";
+import { TSLMaterial } from "$lib/materials";
 
 export const BaseMaterial = (width: number, height: number) => {
-	let { canvas, ctx, canvasTexture } = initCanvas({
-		width,
-		height
+	return new TSLMaterial(width, height, {
+		draw(mouseX: number) {
+			this.ctx.fillStyle = "#0000ff";
+			this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+			// Hue shift to visualise when the canvas is drawing vs when not
+			const hue = (mouseX * 0.5) % 360;
+			this.ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+			this.ctx.font = `500 ${Math.max(this.canvas.width, this.canvas.height)}px "Times"`;
+			this.ctx.textAlign = "center";
+			this.ctx.textBaseline = "middle";
+
+			this.ctx.fillText(
+				"a",
+				this.canvas.width / 2,
+				this.canvas.height / 2
+			);
+
+			this.canvasTexture.needsUpdate = true;
+		},
+		outputNode: (canvasTexture) =>
+			Fn(() => {
+				return texture(canvasTexture, uv());
+			})
 	});
-
-	function draw(mouseX: number) {
-		ctx.fillStyle = "#0000ff";
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-		// Hue shift to visualise when the canvas is drawing vs when not
-		const hue = (mouseX * 0.5) % 360;
-		ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
-		ctx.font = `500 ${Math.max(canvas.width, canvas.height)}px "Times"`;
-		ctx.textAlign = "center";
-		ctx.textBaseline = "middle";
-
-		ctx.fillText("a", canvas.width / 2, canvas.height / 2);
-
-		canvasTexture.needsUpdate = true;
-	}
-
-	const outputNode = Fn(() => {
-		return texture(canvasTexture, uv());
-	});
-
-	const material = new MeshBasicNodeMaterial({
-		colorNode: outputNode()
-	});
-
-	function resize(newWidth: number, newHeight: number) {
-		({ canvas, ctx, canvasTexture } = handleCanvasResize(
-			newWidth,
-			newHeight,
-			canvasTexture,
-			material,
-			outputNode
-		));
-	}
-
-	return { material, draw, resize };
 };

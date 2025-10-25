@@ -1,13 +1,13 @@
 import "./style.css";
 import { BaseMaterial } from "./materials";
-import { init2DScene } from "$lib";
+import { Scene2D } from "$lib";
 
 let width = 800;
 let height = 800;
 
 const materialInfo = BaseMaterial(width, height);
 
-const { canvas, onDrawScene } = init2DScene(
+const { canvas, onDrawScene } = Scene2D(
 	document.querySelector("#app")!,
 	width,
 	height,

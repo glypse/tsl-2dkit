@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import { NodeMaterial, WebGPURenderer } from "three/webgpu";
+import { WebGPURenderer } from "three/webgpu";
+import type { TSLMaterial } from "./materials";
 
 function configRenderer(
 	renderer: WebGPURenderer,
@@ -11,16 +12,11 @@ function configRenderer(
 	renderer.setPixelRatio(dpr);
 }
 
-export function init2DScene(
+export function Scene2D(
 	parentNode: HTMLElement,
 	width: number,
 	height: number,
-	materialInfo: {
-		material: NodeMaterial;
-		// oxlint-disable-next-line no-explicit-any
-		draw: (...arg: any[]) => void;
-		resize: (w: number, h: number) => void;
-	},
+	materialInfo: TSLMaterial,
 	resizeable?: boolean,
 	forceWebGL = false
 ) {

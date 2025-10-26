@@ -12,12 +12,12 @@ function configRenderer(
 	renderer.setPixelRatio(dpr);
 }
 
-export function Scene2D<T extends unknown[] = []>(
+export function Scene2D(
 	parentNode: HTMLElement,
 	width: number,
 	height: number,
-	TSLMaterial: TSLMaterial<T>,
-	resizeable?: boolean,
+	TSLMaterial: TSLMaterial,
+	resizeable = false,
 	forceWebGL = false
 ) {
 	const scene = new THREE.Scene();

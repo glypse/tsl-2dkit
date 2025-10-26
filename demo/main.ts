@@ -1,17 +1,17 @@
 import "./style.css";
-import { BaseMaterial } from "./materials";
+import { getBaseMaterial } from "./materials";
 import { Scene2D } from "$lib";
 
 const initWidth = 800;
 const initHeight = 800;
 
-const materialInfo = BaseMaterial(initWidth, initHeight);
+const baseMaterial = getBaseMaterial(initWidth, initHeight);
 
 const { canvas, onDrawScene } = Scene2D(
 	document.querySelector("#app")!,
 	initWidth,
 	initHeight,
-	materialInfo,
+	baseMaterial,
 	true
 );
 
@@ -22,4 +22,4 @@ canvas.addEventListener("mousemove", (event) => {
 
 let mouseX = 0;
 
-onDrawScene(() => materialInfo.draw(mouseX));
+onDrawScene(() => baseMaterial.draw(mouseX));

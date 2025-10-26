@@ -1,11 +1,11 @@
 import { type ShaderNodeFn } from "three/src/nodes/TSL.js";
 import { CanvasTexture, NodeMaterial } from "three/webgpu";
 
-export function initCanvas(size: { width: number; height: number }) {
+export function initCanvas(width: number, height: number) {
 	const dpr = window.devicePixelRatio;
 	let canvas = document.createElement("canvas");
-	canvas.width = size.width * dpr;
-	canvas.height = size.height * dpr;
+	canvas.width = width * dpr;
+	canvas.height = height * dpr;
 	let ctx = canvas.getContext("2d", { colorSpace: "srgb" })!;
 	let canvasTexture = new CanvasTexture(canvas);
 
@@ -29,10 +29,7 @@ export function handleCanvasResize(
 		canvas,
 		ctx,
 		canvasTexture: newCanvasTexture
-	} = initCanvas({
-		width: newWidth,
-		height: newHeight
-	});
+	} = initCanvas(newWidth, newHeight);
 	canvasTexture = newCanvasTexture;
 	material.colorNode = outputNode();
 	material.needsUpdate = true;

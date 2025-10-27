@@ -1,6 +1,10 @@
 import * as THREE from "three";
 import { WebGPURenderer } from "three/webgpu";
+import { Fn, texture, uv } from "three/tsl";
+import { MeshBasicNodeMaterial } from "three/webgpu";
 import { type TSLMaterial } from "./materials";
+import { initCanvas, handleCanvasResize } from "./canvas";
+import { DrawingContext, setDrawingContext } from "./drawing";
 
 function configRenderer(
 	renderer: WebGPURenderer,
@@ -12,7 +16,7 @@ function configRenderer(
 	renderer.setPixelRatio(dpr);
 }
 
-export function Scene2D(
+function Scene2D(
 	parentNode: HTMLElement,
 	width: number,
 	height: number,
@@ -115,4 +119,38 @@ export function Scene2D(
 		onDrawScene,
 		onResize
 	};
+}
+
+export class Canvas2D {
+	private scene2D: ReturnType<typeof Scene2D>;
+	private drawingContext: DrawingContext;
+
+	constructor(parentNode: HTMLElement, width: number, height: number) {
+		const { ctx, canvasTexture } = initCanvas(width, height);
+		const outputNode = Fn(() => texture(canvasTexture, uv()));
+		const material = new MeshBasicNodeMaterial({ colorNode: outputNode() });
+		this.drawingContext = new DrawingContext(
+			ctx,
+			canvasTexture,
+			width,
+			height
+		);
+		setDrawingContext(this.drawingContext);
+
+		const baseMaterial = {
+			material,
+			draw: () => {},
+			resize: (w: number, h: number) =>
+				handleCanvasResize(w, h, canvasTexture, material, outputNode)
+		};
+		this.scene2D = Scene2D(parentNode, width, height, baseMaterial, true);
+	}
+
+	draw(callback: () => void) {
+		this.scene2D.onDrawScene(callback);
+	}
+
+	resize(w: number, h: number) {
+		this.scene2D.onResize(w, h);
+	}
 }

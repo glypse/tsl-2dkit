@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { WebGPURenderer } from "three/webgpu";
-import { Fn, texture, uv } from "three/tsl";
+import { CanvasTexture, WebGPURenderer } from "three/webgpu";
+import { Fn, texture, uv, mix, vec4 } from "three/tsl";
 import { MeshBasicNodeMaterial } from "three/webgpu";
 import { type TSLMaterial } from "./materials";
 import { initCanvas, handleCanvasResize } from "./canvas";
@@ -124,11 +124,14 @@ function Scene2D(
 export class Canvas2D {
 	private scene2D: ReturnType<typeof Scene2D>;
 	private drawingContext: DrawingContext;
+	private material: MeshBasicNodeMaterial;
+	private canvasTexture: CanvasTexture;
 
 	constructor(parentNode: HTMLElement, width: number, height: number) {
 		const { ctx, canvasTexture } = initCanvas(width, height);
+		this.canvasTexture = canvasTexture;
 		const outputNode = Fn(() => texture(canvasTexture, uv()));
-		const material = new MeshBasicNodeMaterial({ colorNode: outputNode() });
+		this.material = new MeshBasicNodeMaterial({ colorNode: outputNode() });
 		this.drawingContext = new DrawingContext(
 			ctx,
 			canvasTexture,
@@ -138,16 +141,37 @@ export class Canvas2D {
 		setDrawingContext(this.drawingContext);
 
 		const baseMaterial = {
-			material,
+			material: this.material,
 			draw: () => {},
 			resize: (w: number, h: number) =>
-				handleCanvasResize(w, h, canvasTexture, material, outputNode)
+				handleCanvasResize(
+					w,
+					h,
+					canvasTexture,
+					this.material,
+					outputNode
+				)
 		};
 		this.scene2D = Scene2D(parentNode, width, height, baseMaterial, true);
 	}
 
 	draw(callback: () => void) {
-		this.scene2D.onDrawScene(callback);
+		const wrappedCallback = () => {
+			this.drawingContext.resetOverlay();
+			callback();
+			const overlay = this.drawingContext.getCurrentOverlay();
+			if (overlay) {
+				this.material.colorNode = mix(
+					vec4(overlay, 1.0),
+					texture(this.canvasTexture, uv()),
+					0.5
+				);
+			} else {
+				this.material.colorNode = texture(this.canvasTexture, uv());
+			}
+			this.material.needsUpdate = true;
+		};
+		this.scene2D.onDrawScene(wrappedCallback);
 	}
 
 	resize(w: number, h: number) {

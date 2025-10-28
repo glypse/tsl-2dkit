@@ -10,6 +10,7 @@ export class DrawingContext {
 	private width: number;
 	private height: number;
 	private currentColor = "#000000";
+	private currentOverlay: any = null; // ShaderNodeObject<vec3>
 
 	constructor(
 		ctx: CanvasRenderingContext2D,
@@ -21,6 +22,18 @@ export class DrawingContext {
 		this.canvasTexture = canvasTexture;
 		this.width = width;
 		this.height = height;
+	}
+
+	resetOverlay() {
+		this.currentOverlay = null;
+	}
+
+	getCurrentOverlay() {
+		return this.currentOverlay;
+	}
+
+	setCurrentOverlay(color: any) {
+		this.currentOverlay = color;
 	}
 
 	// State setters
@@ -50,6 +63,10 @@ export class DrawingContext {
 		});
 		shape.draw(this.ctx);
 		this.canvasTexture.needsUpdate = true;
+	}
+
+	rectangle(opts: { width: number; height: number; color: any }) {
+		this.setCurrentOverlay(opts.color);
 	}
 
 	// Add more shapes here (rect, etc.)
@@ -106,5 +123,8 @@ export function fill(color: string) {
 }
 export function writeText(opts: Parameters<DrawingContext["writeText"]>[0]) {
 	globalContext?.writeText(opts);
+}
+export function rectangle(opts: { width: number; height: number; color: any }) {
+	globalContext?.rectangle(opts);
 }
 // Add push, pop, etc.

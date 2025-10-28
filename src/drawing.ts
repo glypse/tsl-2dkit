@@ -1,4 +1,5 @@
 import { CanvasTexture } from "three/webgpu";
+import { texture } from "three/tsl";
 
 export interface Shape {
 	draw(ctx: CanvasRenderingContext2D): void;
@@ -43,7 +44,7 @@ export class DrawingContext {
 	}
 
 	// Drawing functions
-	writeText(opts: {
+	textNode(opts: {
 		string: string;
 		x?: number;
 		y?: number;
@@ -63,6 +64,7 @@ export class DrawingContext {
 		});
 		shape.draw(this.ctx);
 		this.canvasTexture.needsUpdate = true;
+		return texture(this.canvasTexture);
 	}
 
 	rectangle(opts: { width: number; height: number; color: any }) {
@@ -121,8 +123,8 @@ export function setDrawingContext(ctx: DrawingContext) {
 export function fill(color: string) {
 	globalContext?.fill(color);
 }
-export function writeText(opts: Parameters<DrawingContext["writeText"]>[0]) {
-	globalContext?.writeText(opts);
+export function textNode(opts: Parameters<DrawingContext["textNode"]>[0]) {
+	return globalContext?.textNode(opts);
 }
 export function rectangle(opts: { width: number; height: number; color: any }) {
 	globalContext?.rectangle(opts);

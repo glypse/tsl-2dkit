@@ -1,17 +1,17 @@
 import "./style.css";
 
-import { Canvas2D, writeText, rectangle } from "$lib";
-import { Fn, uv, uniform, vec3, floor } from "three/tsl";
+import { Canvas2D, textNode, rectangle } from "$lib";
+import { Fn, uv, uniform, vec3, floor, mix } from "three/tsl";
 
 const canvas = new Canvas2D(document.querySelector("#app")!, 800, 800);
 
 canvas.draw(() => {
-	writeText({
+	const textTexture = textNode({
 		string: "a",
-		size: Math.max(800, 800),
+		size: 800,
 		weight: 500,
 		color: "#00ff00"
-	});
+	})!;
 	const pixelatedUVs = Fn(() => {
 		const uvCoord = uv();
 		const uTiles = uniform(8);
@@ -21,9 +21,6 @@ canvas.draw(() => {
 			uniform(0)
 		);
 	});
-	rectangle({
-		width: 200,
-		height: 200,
-		color: pixelatedUVs()
-	});
+	const composited = mix(textTexture.rgb, pixelatedUVs(), 1);
+	rectangle({ width: 200, height: 200, color: composited });
 });

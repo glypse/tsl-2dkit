@@ -1,6 +1,6 @@
 import "./style.css";
 
-import { Canvas2D, textNode, rectangle } from "$lib";
+import { Canvas2D, textNode } from "$lib";
 import { Fn, uv, uniform, vec3, floor, mix } from "three/tsl";
 
 const canvas = new Canvas2D(document.querySelector("#app")!, 800, 800);
@@ -21,6 +21,5 @@ canvas.draw(() => {
 			uniform(0)
 		);
 	});
-	const composited = mix(textTexture.rgb, pixelatedUVs(), 1);
-	rectangle({ width: 200, height: 200, color: composited });
+	mix(textTexture.rgb, pixelatedUVs(), 1);
 });

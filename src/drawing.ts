@@ -1,17 +1,11 @@
 import { CanvasTexture } from "three/webgpu";
 import { texture } from "three/tsl";
 
-export interface Shape {
-	draw(ctx: CanvasRenderingContext2D): void;
-}
-
 export class DrawingContext {
 	private ctx: CanvasRenderingContext2D;
 	private canvasTexture: CanvasTexture;
 	private width: number;
 	private height: number;
-	private currentColor = "#000000";
-	private currentOverlay: any = null; // ShaderNodeObject<vec3>
 
 	constructor(
 		ctx: CanvasRenderingContext2D,
@@ -23,24 +17,6 @@ export class DrawingContext {
 		this.canvasTexture = canvasTexture;
 		this.width = width;
 		this.height = height;
-	}
-
-	resetOverlay() {
-		this.currentOverlay = null;
-	}
-
-	getCurrentOverlay() {
-		return this.currentOverlay;
-	}
-
-	setCurrentOverlay(color: any) {
-		this.currentOverlay = color;
-	}
-
-	// State setters
-	fill(color: string) {
-		this.currentColor = color;
-		return this;
 	}
 
 	// Drawing functions
@@ -58,7 +34,7 @@ export class DrawingContext {
 			x: opts.x ?? this.width / 2,
 			y: opts.y ?? this.height / 2,
 			rotation: opts.rotation ?? 0,
-			color: opts.color || this.currentColor,
+			color: opts.color ?? "#000000",
 			size: opts.size ?? 16,
 			weight: opts.weight ?? 500
 		});
@@ -67,11 +43,11 @@ export class DrawingContext {
 		return texture(this.canvasTexture);
 	}
 
-	rectangle(opts: { width: number; height: number; color: any }) {
-		this.setCurrentOverlay(opts.color);
-	}
-
 	// Add more shapes here (rect, etc.)
+}
+
+export interface Shape {
+	draw(ctx: CanvasRenderingContext2D): void;
 }
 
 class TextShape implements Shape {
@@ -120,13 +96,7 @@ export function setDrawingContext(ctx: DrawingContext) {
 }
 
 // Global functions
-export function fill(color: string) {
-	globalContext?.fill(color);
-}
 export function textNode(opts: Parameters<DrawingContext["textNode"]>[0]) {
 	return globalContext?.textNode(opts);
-}
-export function rectangle(opts: { width: number; height: number; color: any }) {
-	globalContext?.rectangle(opts);
 }
 // Add push, pop, etc.

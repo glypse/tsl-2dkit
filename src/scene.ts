@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { CanvasTexture, WebGPURenderer } from "three/webgpu";
-import { Fn, texture, uv, mix, vec4 } from "three/tsl";
+import { Fn, texture, uv } from "three/tsl";
 import { MeshBasicNodeMaterial } from "three/webgpu";
 import { type TSLMaterial } from "./materials";
 import { initCanvas, handleCanvasResize } from "./canvas";
@@ -157,18 +157,8 @@ export class Canvas2D {
 
 	draw(callback: () => void) {
 		const wrappedCallback = () => {
-			this.drawingContext.resetOverlay();
 			callback();
-			const overlay = this.drawingContext.getCurrentOverlay();
-			if (overlay) {
-				this.material.colorNode = mix(
-					vec4(overlay, 1.0),
-					texture(this.canvasTexture, uv()),
-					0.5
-				);
-			} else {
-				this.material.colorNode = texture(this.canvasTexture, uv());
-			}
+			this.material.colorNode = texture(this.canvasTexture, uv());
 			this.material.needsUpdate = true;
 		};
 		this.scene2D.onDrawScene(wrappedCallback);

@@ -1,10 +1,11 @@
 import * as THREE from "three";
-import { CanvasTexture, WebGPURenderer } from "three/webgpu";
-import { Fn, texture, uv } from "three/tsl";
+import { WebGPURenderer } from "three/webgpu";
+import { Fn, vec3 } from "three/tsl";
 import { MeshBasicNodeMaterial } from "three/webgpu";
-import { type TSLMaterial } from "./materials";
-import { initCanvas, handleCanvasResize } from "./canvas";
+import { type TSLMaterial, compositeLayers } from "./materials";
+import type { Vec3Like, Vec4LayerLike } from "./materials";
 import { DrawingContext, setDrawingContext } from "./drawing";
+// (removed direct ShaderNode import to avoid coupling to internal three typings)
 
 function configRenderer(
 	renderer: WebGPURenderer,
@@ -124,41 +125,47 @@ function Scene2D(
 export class Canvas2D {
 	private scene2D: ReturnType<typeof Scene2D>;
 	private drawingContext: DrawingContext;
-	private material: MeshBasicNodeMaterial;
-	private canvasTexture: CanvasTexture;
+	private material: MeshBasicNodeMaterial & {
+		colorNode: Vec3Like | Vec4LayerLike;
+	};
 
 	constructor(parentNode: HTMLElement, width: number, height: number) {
-		const { ctx, canvasTexture } = initCanvas(width, height);
-		this.canvasTexture = canvasTexture;
-		const outputNode = Fn(() => texture(canvasTexture, uv()));
-		this.material = new MeshBasicNodeMaterial({ colorNode: outputNode() });
-		this.drawingContext = new DrawingContext(
-			ctx,
-			canvasTexture,
-			width,
-			height
-		);
+		const outputNode = Fn(() => vec3(0));
+		this.material = new MeshBasicNodeMaterial({
+			colorNode: outputNode()
+		}) as MeshBasicNodeMaterial & { colorNode: Vec3Like | Vec4LayerLike };
+		this.drawingContext = new DrawingContext(width, height);
 		setDrawingContext(this.drawingContext);
 
 		const baseMaterial = {
 			material: this.material,
 			draw: () => {},
-			resize: (w: number, h: number) =>
-				handleCanvasResize(
-					w,
-					h,
-					canvasTexture,
-					this.material,
-					outputNode
-				)
+			resize: (_w: number, _h: number) => {}
 		};
 		this.scene2D = Scene2D(parentNode, width, height, baseMaterial, true);
 	}
 
-	draw(callback: () => void) {
+	draw(
+		callback: () =>
+			| Vec4LayerLike
+			| Vec4LayerLike[]
+			| Record<string, Vec4LayerLike>
+	) {
 		const wrappedCallback = () => {
-			callback();
-			this.material.colorNode = texture(this.canvasTexture, uv());
+			const result = callback();
+			let colorNode: Vec3Like | Vec4LayerLike;
+			if (Array.isArray(result)) {
+				colorNode = compositeLayers(result);
+			} else if (
+				typeof result === "object" &&
+				result !== null &&
+				!Array.isArray(result)
+			) {
+				colorNode = compositeLayers(Object.values(result));
+			} else {
+				colorNode = result as Vec4LayerLike;
+			}
+			this.material.colorNode = colorNode;
 			this.material.needsUpdate = true;
 		};
 		this.scene2D.onDrawScene(wrappedCallback);

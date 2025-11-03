@@ -2,19 +2,10 @@ import { CanvasTexture } from "three/webgpu";
 import { texture } from "three/tsl";
 
 export class DrawingContext {
-	private ctx: CanvasRenderingContext2D;
-	private canvasTexture: CanvasTexture;
 	private width: number;
 	private height: number;
 
-	constructor(
-		ctx: CanvasRenderingContext2D,
-		canvasTexture: CanvasTexture,
-		width: number,
-		height: number
-	) {
-		this.ctx = ctx;
-		this.canvasTexture = canvasTexture;
+	constructor(width: number, height: number) {
 		this.width = width;
 		this.height = height;
 	}
@@ -29,6 +20,10 @@ export class DrawingContext {
 		size?: number;
 		weight?: number;
 	}) {
+		const canvas = document.createElement("canvas");
+		canvas.width = this.width;
+		canvas.height = this.height;
+		const ctx = canvas.getContext("2d", { colorSpace: "srgb" })!;
 		const shape = new TextShape({
 			string: opts.string,
 			x: opts.x ?? this.width / 2,
@@ -38,9 +33,9 @@ export class DrawingContext {
 			size: opts.size ?? 16,
 			weight: opts.weight ?? 500
 		});
-		shape.draw(this.ctx);
-		this.canvasTexture.needsUpdate = true;
-		return texture(this.canvasTexture);
+		shape.draw(ctx);
+		const canvasTexture = new CanvasTexture(canvas);
+		return texture(canvasTexture);
 	}
 
 	// Add more shapes here (rect, etc.)

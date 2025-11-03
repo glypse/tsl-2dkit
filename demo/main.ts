@@ -1,7 +1,7 @@
 import "./style.css";
 
 import { Canvas2D, textNode } from "$lib";
-import { Fn, uv, uniform, vec3, floor, mix } from "three/tsl";
+import { Fn, uv, uniform, vec3, floor, mix, vec4 } from "three/tsl";
 
 const canvas = new Canvas2D(document.querySelector("#app")!, 800, 800);
 
@@ -21,5 +21,5 @@ canvas.draw(() => {
 			uniform(0)
 		);
 	});
-	mix(textTexture.rgb, pixelatedUVs(), 1);
+	return { text: vec4(mix(textTexture.rgb, pixelatedUVs(), 0.5), 1.0) };
 });

@@ -3,8 +3,6 @@
 	"typeAware": true,
 	"tsconfig": "tsconfig.json",
 	"rules": {
-		"no-explicit-any": "warn",
-		"no-unused-private-class-members": "off",
-		"no-unused-vars": "off"
+		"no-explicit-any": "warn"
 	}
 }

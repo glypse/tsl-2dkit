@@ -93,4 +93,3 @@ export function setDrawingContext(ctx: DrawingContext) {
 export function textNode(opts: Parameters<DrawingContext["textNode"]>[0]) {
 	return globalContext!.textNode(opts);
 }
-// Add push, pop, etc.

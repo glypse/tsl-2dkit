@@ -1,11 +1,10 @@
 import * as THREE from "three";
-import { WebGPURenderer } from "three/webgpu";
-import { Fn, vec3 } from "three/tsl";
+import { WebGPURenderer, Node, TextureNode } from "three/webgpu";
+import { Fn, vec3, type ShaderNodeObject } from "three/tsl";
 import { MeshBasicNodeMaterial } from "three/webgpu";
-import { type TSLMaterial, compositeLayers } from "./materials";
+import { type TSLMaterial } from "./materials";
 import type { Vec3Like, Vec4LayerLike } from "./materials";
 import { DrawingContext, setDrawingContext } from "./drawing";
-// (removed direct ShaderNode import to avoid coupling to internal three typings)
 
 function configRenderer(
 	renderer: WebGPURenderer,
@@ -147,24 +146,14 @@ export class Canvas2D {
 
 	draw(
 		callback: () =>
+			| ShaderNodeObject<Node>
 			| Vec4LayerLike
-			| Vec4LayerLike[]
-			| Record<string, Vec4LayerLike>
+			| ShaderNodeObject<TextureNode>
 	) {
 		const wrappedCallback = () => {
 			const result = callback();
 			let colorNode: Vec3Like | Vec4LayerLike;
-			if (Array.isArray(result)) {
-				colorNode = compositeLayers(result);
-			} else if (
-				typeof result === "object" &&
-				result !== null &&
-				!Array.isArray(result)
-			) {
-				colorNode = compositeLayers(Object.values(result));
-			} else {
-				colorNode = result as Vec4LayerLike;
-			}
+			colorNode = result as Vec4LayerLike;
 			this.material.colorNode = colorNode;
 			this.material.needsUpdate = true;
 		};

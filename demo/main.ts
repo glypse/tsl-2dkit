@@ -1,7 +1,7 @@
 import "./style.css";
 
 import { Canvas2D, textNode } from "$lib";
-import { Fn, uv, uniform, vec2, floor, vec4, texture } from "three/tsl";
+import { Fn, uv, uniform, vec2, floor, texture } from "three/tsl";
 
 const canvas = new Canvas2D(document.querySelector("#app")!, 800, 800);
 
@@ -20,5 +20,5 @@ canvas.draw(() => {
 			floor(uvCoord.y.mul(uTiles)).div(uTiles)
 		);
 	});
-	return { text: vec4(texture(textTexture, pixelatedUVs()), 1.0) };
+	return texture(textTexture, pixelatedUVs());
 });

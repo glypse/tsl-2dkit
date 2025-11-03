@@ -1,5 +1,4 @@
 import { CanvasTexture } from "three/webgpu";
-import { texture } from "three/tsl";
 
 export class DrawingContext {
 	private width: number;
@@ -35,7 +34,7 @@ export class DrawingContext {
 		});
 		shape.draw(ctx);
 		const canvasTexture = new CanvasTexture(canvas);
-		return texture(canvasTexture);
+		return canvasTexture;
 	}
 
 	// Add more shapes here (rect, etc.)
@@ -92,6 +91,6 @@ export function setDrawingContext(ctx: DrawingContext) {
 
 // Global functions
 export function textNode(opts: Parameters<DrawingContext["textNode"]>[0]) {
-	return globalContext?.textNode(opts);
+	return globalContext!.textNode(opts);
 }
 // Add push, pop, etc.

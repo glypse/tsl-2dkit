@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { WebGPURenderer, Node, TextureNode } from "three/webgpu";
-import { Fn, vec3, type ShaderNodeObject } from "three/tsl";
+import { WebGPURenderer, Node, TextureNode, UniformNode } from "three/webgpu";
+import { Fn, vec3, uniform, type ShaderNodeObject } from "three/tsl";
 import { MeshBasicNodeMaterial } from "three/webgpu";
 import { type TSLMaterial } from "./materials";
 import type { Vec3Like, Vec4LayerLike } from "./materials";
@@ -133,6 +133,7 @@ export class Canvas2D {
 	private stats?: Stats;
 	private time = 0;
 	private lastTime = performance.now();
+	private timeUniform = uniform(0);
 
 	constructor(
 		parentNode: HTMLElement,
@@ -173,23 +174,23 @@ export class Canvas2D {
 
 	draw(
 		callback: (
-			time: number
+			time: ShaderNodeObject<UniformNode<number>>
 		) =>
 			| ShaderNodeObject<Node>
 			| Vec4LayerLike
 			| ShaderNodeObject<TextureNode>
 	) {
+		const colorNode = callback(this.timeUniform);
+		this.material.colorNode = colorNode as Vec4LayerLike;
+		this.material.needsUpdate = true;
+
 		const wrappedCallback = () => {
 			const now = performance.now();
 			const delta = (now - this.lastTime) / 1000;
 			this.time += delta;
 			this.lastTime = now;
 
-			const result = callback(this.time);
-			let colorNode: Vec3Like | Vec4LayerLike;
-			colorNode = result as Vec4LayerLike;
-			this.material.colorNode = colorNode;
-			this.material.needsUpdate = true;
+			this.timeUniform.value = this.time;
 		};
 		this.scene2D.onDrawScene(wrappedCallback);
 	}

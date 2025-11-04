@@ -10,17 +10,13 @@ export default defineConfig(({ command }) => {
 			root: "demo",
 			resolve: {
 				alias: {
-					$lib: resolve(__dirname, "src")
+					$lib: resolve(__dirname, "src"),
+					$demo: resolve(__dirname, "demo")
 				}
 			}
 		};
 	} else {
 		return {
-			resolve: {
-				alias: {
-					$lib: resolve(__dirname, "src")
-				}
-			},
 			build: {
 				emptyOutDir: false,
 				lib: {

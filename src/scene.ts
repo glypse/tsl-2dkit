@@ -5,6 +5,7 @@ import { MeshBasicNodeMaterial } from "three/webgpu";
 import { type TSLMaterial } from "./materials";
 import type { Vec3Like, Vec4LayerLike } from "./materials";
 import { DrawingContext, setDrawingContext } from "./drawing";
+import Stats from "three/examples/jsm/libs/stats.module.js";
 
 function configRenderer(
 	renderer: WebGPURenderer,
@@ -22,10 +23,11 @@ function Scene2D(
 	height: number,
 	TSLMaterial: TSLMaterial,
 	resizeable = false,
-	forceWebGL = false
+	forceWebGL = false,
+	stats?: Stats
 ) {
 	const scene = new THREE.Scene();
-	const renderer = new WebGPURenderer({ forceWebGL });
+	const renderer = new WebGPURenderer({ forceWebGL, antialias: true });
 	renderer.setClearColor(new THREE.Color(0x808080));
 
 	const { material, resize: resizeMaterial } = TSLMaterial;
@@ -109,6 +111,7 @@ function Scene2D(
 		function animate() {
 			drawFn();
 			renderer.renderAsync(scene, camera);
+			if (stats) stats.update();
 			requestAnimationFrame(animate);
 		}
 		animate();
@@ -127,8 +130,16 @@ export class Canvas2D {
 	private material: MeshBasicNodeMaterial & {
 		colorNode: Vec3Like | Vec4LayerLike;
 	};
+	private stats?: Stats;
+	private time = 0;
+	private lastTime = performance.now();
 
-	constructor(parentNode: HTMLElement, width: number, height: number) {
+	constructor(
+		parentNode: HTMLElement,
+		width: number,
+		height: number,
+		stats?: boolean
+	) {
 		const outputNode = Fn(() => vec3(0));
 		this.material = new MeshBasicNodeMaterial({
 			colorNode: outputNode()
@@ -136,22 +147,45 @@ export class Canvas2D {
 		this.drawingContext = new DrawingContext(width, height);
 		setDrawingContext(this.drawingContext);
 
+		if (stats) {
+			this.stats = new Stats();
+		}
+
 		const baseMaterial = {
 			material: this.material,
 			draw: () => {},
 			resize: (_w: number, _h: number) => {}
 		};
-		this.scene2D = Scene2D(parentNode, width, height, baseMaterial, true);
+		this.scene2D = Scene2D(
+			parentNode,
+			width,
+			height,
+			baseMaterial,
+			true,
+			false,
+			this.stats
+		);
+
+		if (stats) {
+			parentNode.appendChild(this.stats!.dom);
+		}
 	}
 
 	draw(
-		callback: () =>
+		callback: (
+			time: number
+		) =>
 			| ShaderNodeObject<Node>
 			| Vec4LayerLike
 			| ShaderNodeObject<TextureNode>
 	) {
 		const wrappedCallback = () => {
-			const result = callback();
+			const now = performance.now();
+			const delta = (now - this.lastTime) / 1000;
+			this.time += delta;
+			this.lastTime = now;
+
+			const result = callback(this.time);
 			let colorNode: Vec3Like | Vec4LayerLike;
 			colorNode = result as Vec4LayerLike;
 			this.material.colorNode = colorNode;

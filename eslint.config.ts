@@ -7,13 +7,23 @@ import css from "@eslint/css";
 import { defineConfig } from "eslint/config";
 
 export default defineConfig([
+	{ ignores: ["eslint.config.ts"] },
 	{
 		files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
 		plugins: { js },
 		extends: ["js/recommended"],
 		languageOptions: { globals: globals.browser }
 	},
-	tseslint.configs.recommended,
+	tseslint.configs.strictTypeChecked,
+	{
+		files: ["**/*.{ts,mts,cts}"],
+		languageOptions: {
+			parser: tseslint.parser,
+			parserOptions: {
+				project: true
+			}
+		}
+	},
 	{
 		files: ["**/*.json"],
 		ignores: ["**/tsconfig.json"],

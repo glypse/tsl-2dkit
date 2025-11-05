@@ -1,19 +1,17 @@
 import "$demo/style.css";
 
-import { Canvas2D, colorLookup, initCanvas } from "$lib";
+import { Canvas2D, colorLookup, gradient } from "$lib";
 import { mx_noise_float, uniform, uv, vec3 } from "three/tsl";
-import { Texture } from "three";
 
 const canvas = new Canvas2D(document.querySelector("#app")!, 800, 800, true);
 
-const { canvas: gradientCanvas, ctx: gradientCanvasCtx } = initCanvas(800, 1);
-const gradient = gradientCanvasCtx.createLinearGradient(0, 0, 800, 0);
-gradient.addColorStop(0, "red");
-gradient.addColorStop(1, "blue");
-gradientCanvasCtx.fillStyle = gradient;
-gradientCanvasCtx.fillRect(0, 0, 800, 1);
-const mapTexture = new Texture(gradientCanvas);
-mapTexture.needsUpdate = true;
+const mapTexture = gradient(
+	[
+		{ position: 0, color: "red" },
+		{ position: 1, color: "blue" }
+	],
+	{ mode: "oklch" }
+);
 
 canvas.draw((time) => {
 	const UV = uv();

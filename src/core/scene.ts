@@ -154,6 +154,8 @@ export class Canvas2D {
 		const baseMaterial = {
 			material: this.material,
 			draw: () => {},
+			// TODO: implement the resizes
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			resize: (_w: number, _h: number) => {}
 		};
 		this.scene2D = Scene2D(

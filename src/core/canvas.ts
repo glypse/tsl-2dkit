@@ -3,11 +3,11 @@ import { CanvasTexture, NodeMaterial } from "three/webgpu";
 
 export function initCanvas(width: number, height: number) {
 	const dpr = window.devicePixelRatio;
-	let canvas = document.createElement("canvas");
+	const canvas = document.createElement("canvas");
 	canvas.width = width * dpr;
 	canvas.height = height * dpr;
-	let ctx = canvas.getContext("2d", { colorSpace: "srgb" })!;
-	let canvasTexture = new CanvasTexture(canvas);
+	const ctx = canvas.getContext("2d", { colorSpace: "srgb" })!;
+	const canvasTexture = new CanvasTexture(canvas);
 
 	return {
 		canvas,
@@ -25,7 +25,7 @@ export function handleCanvasResize(
 	outputNode: ShaderNodeFn<[]>
 ) {
 	canvasTexture.dispose();
-	let {
+	const {
 		canvas,
 		ctx,
 		canvasTexture: newCanvasTexture

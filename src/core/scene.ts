@@ -1,9 +1,8 @@
 import * as THREE from "three";
-import { WebGPURenderer, Node, TextureNode, UniformNode } from "three/webgpu";
+import { WebGPURenderer, Node, UniformNode } from "three/webgpu";
 import { Fn, vec3, uniform, type ShaderNodeObject } from "three/tsl";
 import { MeshBasicNodeMaterial } from "three/webgpu";
 import { type TSLMaterial } from "./materials";
-import type { Vec3Like, Vec4LayerLike } from "./materials";
 import { DrawingContext, setDrawingContext } from "./drawing";
 import Stats from "three/examples/jsm/libs/stats.module.js";
 
@@ -110,7 +109,7 @@ function Scene2D(
 	function onDrawScene(drawFn: () => void) {
 		function animate() {
 			drawFn();
-			renderer.renderAsync(scene, camera);
+			void renderer.renderAsync(scene, camera);
 			if (stats) stats.update();
 			requestAnimationFrame(animate);
 		}
@@ -128,7 +127,7 @@ export class Canvas2D {
 	private scene2D: ReturnType<typeof Scene2D>;
 	private drawingContext: DrawingContext;
 	private material: MeshBasicNodeMaterial & {
-		colorNode: Vec3Like | Vec4LayerLike;
+		colorNode: ShaderNodeObject<Node>;
 	};
 	private stats?: Stats;
 	private time = 0;
@@ -144,7 +143,7 @@ export class Canvas2D {
 		const outputNode = Fn(() => vec3(0));
 		this.material = new MeshBasicNodeMaterial({
 			colorNode: outputNode()
-		}) as MeshBasicNodeMaterial & { colorNode: Vec3Like | Vec4LayerLike };
+		}) as MeshBasicNodeMaterial & { colorNode: ShaderNodeObject<Node> };
 		this.drawingContext = new DrawingContext(width, height);
 		setDrawingContext(this.drawingContext);
 
@@ -175,13 +174,10 @@ export class Canvas2D {
 	draw(
 		callback: (
 			time: ShaderNodeObject<UniformNode<number>>
-		) =>
-			| ShaderNodeObject<Node>
-			| Vec4LayerLike
-			| ShaderNodeObject<TextureNode>
+		) => ShaderNodeObject<Node>
 	) {
 		const colorNode = callback(this.timeUniform);
-		this.material.colorNode = colorNode as Vec4LayerLike;
+		this.material.colorNode = colorNode;
 		this.material.needsUpdate = true;
 
 		const wrappedCallback = () => {

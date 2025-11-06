@@ -6,7 +6,7 @@ export function initCanvas(width: number, height: number) {
 	const canvas = document.createElement("canvas");
 	canvas.width = width * dpr;
 	canvas.height = height * dpr;
-	const ctx = canvas.getContext("2d", { colorSpace: "srgb" })!;
+	const ctx = canvas.getContext("2d")!;
 	const canvasTexture = new CanvasTexture(canvas);
 
 	return {

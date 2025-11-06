@@ -1,16 +1,16 @@
 import { vec2, texture, clamp } from "three/tsl";
 import { Texture } from "three";
-import { type FloatNode, type Vec3Node } from "../core/materials";
+import { Node } from "three/webgpu";
 import { interpolate, converter, type Mode } from "culori";
 
-export function colorLookup(value: FloatNode, mapTexture: Texture): Vec3Node {
+export function colorLookup(value: Node, mapTexture: Texture): Node {
 	const clampedValue = clamp(value, 0, 1);
 	const sampleUV = vec2(clampedValue, 0.5);
-	return texture(mapTexture, sampleUV).rgb as Vec3Node;
+	return texture(mapTexture, sampleUV).rgb;
 }
 
 export function gradient(
-	stops: Array<{ position: number; color: string }>,
+	stops: { position: number; color: string }[],
 	opts: { width?: number; height?: number; mode?: Mode } = {
 		width: 256,
 		height: 1,

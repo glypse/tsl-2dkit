@@ -3,7 +3,8 @@ import "$demo/style.css";
 import { Canvas2D, textNode } from "$lib";
 import { uv, uniform, vec2, floor, texture } from "three/tsl";
 
-const canvas = new Canvas2D(document.querySelector("#app")!, 800, 800);
+const canvas = new Canvas2D(800, 800);
+document.body.appendChild(canvas.canvasElement);
 
 canvas.draw(() => {
 	const textTexture = textNode({

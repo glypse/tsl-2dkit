@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import { WebGPURenderer, Node, UniformNode } from "three/webgpu";
-import { Fn, vec3, uniform, type ShaderNodeObject } from "three/tsl";
-import { MeshBasicNodeMaterial } from "three/webgpu";
+import { WebGPURenderer, Node } from "three/webgpu";
+import { Fn, vec3 } from "three/tsl";
+import { MeshBasicNodeMaterial, CanvasTexture } from "three/webgpu";
 import { type TSLMaterial } from "./materials";
 import { DrawingContext, setDrawingContext } from "./drawing";
 import Stats from "three/examples/jsm/libs/stats.module.js";
@@ -16,34 +16,41 @@ function configRenderer(
 	renderer.setPixelRatio(dpr);
 }
 
-function Scene2D(
-	parentNode: HTMLElement,
+async function Scene2D(
 	width: number,
 	height: number,
 	TSLMaterial: TSLMaterial,
-	resizeable = false,
 	forceWebGL = false,
-	stats?: Stats
+	stats?: Stats,
+	offscreen = false
 ) {
 	const scene = new THREE.Scene();
-	const renderer = new WebGPURenderer({ forceWebGL, antialias: true });
-	renderer.setClearColor(new THREE.Color(0x808080));
+	let canvasElement: HTMLCanvasElement | null = null;
+	let texture: CanvasTexture | null = null;
+	let renderer: WebGPURenderer;
+
+	if (offscreen) {
+		canvasElement = document.createElement("canvas");
+		canvasElement.width = width;
+		canvasElement.height = height;
+		renderer = new WebGPURenderer({
+			canvas: canvasElement,
+			forceWebGL,
+			antialias: true
+		});
+		await renderer.init();
+		renderer.outputColorSpace = THREE.NoColorSpace;
+		texture = new CanvasTexture(canvasElement);
+		texture.colorSpace = THREE.LinearSRGBColorSpace;
+	} else {
+		renderer = new WebGPURenderer({ forceWebGL, antialias: true });
+		await renderer.init();
+		renderer.outputColorSpace = THREE.SRGBColorSpace;
+		renderer.setClearColor(new THREE.Color(0x808080));
+		canvasElement = renderer.domElement;
+	}
 
 	const { material, resize: resizeMaterial } = TSLMaterial;
-
-	let container: HTMLDivElement | undefined;
-
-	if (resizeable) {
-		container = document.createElement("div");
-		container.style.resize = "both";
-		container.style.width = width + "px";
-		container.style.height = height + "px";
-		container.style.overflow = "hidden";
-		parentNode.appendChild(container);
-		container.appendChild(renderer.domElement);
-	} else {
-		parentNode.appendChild(renderer.domElement);
-	}
 
 	configRenderer(renderer, width, height, window.devicePixelRatio);
 
@@ -65,22 +72,6 @@ function Scene2D(
 	);
 	camera.position.z = 1;
 
-	let newWidth = width;
-	let newHeight = height;
-
-	const resizeObserver = resizeable
-		? new ResizeObserver(() => {
-				if (container) {
-					newWidth = container.clientWidth;
-					newHeight = container.clientHeight;
-				}
-			})
-		: null;
-
-	if (resizeObserver && container) {
-		resizeObserver.observe(container);
-	}
-
 	function onResize(newW: number, newH: number) {
 		configRenderer(renderer, newW, newH, window.devicePixelRatio);
 		const newPlaneSize = { w: newW / 100, h: newH / 100 };
@@ -91,26 +82,21 @@ function Scene2D(
 		camera.bottom = -newPlaneSize.h / 2;
 		camera.updateProjectionMatrix();
 		resizeMaterial(newW, newH);
-	}
-
-	function animate() {
-		if (width !== newWidth || height !== newHeight) {
-			width = newWidth;
-			height = newHeight;
-			onResize(newWidth, newHeight);
+		if (texture && canvasElement) {
+			canvasElement.width = newW;
+			canvasElement.height = newH;
+			texture.needsUpdate = true;
 		}
-		requestAnimationFrame(animate);
 	}
 
-	animate();
-
-	const canvas = renderer.domElement;
+	const canvas = offscreen ? null : renderer.domElement;
 
 	function onDrawScene(drawFn: () => void) {
 		function animate() {
 			drawFn();
-			void renderer.renderAsync(scene, camera);
-			if (stats) stats.update();
+			renderer.render(scene, camera);
+			if (texture) texture.needsUpdate = true;
+			if (!offscreen && stats) stats.update();
 			requestAnimationFrame(animate);
 		}
 		animate();
@@ -118,82 +104,127 @@ function Scene2D(
 
 	return {
 		canvas,
+		texture,
+		renderer,
 		onDrawScene,
 		onResize
 	};
 }
 
 export class Canvas2D {
-	private scene2D: ReturnType<typeof Scene2D>;
+	private scene2D: Awaited<ReturnType<typeof Scene2D>> | null = null;
 	private drawingContext: DrawingContext;
 	private material: MeshBasicNodeMaterial & {
-		colorNode: ShaderNodeObject<Node>;
+		colorNode: Node;
 	};
 	private stats?: Stats;
-	private time = 0;
-	private lastTime = performance.now();
-	private timeUniform = uniform(0);
+	private offscreen: boolean;
+	private width: number;
+	private height: number;
 
 	constructor(
-		parentNode: HTMLElement,
 		width: number,
 		height: number,
-		stats?: boolean
+		opts?: { stats?: boolean; offscreen?: boolean }
 	) {
+		this.width = width;
+		this.height = height;
 		const outputNode = Fn(() => vec3(0));
 		this.material = new MeshBasicNodeMaterial({
 			colorNode: outputNode()
-		}) as MeshBasicNodeMaterial & { colorNode: ShaderNodeObject<Node> };
+		}) as MeshBasicNodeMaterial & { colorNode: Node };
 		this.drawingContext = new DrawingContext(width, height);
 		setDrawingContext(this.drawingContext);
 
-		if (stats) {
+		this.offscreen = opts?.offscreen ?? false;
+
+		if (opts?.stats) {
 			this.stats = new Stats();
-		}
-
-		const baseMaterial = {
-			material: this.material,
-			draw: () => {},
-			// TODO: implement the resizes
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-			resize: (_w: number, _h: number) => {}
-		};
-		this.scene2D = Scene2D(
-			parentNode,
-			width,
-			height,
-			baseMaterial,
-			true,
-			false,
-			this.stats
-		);
-
-		if (stats) {
-			parentNode.appendChild(this.stats!.dom);
+			document.body.appendChild(this.stats.dom);
 		}
 	}
 
-	draw(
-		callback: (
-			time: ShaderNodeObject<UniformNode<number>>
-		) => ShaderNodeObject<Node>
-	) {
-		const colorNode = callback(this.timeUniform);
+	async draw(callback: () => Node) {
+		if (!this.scene2D) {
+			const baseMaterial = {
+				material: this.material,
+				draw: () => {},
+				// TODO: implement the resizes
+				// eslint-disable-next-line @typescript-eslint/no-unused-vars
+				resize: (_w: number, _h: number) => {}
+			};
+			this.scene2D = await Scene2D(
+				this.width,
+				this.height,
+				baseMaterial,
+				false,
+				this.stats,
+				this.offscreen
+			);
+		}
+		const colorNode = callback();
 		this.material.colorNode = colorNode;
 		this.material.needsUpdate = true;
 
-		const wrappedCallback = () => {
-			const now = performance.now();
-			const delta = (now - this.lastTime) / 1000;
-			this.time += delta;
-			this.lastTime = now;
-
-			this.timeUniform.value = this.time;
-		};
-		this.scene2D.onDrawScene(wrappedCallback);
+		this.scene2D.onDrawScene(callback);
 	}
 
 	resize(w: number, h: number) {
-		this.scene2D.onResize(w, h);
+		if (this.scene2D) {
+			this.scene2D.onResize(w, h);
+		}
+	}
+
+	get canvasElement(): Promise<HTMLCanvasElement> {
+		if (this.offscreen)
+			throw new Error("Offscreen canvas has no canvas element");
+		if (this.scene2D) {
+			return Promise.resolve(this.scene2D.canvas!);
+		} else {
+			return (async () => {
+				const baseMaterial = {
+					material: this.material,
+					draw: () => {},
+					// TODO: implement the resizes
+					// eslint-disable-next-line @typescript-eslint/no-unused-vars
+					resize: (_w: number, _h: number) => {}
+				};
+				this.scene2D = await Scene2D(
+					this.width,
+					this.height,
+					baseMaterial,
+					false,
+					this.stats,
+					this.offscreen
+				);
+				return this.scene2D.canvas!;
+			})();
+		}
+	}
+
+	get texture(): Promise<CanvasTexture> {
+		if (!this.offscreen) throw new Error("Onscreen canvas has no texture");
+		if (this.scene2D) {
+			return Promise.resolve(this.scene2D.texture!);
+		} else {
+			return (async () => {
+				const baseMaterial = {
+					material: this.material,
+					draw: () => {},
+					// TODO: implement the resizes
+					// eslint-disable-next-line @typescript-eslint/no-unused-vars
+					resize: (_w: number, _h: number) => {}
+				};
+				this.scene2D = await Scene2D(
+					this.width,
+					this.height,
+					baseMaterial,
+					false,
+					this.stats,
+					this.offscreen
+				);
+				return this.scene2D.texture!;
+			})();
+		}
 	}
 }

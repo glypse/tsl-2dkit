@@ -1,4 +1,5 @@
 import { CanvasTexture } from "three/webgpu";
+import { initCanvas } from "./canvas";
 
 export class DrawingContext {
 	private width: number;
@@ -19,10 +20,7 @@ export class DrawingContext {
 		size?: number;
 		weight?: number;
 	}) {
-		const canvas = document.createElement("canvas");
-		canvas.width = this.width;
-		canvas.height = this.height;
-		const ctx = canvas.getContext("2d", { colorSpace: "srgb" })!;
+		const { canvas, ctx } = initCanvas(this.width, this.height);
 		const shape = new TextShape({
 			string: opts.string,
 			x: opts.x ?? this.width / 2,

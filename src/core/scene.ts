@@ -48,6 +48,8 @@ async function Scene2D(
 		renderer.outputColorSpace = THREE.SRGBColorSpace;
 		renderer.setClearColor(new THREE.Color(0x808080));
 		canvasElement = renderer.domElement;
+		texture = new CanvasTexture(canvasElement);
+		texture.colorSpace = THREE.SRGBColorSpace;
 	}
 
 	const { material, resize: resizeMaterial } = TSLMaterial;
@@ -151,7 +153,7 @@ export class Canvas2D {
 			const baseMaterial = {
 				material: this.material,
 				draw: () => {
-					// TODO: implement draw logic
+					// This function is given by the user
 				},
 				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 				resize: (_w: number, _h: number) => {
@@ -195,13 +197,8 @@ export class Canvas2D {
 	}
 
 	get texture(): Promise<CanvasTexture> {
-		if (!this.offscreen) throw new Error("Onscreen canvas has no texture");
 		if (this.scene2D) {
-			const texture = this.scene2D.texture;
-			if (!texture) {
-				throw new Error("Texture is unexpectedly null");
-			}
-			return Promise.resolve(texture);
+			return Promise.resolve(this.scene2D.texture);
 		} else {
 			throw new Error("Canvas not initialized");
 		}

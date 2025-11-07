@@ -4,9 +4,9 @@ import { Canvas2D, textNode } from "$lib";
 import { uv, uniform, vec2, floor, texture } from "three/tsl";
 
 const canvas = new Canvas2D(800, 800);
-document.body.appendChild(canvas.canvasElement);
+document.body.appendChild(await canvas.canvasElement);
 
-canvas.draw(() => {
+await canvas.draw(() => {
 	const textTexture = textNode({
 		string: "a",
 		size: 800,

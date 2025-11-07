@@ -38,9 +38,9 @@ export class DrawingContext {
 	// Add more shapes here (rect, etc.)
 }
 
-export interface Shape {
+export type Shape = {
 	draw(ctx: CanvasRenderingContext2D): void;
-}
+};
 
 class TextShape implements Shape {
 	private opts: {
@@ -70,7 +70,7 @@ class TextShape implements Shape {
 		ctx.translate(this.opts.x, this.opts.y);
 		ctx.rotate(this.opts.rotation);
 		ctx.fillStyle = this.opts.color;
-		ctx.font = `${this.opts.weight} ${this.opts.size}px Arial`;
+		ctx.font = `${this.opts.weight.toString()} ${this.opts.size.toString()}px Arial`;
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
 		ctx.fillText(this.opts.string, 0, 0);
@@ -89,5 +89,6 @@ export function setDrawingContext(ctx: DrawingContext) {
 
 // Global functions
 export function textNode(opts: Parameters<DrawingContext["textNode"]>[0]) {
-	return globalContext!.textNode(opts);
+	if (!globalContext) throw new Error("Drawing context not set");
+	return globalContext.textNode(opts);
 }

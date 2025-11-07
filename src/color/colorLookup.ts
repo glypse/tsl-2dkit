@@ -6,7 +6,7 @@ import { interpolate, converter, type Mode } from "culori";
 export function colorLookup(value: Node, mapTexture: Texture): Node {
 	const clampedValue = clamp(value, 0, 1);
 	const sampleUV = vec2(clampedValue, 0.5);
-	return texture(mapTexture, sampleUV).rgb;
+	return texture(mapTexture, sampleUV);
 }
 
 export function gradient(
@@ -24,7 +24,8 @@ export function gradient(
 	const canvas = document.createElement("canvas");
 	canvas.width = width;
 	canvas.height = height;
-	const ctx = canvas.getContext("2d")!;
+	const ctx = canvas.getContext("2d");
+	if (!ctx) throw new Error("2d context not supported");
 
 	if (mode === "rgb") {
 		const grad = ctx.createLinearGradient(0, 0, width, 0);
@@ -66,7 +67,7 @@ export function gradient(
 				}
 			}
 			const rgb = convertRgb(color) ?? { r: 0, g: 0, b: 0 };
-			ctx.fillStyle = `rgb(${Math.round(rgb.r * 255)}, ${Math.round(rgb.g * 255)}, ${Math.round(rgb.b * 255)})`;
+			ctx.fillStyle = `rgb(${Math.round(rgb.r * 255).toString()}, ${Math.round(rgb.g * 255).toString()}, ${Math.round(rgb.b * 255).toString()})`;
 			ctx.fillRect(x, 0, 1, height);
 		}
 	}

@@ -52,7 +52,7 @@ async function Scene2D(
 
 	const { material, resize: resizeMaterial } = TSLMaterial;
 
-	configRenderer(renderer, width, height, window.devicePixelRatio);
+	configRenderer(renderer, width, height, window.devicePixelRatio * 1);
 
 	const geometry = new THREE.PlaneGeometry(1, 1);
 	const plane = new THREE.Mesh(geometry, material);
@@ -106,6 +106,8 @@ async function Scene2D(
 		canvas,
 		texture,
 		renderer,
+		camera,
+		scene,
 		onDrawScene,
 		onResize
 	};
@@ -148,10 +150,13 @@ export class Canvas2D {
 		if (!this.scene2D) {
 			const baseMaterial = {
 				material: this.material,
-				draw: () => {},
-				// TODO: implement the resizes
+				draw: () => {
+					// TODO: implement draw logic
+				},
 				// eslint-disable-next-line @typescript-eslint/no-unused-vars
-				resize: (_w: number, _h: number) => {}
+				resize: (_w: number, _h: number) => {
+					// TODO: implement resize logic
+				}
 			};
 			this.scene2D = await Scene2D(
 				this.width,
@@ -179,52 +184,50 @@ export class Canvas2D {
 		if (this.offscreen)
 			throw new Error("Offscreen canvas has no canvas element");
 		if (this.scene2D) {
-			return Promise.resolve(this.scene2D.canvas!);
+			const canvas = this.scene2D.canvas;
+			if (!canvas) {
+				throw new Error("Canvas is unexpectedly null");
+			}
+			return Promise.resolve(canvas);
 		} else {
-			return (async () => {
-				const baseMaterial = {
-					material: this.material,
-					draw: () => {},
-					// TODO: implement the resizes
-					// eslint-disable-next-line @typescript-eslint/no-unused-vars
-					resize: (_w: number, _h: number) => {}
-				};
-				this.scene2D = await Scene2D(
-					this.width,
-					this.height,
-					baseMaterial,
-					false,
-					this.stats,
-					this.offscreen
-				);
-				return this.scene2D.canvas!;
-			})();
+			throw new Error("Canvas not initialized");
 		}
 	}
 
 	get texture(): Promise<CanvasTexture> {
 		if (!this.offscreen) throw new Error("Onscreen canvas has no texture");
 		if (this.scene2D) {
-			return Promise.resolve(this.scene2D.texture!);
+			const texture = this.scene2D.texture;
+			if (!texture) {
+				throw new Error("Texture is unexpectedly null");
+			}
+			return Promise.resolve(texture);
 		} else {
-			return (async () => {
-				const baseMaterial = {
-					material: this.material,
-					draw: () => {},
-					// TODO: implement the resizes
-					// eslint-disable-next-line @typescript-eslint/no-unused-vars
-					resize: (_w: number, _h: number) => {}
-				};
-				this.scene2D = await Scene2D(
-					this.width,
-					this.height,
-					baseMaterial,
-					false,
-					this.stats,
-					this.offscreen
-				);
-				return this.scene2D.texture!;
-			})();
+			throw new Error("Canvas not initialized");
+		}
+	}
+
+	get renderer(): Promise<WebGPURenderer> {
+		if (this.scene2D) {
+			return Promise.resolve(this.scene2D.renderer);
+		} else {
+			throw new Error("Canvas not initialized");
+		}
+	}
+
+	get scene(): Promise<THREE.Scene> {
+		if (this.scene2D) {
+			return Promise.resolve(this.scene2D.scene);
+		} else {
+			throw new Error("Canvas not initialized");
+		}
+	}
+
+	get camera(): Promise<THREE.OrthographicCamera> {
+		if (this.scene2D) {
+			return Promise.resolve(this.scene2D.camera);
+		} else {
+			throw new Error("Canvas not initialized");
 		}
 	}
 }

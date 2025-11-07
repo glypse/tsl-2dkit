@@ -14,9 +14,15 @@ export default defineConfig([
 		extends: ["js/recommended"],
 		languageOptions: { globals: globals.browser }
 	},
-	/* ...tseslint.configs.strictTypeChecked,
-	...tseslint.configs.stylisticTypeChecked, */
-	tseslint.configs.recommended,
+	...tseslint.configs.strictTypeChecked,
+	...tseslint.configs.stylisticTypeChecked,
+	{
+		files: ["**/*.{ts,mts,cts}"],
+		rules: {
+			"@typescript-eslint/consistent-type-definitions": ["error", "type"]
+		}
+	},
+	/* tseslint.configs.recommended, */
 	{
 		files: ["**/*.{ts,mts,cts}"],
 		languageOptions: {

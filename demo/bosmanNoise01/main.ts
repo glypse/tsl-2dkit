@@ -17,7 +17,7 @@ const gradientCanvas = new Canvas2D(800, 1, { offscreen: true });
 await gradientCanvas.draw(() => {
 	// Procedural palette using OKLch noises
 	const paletteNoiseScale = uniform(1);
-	const paletteSpeed = 0;
+	const paletteSpeed = 0.5;
 
 	const UV = uv();
 
@@ -27,7 +27,7 @@ await gradientCanvas.draw(() => {
 			UV.y.mul(paletteNoiseScale),
 			time
 				.mul(paletteSpeed)
-				.add(uniform(seededRandom(398778)).mul(100000))
+				.add(uniform(seededRandom(121053870)).mul(100000))
 		)
 	);
 
@@ -43,15 +43,14 @@ await gradientCanvas.draw(() => {
 const gradientTexture = await gradientCanvas.texture;
 
 const canvas = new Canvas2D(800, 800, { stats: true });
-document.body.appendChild(await canvas.canvasElement);
 
 await canvas.draw(() => {
 	const UV = uv();
 
 	const stripeNumber = uniform(6);
 	const noiseScale = uniform(1.2);
-	const displaceStrength = uniform(0);
-	const speed = uniform(0.4);
+	const displaceStrength = uniform(0.4);
+	const speed = uniform(0.0);
 
 	// range is -0.5 to 0.5
 	const noise = mx_noise_float(
@@ -64,3 +63,5 @@ await canvas.draw(() => {
 
 	return colorLookup(displacedStripes, gradientTexture);
 });
+
+document.body.appendChild(await canvas.canvasElement);

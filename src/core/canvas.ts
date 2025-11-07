@@ -6,7 +6,8 @@ export function initCanvas(width: number, height: number) {
 	const canvas = document.createElement("canvas");
 	canvas.width = width * dpr;
 	canvas.height = height * dpr;
-	const ctx = canvas.getContext("2d")!;
+	const ctx = canvas.getContext("2d");
+	if (!ctx) throw new Error("2d context not supported");
 	const canvasTexture = new CanvasTexture(canvas);
 
 	return {

@@ -3,6 +3,8 @@ import "$demo/style.css";
 import { Canvas2D, colorLookup, oklchToRgb } from "$lib";
 import { seededRandom } from "three/src/math/MathUtils.js";
 import {
+	float,
+	Fn,
 	mx_noise_float,
 	mx_noise_vec3,
 	remap,
@@ -11,40 +13,32 @@ import {
 	uv,
 	vec3
 } from "three/tsl";
-
-const gradientCanvas = new Canvas2D(800, 1, { offscreen: true });
-
-await gradientCanvas.draw(() => {
-	// Procedural palette using OKLch noises
-	const paletteNoiseScale = uniform(1);
-	const paletteSpeed = 0.5;
-
-	const UV = uv();
-
-	const noise = mx_noise_vec3(
-		vec3(
-			UV.x.mul(paletteNoiseScale),
-			UV.y.mul(paletteNoiseScale),
-			time
-				.mul(paletteSpeed)
-				.add(uniform(seededRandom(121053870)).mul(100000))
-		)
-	);
-
-	const gradientTexture = oklchToRgb(
-		remap(UV.x, 0, 1, 0.1, 1),
-		remap(noise.y, -1, 1, 0, 0.37),
-		remap(noise.z, -1, 1, 0, 360)
-	);
-
-	return gradientTexture;
-});
-
-const gradientTexture = await gradientCanvas.texture;
+import { Node } from "three/webgpu";
 
 const canvas = new Canvas2D(800, 800, { stats: true });
 
 await canvas.draw(() => {
+	const paletteNoiseScale = uniform(1);
+	const paletteSpeed = 0.5;
+
+	const gradientFn = Fn(({ t }: { t: Node }) => {
+		const noise = mx_noise_vec3(
+			vec3(
+				t.mul(paletteNoiseScale),
+				float(0.5).mul(paletteNoiseScale),
+				time
+					.mul(paletteSpeed)
+					.add(uniform(seededRandom(121053870)).mul(100000))
+			)
+		);
+
+		return oklchToRgb(
+			remap(t, 0, 1, 0.1, 1),
+			remap(noise.y, -1, 1, 0, 0.37),
+			remap(noise.z, -1, 1, 0, 360)
+		);
+	});
+
 	const UV = uv();
 
 	const stripeNumber = uniform(6);
@@ -61,7 +55,7 @@ await canvas.draw(() => {
 
 	const displacedStripes = displacedUV.x.mul(stripeNumber).fract();
 
-	return colorLookup(displacedStripes, gradientTexture);
+	return colorLookup(displacedStripes, gradientFn);
 });
 
 document.body.appendChild(await canvas.canvasElement);

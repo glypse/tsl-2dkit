@@ -1,12 +1,20 @@
-import { vec2, texture, clamp } from "three/tsl";
+import { clamp, texture, vec2, type ProxiedObject } from "three/tsl";
 import { Texture } from "three";
 import { Node } from "three/webgpu";
 import { interpolate, converter, type Mode } from "culori";
+import type { ShaderNodeFn } from "three/src/nodes/TSL.js";
 
-export function colorLookup(value: Node, mapTexture: Texture): Node {
+export function colorLookup(
+	value: Node,
+	gradient: ShaderNodeFn<[ProxiedObject<{ t: Node }>]> | Texture
+): Node {
 	const clampedValue = clamp(value, 0, 1);
-	const sampleUV = vec2(clampedValue, 0.5);
-	return texture(mapTexture, sampleUV);
+	if (gradient instanceof Texture) {
+		const sampleUV = vec2(clampedValue, 0.5);
+		return texture(gradient, sampleUV);
+	} else {
+		return gradient({ t: clampedValue });
+	}
 }
 
 export function gradient(

@@ -1,10 +1,16 @@
 import * as THREE from "three";
-import { WebGPURenderer, Node } from "three/webgpu";
+import {
+	WebGPURenderer,
+	Node,
+	MeshBasicNodeMaterial,
+	CanvasTexture
+} from "three/webgpu";
 import { Fn, vec3 } from "three/tsl";
-import { MeshBasicNodeMaterial, CanvasTexture } from "three/webgpu";
+import { smaa } from "three/addons/tsl/display/SMAANode.js";
+import { fxaa } from "three/addons/tsl/display/FXAANode.js";
 import { type TSLMaterial } from "./materials";
 import { DrawingContext, setDrawingContext } from "./drawing";
-import Stats from "three/examples/jsm/libs/stats.module.js";
+import Stats from "three/addons/libs/stats.module.js";
 
 function configRenderer(
 	renderer: WebGPURenderer,
@@ -27,7 +33,7 @@ async function Scene2D(
 	let canvasElement: HTMLCanvasElement | null = null;
 	let texture: CanvasTexture | null = null;
 
-	const renderer = new WebGPURenderer({ forceWebGL, antialias: true });
+	const renderer = new WebGPURenderer({ forceWebGL });
 	await renderer.init();
 	renderer.outputColorSpace = THREE.SRGBColorSpace;
 	renderer.setClearColor(new THREE.Color(0x808080));
@@ -108,11 +114,16 @@ export class Canvas2D {
 	private offscreen: boolean;
 	private width: number;
 	private height: number;
+	private antialias: "fxaa" | "smaa" | "none";
 
 	constructor(
 		width: number,
 		height: number,
-		opts?: { stats?: boolean; offscreen?: boolean }
+		opts?: {
+			stats?: boolean;
+			offscreen?: boolean;
+			antialias?: "fxaa" | "smaa" | "none";
+		}
 	) {
 		this.width = width;
 		this.height = height;
@@ -124,6 +135,7 @@ export class Canvas2D {
 		setDrawingContext(this.drawingContext);
 
 		this.offscreen = opts?.offscreen ?? false;
+		this.antialias = opts?.antialias ?? "fxaa";
 
 		if (opts?.stats) {
 			this.stats = new Stats();
@@ -151,7 +163,13 @@ export class Canvas2D {
 				this.stats
 			);
 		}
-		const colorNode = callback();
+		const rawColorNode = callback();
+		let colorNode = rawColorNode;
+		if (this.antialias === "smaa") {
+			colorNode = smaa(rawColorNode);
+		} else if (this.antialias === "fxaa") {
+			colorNode = fxaa(rawColorNode);
+		}
 		this.material.colorNode = colorNode;
 		this.material.needsUpdate = true;
 

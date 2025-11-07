@@ -15,7 +15,7 @@ import {
 } from "three/tsl";
 import { Node } from "three/webgpu";
 
-const canvas = new Canvas2D(800, 800, { stats: true });
+const canvas = new Canvas2D(800, 800, { stats: true, antialias: "smaa" });
 
 await canvas.draw(() => {
 	const paletteNoiseScale = uniform(1);

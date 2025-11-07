@@ -21,36 +21,19 @@ async function Scene2D(
 	height: number,
 	TSLMaterial: TSLMaterial,
 	forceWebGL = false,
-	stats?: Stats,
-	offscreen = false
+	stats?: Stats
 ) {
 	const scene = new THREE.Scene();
 	let canvasElement: HTMLCanvasElement | null = null;
 	let texture: CanvasTexture | null = null;
-	let renderer: WebGPURenderer;
 
-	if (offscreen) {
-		canvasElement = document.createElement("canvas");
-		canvasElement.width = width;
-		canvasElement.height = height;
-		renderer = new WebGPURenderer({
-			canvas: canvasElement,
-			forceWebGL,
-			antialias: true
-		});
-		await renderer.init();
-		renderer.outputColorSpace = THREE.NoColorSpace;
-		texture = new CanvasTexture(canvasElement);
-		texture.colorSpace = THREE.LinearSRGBColorSpace;
-	} else {
-		renderer = new WebGPURenderer({ forceWebGL, antialias: true });
-		await renderer.init();
-		renderer.outputColorSpace = THREE.SRGBColorSpace;
-		renderer.setClearColor(new THREE.Color(0x808080));
-		canvasElement = renderer.domElement;
-		texture = new CanvasTexture(canvasElement);
-		texture.colorSpace = THREE.SRGBColorSpace;
-	}
+	const renderer = new WebGPURenderer({ forceWebGL, antialias: true });
+	await renderer.init();
+	renderer.outputColorSpace = THREE.SRGBColorSpace;
+	renderer.setClearColor(new THREE.Color(0x808080));
+	canvasElement = renderer.domElement;
+	texture = new CanvasTexture(canvasElement);
+	texture.colorSpace = THREE.SRGBColorSpace;
 
 	const { material, resize: resizeMaterial } = TSLMaterial;
 
@@ -91,14 +74,14 @@ async function Scene2D(
 		}
 	}
 
-	const canvas = offscreen ? null : renderer.domElement;
+	const canvas = renderer.domElement;
 
 	function onDrawScene(drawFn: () => void) {
 		function animate() {
 			drawFn();
 			renderer.render(scene, camera);
 			if (texture) texture.needsUpdate = true;
-			if (!offscreen && stats) stats.update();
+			if (stats) stats.update();
 			requestAnimationFrame(animate);
 		}
 		animate();
@@ -165,8 +148,7 @@ export class Canvas2D {
 				this.height,
 				baseMaterial,
 				false,
-				this.stats,
-				this.offscreen
+				this.stats
 			);
 		}
 		const colorNode = callback();
@@ -186,11 +168,7 @@ export class Canvas2D {
 		if (this.offscreen)
 			throw new Error("Offscreen canvas has no canvas element");
 		if (this.scene2D) {
-			const canvas = this.scene2D.canvas;
-			if (!canvas) {
-				throw new Error("Canvas is unexpectedly null");
-			}
-			return Promise.resolve(canvas);
+			return Promise.resolve(this.scene2D.canvas);
 		} else {
 			throw new Error("Canvas not initialized");
 		}

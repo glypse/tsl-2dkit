@@ -7,24 +7,22 @@ import css from "@eslint/css";
 import { defineConfig } from "eslint/config";
 
 export default defineConfig([
-	{ ignores: ["eslint.config.ts"] },
+	{ ignores: ["eslint.config.ts", "vite.config.ts"] },
 	{
 		files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
 		plugins: { js },
 		extends: ["js/recommended"],
 		languageOptions: { globals: globals.browser }
 	},
-	...tseslint.configs.strictTypeChecked,
-	...tseslint.configs.stylisticTypeChecked,
 	{
 		files: ["**/*.{ts,mts,cts}"],
+		extends: [
+			...tseslint.configs.strictTypeChecked,
+			...tseslint.configs.stylisticTypeChecked
+		],
 		rules: {
 			"@typescript-eslint/consistent-type-definitions": ["error", "type"]
-		}
-	},
-	/* tseslint.configs.recommended, */
-	{
-		files: ["**/*.{ts,mts,cts}"],
+		},
 		languageOptions: {
 			parser: tseslint.parser,
 			parserOptions: {

@@ -12,6 +12,9 @@ export default defineConfig([
 		files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
 		plugins: { js },
 		extends: ["js/recommended"],
+		rules: {
+			"func-style": ["warn", "declaration"]
+		},
 		languageOptions: { globals: globals.browser }
 	},
 	{

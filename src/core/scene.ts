@@ -3,12 +3,12 @@ import {
 	WebGPURenderer,
 	Node,
 	MeshBasicNodeMaterial,
-	CanvasTexture
+	CanvasTexture,
+	NodeMaterial
 } from "three/webgpu";
 import { Fn, vec3 } from "three/tsl";
 import { smaa } from "three/addons/tsl/display/SMAANode.js";
 import { fxaa } from "three/addons/tsl/display/FXAANode.js";
-import { type TSLMaterial } from "./materials";
 import { DrawingContext, setDrawingContext } from "./drawing";
 import Stats from "three/addons/libs/stats.module.js";
 
@@ -25,7 +25,11 @@ function configRenderer(
 async function Scene2D(
 	width: number,
 	height: number,
-	TSLMaterial: TSLMaterial,
+	TSLMaterial: {
+		material: NodeMaterial;
+		draw: (...args: Node[]) => void;
+		resize: (width: number, height: number, ...args: Node[]) => void;
+	},
 	forceWebGL = false,
 	stats?: Stats
 ) {

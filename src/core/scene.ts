@@ -3,9 +3,10 @@ import {
 	WebGPURenderer,
 	Node,
 	MeshBasicNodeMaterial,
-	CanvasTexture
+	CanvasTexture,
+	UniformNode
 } from "three/webgpu";
-import { Fn, vec3 } from "three/tsl";
+import { Fn, vec3, uniform } from "three/tsl";
 import { smaa } from "three/addons/tsl/display/SMAANode.js";
 import { fxaa } from "three/addons/tsl/display/FXAANode.js";
 import { DrawingContext, setDrawingContext } from "./drawing";
@@ -27,10 +28,14 @@ export class Canvas2D {
 	private drawingContext: DrawingContext;
 	private material: MaterialWithColorNode;
 
+	// uniforms
+	private _widthUniform: UniformNode<number>;
+	private _heightUniform: UniformNode<number>;
+
 	// misc
 	private stats?: Stats;
-	private width: number;
-	private height: number;
+	private _width: number;
+	private _height: number;
 	private antialias: "fxaa" | "smaa" | "none";
 
 	private static configRenderer(
@@ -51,9 +56,12 @@ export class Canvas2D {
 			antialias?: "fxaa" | "smaa" | "none";
 		}
 	) {
-		this.width = width;
-		this.height = height;
+		this._width = width;
+		this._height = height;
 		this.antialias = opts?.antialias ?? "fxaa";
+
+		this._widthUniform = uniform(this._width);
+		this._heightUniform = uniform(this._height);
 
 		const outputNode = Fn(() => vec3(0));
 		this.material = new MeshBasicNodeMaterial({
@@ -84,8 +92,8 @@ export class Canvas2D {
 
 			Canvas2D.configRenderer(
 				this.rendererObj,
-				this.width,
-				this.height,
+				this._width,
+				this._height,
 				window.devicePixelRatio
 			);
 
@@ -93,7 +101,10 @@ export class Canvas2D {
 			this.planeMesh = new THREE.Mesh(this.planeGeometry, this.material);
 			this.sceneObj.add(this.planeMesh);
 
-			const planeSize = { w: this.width / 100, h: this.height / 100 };
+			const planeSize = {
+				w: this._width / 100,
+				h: this._height / 100
+			};
 			this.planeMesh.scale.set(planeSize.w, planeSize.h, 1);
 
 			this.cameraObj = new THREE.OrthographicCamera(
@@ -119,9 +130,6 @@ export class Canvas2D {
 		this.material.needsUpdate = true;
 
 		const animate = () => {
-			// keep calling the callback each frame (original behaviour)
-			callback();
-
 			if (this.rendererObj && this.sceneObj && this.cameraObj) {
 				this.rendererObj.render(this.sceneObj, this.cameraObj);
 			}
@@ -145,6 +153,10 @@ export class Canvas2D {
 		) {
 			return;
 		}
+		this._width = w;
+		this._height = h;
+		this._widthUniform.value = w;
+		this._heightUniform.value = h;
 		Canvas2D.configRenderer(
 			this.rendererObj,
 			w,
@@ -162,8 +174,6 @@ export class Canvas2D {
 		this.cameraObj.updateProjectionMatrix();
 
 		this.drawingContext.resize(w, h);
-		this.canvasEl.width = w;
-		this.canvasEl.height = h;
 		this.textureObj.needsUpdate = true;
 	}
 
@@ -190,5 +200,21 @@ export class Canvas2D {
 	get camera(): THREE.OrthographicCamera {
 		if (!this.cameraObj) throw new Error("Canvas not initialized");
 		return this.cameraObj;
+	}
+
+	get width(): number {
+		return this._width;
+	}
+
+	get height(): number {
+		return this._height;
+	}
+
+	get widthUniform(): UniformNode<number> {
+		return this._widthUniform;
+	}
+
+	get heightUniform(): UniformNode<number> {
+		return this._heightUniform;
 	}
 }

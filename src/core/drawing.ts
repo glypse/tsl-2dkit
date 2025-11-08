@@ -10,6 +10,11 @@ export class DrawingContext {
 		this.height = height;
 	}
 
+	resize(width: number, height: number) {
+		this.width = width;
+		this.height = height;
+	}
+
 	// Drawing functions
 	textNode(opts: {
 		string: string;

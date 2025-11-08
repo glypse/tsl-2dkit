@@ -13,7 +13,8 @@ export default defineConfig([
 		plugins: { js },
 		extends: ["js/recommended"],
 		rules: {
-			"func-style": ["warn", "declaration"]
+			"func-style": ["warn", "declaration"],
+			"require-atomic-updates": "error"
 		},
 		languageOptions: { globals: globals.browser }
 	},
@@ -24,7 +25,15 @@ export default defineConfig([
 			...tseslint.configs.stylisticTypeChecked
 		],
 		rules: {
-			"@typescript-eslint/consistent-type-definitions": ["error", "type"]
+			"@typescript-eslint/consistent-type-definitions": ["error", "type"],
+			"no-restricted-syntax": [
+				"error",
+				{
+					selector:
+						":matches(PropertyDefinition, MethodDefinition) > PrivateIdentifier.key",
+					message: "Use `private` instead"
+				}
+			]
 		},
 		languageOptions: {
 			parser: tseslint.parser,

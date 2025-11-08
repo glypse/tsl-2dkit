@@ -58,4 +58,4 @@ await canvas.draw(() => {
 	return colorLookup(displacedStripes, gradientFn);
 });
 
-document.body.appendChild(await canvas.canvasElement);
+document.body.appendChild(canvas.canvasElement);

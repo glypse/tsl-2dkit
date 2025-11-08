@@ -3,8 +3,7 @@ import {
 	WebGPURenderer,
 	Node,
 	MeshBasicNodeMaterial,
-	CanvasTexture,
-	NodeMaterial
+	CanvasTexture
 } from "three/webgpu";
 import { Fn, vec3 } from "three/tsl";
 import { smaa } from "three/addons/tsl/display/SMAANode.js";
@@ -12,134 +11,57 @@ import { fxaa } from "three/addons/tsl/display/FXAANode.js";
 import { DrawingContext, setDrawingContext } from "./drawing";
 import Stats from "three/addons/libs/stats.module.js";
 
-function configRenderer(
-	renderer: WebGPURenderer,
-	width: number,
-	height: number,
-	dpr: number
-) {
-	renderer.setSize(width, height);
-	renderer.setPixelRatio(dpr);
-}
-
-async function Scene2D(
-	width: number,
-	height: number,
-	TSLMaterial: {
-		material: NodeMaterial;
-		draw: (...args: Node[]) => void;
-		resize: (width: number, height: number, ...args: Node[]) => void;
-	},
-	forceWebGL = false,
-	stats?: Stats
-) {
-	const scene = new THREE.Scene();
-	let canvasElement: HTMLCanvasElement | null = null;
-	let texture: CanvasTexture | null = null;
-
-	const renderer = new WebGPURenderer({ forceWebGL });
-	await renderer.init();
-	renderer.outputColorSpace = THREE.SRGBColorSpace;
-	renderer.setClearColor(new THREE.Color(0x808080));
-	canvasElement = renderer.domElement;
-	texture = new CanvasTexture(canvasElement);
-	texture.colorSpace = THREE.SRGBColorSpace;
-
-	const { material, resize: resizeMaterial } = TSLMaterial;
-
-	configRenderer(renderer, width, height, window.devicePixelRatio * 1);
-
-	const geometry = new THREE.PlaneGeometry(1, 1);
-	const plane = new THREE.Mesh(geometry, material);
-	scene.add(plane);
-
-	const planeSize = { w: width / 100, h: height / 100 };
-
-	plane.scale.set(planeSize.w, planeSize.h, 1);
-
-	const camera = new THREE.OrthographicCamera(
-		-planeSize.w / 2,
-		planeSize.w / 2,
-		planeSize.h / 2,
-		-planeSize.h / 2,
-		0.1,
-		2
-	);
-	camera.position.z = 1;
-
-	function onResize(newW: number, newH: number) {
-		configRenderer(renderer, newW, newH, window.devicePixelRatio);
-		const newPlaneSize = { w: newW / 100, h: newH / 100 };
-		plane.scale.set(newPlaneSize.w, newPlaneSize.h, 1);
-		camera.left = -newPlaneSize.w / 2;
-		camera.right = newPlaneSize.w / 2;
-		camera.top = newPlaneSize.h / 2;
-		camera.bottom = -newPlaneSize.h / 2;
-		camera.updateProjectionMatrix();
-		resizeMaterial(newW, newH);
-		if (texture && canvasElement) {
-			canvasElement.width = newW;
-			canvasElement.height = newH;
-			texture.needsUpdate = true;
-		}
-	}
-
-	const canvas = renderer.domElement;
-
-	function onDrawScene(drawFn: () => void) {
-		function animate() {
-			drawFn();
-			renderer.render(scene, camera);
-			if (texture) texture.needsUpdate = true;
-			if (stats) stats.update();
-			requestAnimationFrame(animate);
-		}
-		animate();
-	}
-
-	return {
-		canvas,
-		texture,
-		renderer,
-		camera,
-		scene,
-		onDrawScene,
-		onResize
-	};
-}
+type MaterialWithColorNode = MeshBasicNodeMaterial & { colorNode: Node };
 
 export class Canvas2D {
-	private scene2D: Awaited<ReturnType<typeof Scene2D>> | null = null;
+	// renderer / scene objects
+	private sceneObj: THREE.Scene | null = null;
+	private rendererObj: WebGPURenderer | null = null;
+	private cameraObj: THREE.OrthographicCamera | null = null;
+	private planeMesh: THREE.Mesh | null = null;
+	private planeGeometry: THREE.PlaneGeometry | null = null;
+	private canvasEl: HTMLCanvasElement | null = null;
+	private textureObj: CanvasTexture | null = null;
+
+	// drawing and material
 	private drawingContext: DrawingContext;
-	private material: MeshBasicNodeMaterial & {
-		colorNode: Node;
-	};
+	private material: MaterialWithColorNode;
+
+	// misc
 	private stats?: Stats;
-	private offscreen: boolean;
 	private width: number;
 	private height: number;
 	private antialias: "fxaa" | "smaa" | "none";
+
+	private static configRenderer(
+		renderer: WebGPURenderer,
+		width: number,
+		height: number,
+		dpr: number
+	) {
+		renderer.setSize(width, height);
+		renderer.setPixelRatio(dpr);
+	}
 
 	constructor(
 		width: number,
 		height: number,
 		opts?: {
 			stats?: boolean;
-			offscreen?: boolean;
 			antialias?: "fxaa" | "smaa" | "none";
 		}
 	) {
 		this.width = width;
 		this.height = height;
+		this.antialias = opts?.antialias ?? "fxaa";
+
 		const outputNode = Fn(() => vec3(0));
 		this.material = new MeshBasicNodeMaterial({
 			colorNode: outputNode()
-		}) as MeshBasicNodeMaterial & { colorNode: Node };
+		}) as MaterialWithColorNode;
+
 		this.drawingContext = new DrawingContext(width, height);
 		setDrawingContext(this.drawingContext);
-
-		this.offscreen = opts?.offscreen ?? false;
-		this.antialias = opts?.antialias ?? "fxaa";
 
 		if (opts?.stats) {
 			this.stats = new Stats();
@@ -148,25 +70,43 @@ export class Canvas2D {
 	}
 
 	async draw(callback: () => Node) {
-		if (!this.scene2D) {
-			const baseMaterial = {
-				material: this.material,
-				draw: () => {
-					// This function is given by the user
-				},
-				// eslint-disable-next-line @typescript-eslint/no-unused-vars
-				resize: (_w: number, _h: number) => {
-					// TODO: implement resize logic
-				}
-			};
-			this.scene2D = await Scene2D(
+		if (!this.sceneObj) {
+			this.sceneObj = new THREE.Scene();
+
+			this.rendererObj = new WebGPURenderer({ forceWebGL: false });
+			await this.rendererObj.init();
+			this.rendererObj.outputColorSpace = THREE.SRGBColorSpace;
+			this.rendererObj.setClearColor(new THREE.Color(0x808080));
+
+			this.canvasEl = this.rendererObj.domElement;
+			this.textureObj = new CanvasTexture(this.canvasEl);
+			this.textureObj.colorSpace = THREE.SRGBColorSpace;
+
+			Canvas2D.configRenderer(
+				this.rendererObj,
 				this.width,
 				this.height,
-				baseMaterial,
-				false,
-				this.stats
+				window.devicePixelRatio
 			);
+
+			this.planeGeometry = new THREE.PlaneGeometry(1, 1);
+			this.planeMesh = new THREE.Mesh(this.planeGeometry, this.material);
+			this.sceneObj.add(this.planeMesh);
+
+			const planeSize = { w: this.width / 100, h: this.height / 100 };
+			this.planeMesh.scale.set(planeSize.w, planeSize.h, 1);
+
+			this.cameraObj = new THREE.OrthographicCamera(
+				-planeSize.w / 2,
+				planeSize.w / 2,
+				planeSize.h / 2,
+				-planeSize.h / 2,
+				0.1,
+				2
+			);
+			this.cameraObj.position.z = 1;
 		}
+
 		const rawColorNode = callback();
 		let colorNode = rawColorNode;
 		if (this.antialias === "smaa") {
@@ -174,57 +114,81 @@ export class Canvas2D {
 		} else if (this.antialias === "fxaa") {
 			colorNode = fxaa(rawColorNode);
 		}
+
 		this.material.colorNode = colorNode;
 		this.material.needsUpdate = true;
 
-		this.scene2D.onDrawScene(callback);
+		const animate = () => {
+			// keep calling the callback each frame (original behaviour)
+			callback();
+
+			if (this.rendererObj && this.sceneObj && this.cameraObj) {
+				this.rendererObj.render(this.sceneObj, this.cameraObj);
+			}
+
+			if (this.textureObj) this.textureObj.needsUpdate = true;
+			if (this.stats) this.stats.update();
+
+			requestAnimationFrame(animate);
+		};
+
+		animate();
 	}
 
 	resize(w: number, h: number) {
-		if (this.scene2D) {
-			this.scene2D.onResize(w, h);
+		if (
+			!this.rendererObj ||
+			!this.planeMesh ||
+			!this.cameraObj ||
+			!this.textureObj ||
+			!this.canvasEl
+		) {
+			return;
 		}
+		Canvas2D.configRenderer(
+			this.rendererObj,
+			w,
+			h,
+			window.devicePixelRatio
+		);
+
+		const newPlaneSize = { w: w / 100, h: h / 100 };
+		this.planeMesh.scale.set(newPlaneSize.w, newPlaneSize.h, 1);
+
+		this.cameraObj.left = -newPlaneSize.w / 2;
+		this.cameraObj.right = newPlaneSize.w / 2;
+		this.cameraObj.top = newPlaneSize.h / 2;
+		this.cameraObj.bottom = -newPlaneSize.h / 2;
+		this.cameraObj.updateProjectionMatrix();
+
+		this.drawingContext.resize(w, h);
+		this.canvasEl.width = w;
+		this.canvasEl.height = h;
+		this.textureObj.needsUpdate = true;
 	}
 
-	get canvasElement(): Promise<HTMLCanvasElement> {
-		if (this.offscreen)
-			throw new Error("Offscreen canvas has no canvas element");
-		if (this.scene2D) {
-			return Promise.resolve(this.scene2D.canvas);
-		} else {
-			throw new Error("Canvas not initialized");
-		}
+	get canvasElement(): HTMLCanvasElement {
+		if (!this.canvasEl) throw new Error("Canvas not initialized");
+		return this.canvasEl;
 	}
 
-	get texture(): Promise<CanvasTexture> {
-		if (this.scene2D) {
-			return Promise.resolve(this.scene2D.texture);
-		} else {
-			throw new Error("Canvas not initialized");
-		}
+	get texture(): CanvasTexture {
+		if (!this.textureObj) throw new Error("Canvas not initialized");
+		return this.textureObj;
 	}
 
-	get renderer(): Promise<WebGPURenderer> {
-		if (this.scene2D) {
-			return Promise.resolve(this.scene2D.renderer);
-		} else {
-			throw new Error("Canvas not initialized");
-		}
+	get renderer(): WebGPURenderer {
+		if (!this.rendererObj) throw new Error("Canvas not initialized");
+		return this.rendererObj;
 	}
 
-	get scene(): Promise<THREE.Scene> {
-		if (this.scene2D) {
-			return Promise.resolve(this.scene2D.scene);
-		} else {
-			throw new Error("Canvas not initialized");
-		}
+	get scene(): THREE.Scene {
+		if (!this.sceneObj) throw new Error("Canvas not initialized");
+		return this.sceneObj;
 	}
 
-	get camera(): Promise<THREE.OrthographicCamera> {
-		if (this.scene2D) {
-			return Promise.resolve(this.scene2D.camera);
-		} else {
-			throw new Error("Canvas not initialized");
-		}
+	get camera(): THREE.OrthographicCamera {
+		if (!this.cameraObj) throw new Error("Canvas not initialized");
+		return this.cameraObj;
 	}
 }

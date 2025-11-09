@@ -202,6 +202,11 @@ export class Canvas2D {
 		return this.cameraObj;
 	}
 
+	get mesh(): THREE.Mesh {
+		if (!this.planeMesh) throw new Error("Canvas not initialized");
+		return this.planeMesh;
+	}
+
 	get width(): number {
 		return this._width;
 	}

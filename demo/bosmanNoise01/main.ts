@@ -129,6 +129,13 @@ await canvas.draw(() => {
 
 document.body.appendChild(canvas.canvasElement);
 
+const seedSlider = document.getElementById("seed-slider") as HTMLInputElement;
+seedSlider.value = seed.value.toString();
+
+seedSlider.addEventListener("input", () => {
+	seed.value = parseFloat(seedSlider.value);
+});
+
 let pressTimer: number;
 let isLongPress = false;
 
@@ -149,6 +156,7 @@ canvas.canvasElement.addEventListener("pointerup", () => {
 	clearTimeout(pressTimer);
 	if (!isLongPress) {
 		seed.value = Math.random() * 10000;
+		seedSlider.value = seed.value.toString();
 	}
 });
 

@@ -23,7 +23,7 @@ import {
 import { Node } from "three/webgpu";
 
 const canvas = new Canvas2D(window.innerWidth, window.innerHeight, {
-	stats: false,
+	stats: true,
 	antialias: "none"
 });
 
@@ -37,6 +37,7 @@ const seed = uniform(Math.random() * 100);
 const dark = uniform(0.1);
 const light = uniform(1.0);
 const chromaVariance = uniform(1);
+const chromaMax = uniform(0.35);
 const hueVariance = uniform(1);
 const hueSpeed = uniform(0);
 const stripeNumber = uniform(14);
@@ -70,13 +71,17 @@ new UniformSlider(controls, "Chroma variance:", chromaVariance, {
 	min: 0.1,
 	max: 5
 });
+new UniformSlider(controls, "Chroma max:", chromaMax, {
+	min: 0,
+	max: 1
+});
 new UniformSlider(controls, "Hue variance:", hueVariance, {
 	min: 0.1,
 	max: 5
 });
 new UniformSlider(controls, "Hue speed:", hueSpeed, {
 	min: 0,
-	max: 3
+	max: 1
 });
 new UniformSlider(controls, "Stripe Number:", stripeNumber, {
 	min: 1,
@@ -141,8 +146,8 @@ await canvas.draw(() => {
 
 		return oklchToRgb(
 			remap(t, 0, 1, light, dark),
-			remap(noiseChroma, -1.5, 1.5, 0, 0.35),
-			remap(noiseHue, 0, 1, 0, 360 * 2)
+			remap(noiseChroma, -1.5, 1.5, 0, chromaMax),
+			remap(noiseHue, 0, 1, 0, 360)
 		);
 	});
 
@@ -151,7 +156,7 @@ await canvas.draw(() => {
 	const UV = getAspectCorrectedUV(uv(), canvasSize, "cover");
 
 	// range is -1 to 1
-	const noise = mx_noise_float(
+	const dispNoise = mx_noise_float(
 		vec3(
 			UV.x.mul(displaceScale),
 			UV.y.mul(displaceScale),
@@ -159,7 +164,7 @@ await canvas.draw(() => {
 		)
 	);
 
-	const displacedUV = UV.add(noise.mul(displaceStrength));
+	const displacedUV = UV.add(dispNoise.mul(displaceStrength));
 
 	const displacedStripes = displacedUV.x.mul(stripeNumber).fract();
 

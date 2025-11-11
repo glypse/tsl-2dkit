@@ -1,9 +1,9 @@
-import { CanvasTexture } from "three/webgpu";
 import { initCanvas } from "./canvas";
 
 export class DrawingContext {
 	private width: number;
 	private height: number;
+	private backgroundColor = "transparent";
 
 	constructor(width: number, height: number) {
 		this.width = width;
@@ -15,6 +15,10 @@ export class DrawingContext {
 		this.height = height;
 	}
 
+	setBackgroundColor(color: string) {
+		this.backgroundColor = color;
+	}
+
 	// Drawing functions
 	textNode(opts: {
 		string: string;
@@ -24,19 +28,26 @@ export class DrawingContext {
 		color?: string;
 		size?: number;
 		weight?: number;
+		fontFamily?: string;
 	}) {
-		const { canvas, ctx } = initCanvas(this.width, this.height);
+		const size = Math.max(this.width, this.height);
+		const { ctx, canvasTexture } = initCanvas(size, size);
+		if (this.backgroundColor !== "transparent") {
+			ctx.fillStyle = this.backgroundColor;
+			ctx.fillRect(0, 0, size, size);
+		}
 		const shape = new TextShape({
 			string: opts.string,
-			x: opts.x ?? this.width / 2,
-			y: opts.y ?? this.height / 2,
+			x: opts.x ?? size / 2,
+			y: opts.y ?? size / 2,
 			rotation: opts.rotation ?? 0,
 			color: opts.color ?? "#000000",
 			size: opts.size ?? 16,
-			weight: opts.weight ?? 500
+			weight: opts.weight ?? 500,
+			fontFamily: opts.fontFamily ?? "Arial"
 		});
 		shape.draw(ctx);
-		const canvasTexture = new CanvasTexture(canvas);
+		canvasTexture.needsUpdate = true;
 		return canvasTexture;
 	}
 
@@ -56,6 +67,7 @@ class TextShape implements Shape {
 		color: string;
 		size: number;
 		weight: number;
+		fontFamily: string;
 	};
 
 	constructor(opts: {
@@ -66,19 +78,19 @@ class TextShape implements Shape {
 		color: string;
 		size: number;
 		weight: number;
+		fontFamily: string;
 	}) {
 		this.opts = opts;
 	}
 
 	draw(ctx: CanvasRenderingContext2D) {
 		ctx.save();
-		ctx.translate(this.opts.x, this.opts.y);
 		ctx.rotate(this.opts.rotation);
 		ctx.fillStyle = this.opts.color;
-		ctx.font = `${this.opts.weight.toString()} ${this.opts.size.toString()}px Arial`;
+		ctx.font = `${this.opts.weight.toString()} ${this.opts.size.toString()}px ${this.opts.fontFamily}`;
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
-		ctx.fillText(this.opts.string, 0, 0);
+		ctx.fillText(this.opts.string, this.opts.x, this.opts.y);
 		ctx.restore();
 	}
 }
@@ -96,4 +108,8 @@ export function setDrawingContext(ctx: DrawingContext) {
 export function textNode(opts: Parameters<DrawingContext["textNode"]>[0]) {
 	if (!globalContext) throw new Error("Drawing context not set");
 	return globalContext.textNode(opts);
+}
+
+export function setBackgroundColor(color: string) {
+	globalContext?.setBackgroundColor(color);
 }

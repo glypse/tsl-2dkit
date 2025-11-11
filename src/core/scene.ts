@@ -37,6 +37,7 @@ export class Canvas2D {
 	private _width: number;
 	private _height: number;
 	private antialias: "fxaa" | "smaa" | "none";
+	private _drawCallback?: () => Node;
 
 	private static configRenderer(
 		renderer: WebGPURenderer,
@@ -118,18 +119,21 @@ export class Canvas2D {
 			this.cameraObj.position.z = 1;
 		}
 
-		const rawColorNode = callback();
-		let colorNode = rawColorNode;
-		if (this.antialias === "smaa") {
-			colorNode = smaa(rawColorNode);
-		} else if (this.antialias === "fxaa") {
-			colorNode = fxaa(rawColorNode);
-		}
-
-		this.material.colorNode = colorNode;
-		this.material.needsUpdate = true;
+		this._drawCallback = callback;
 
 		const animate = () => {
+			if (this._drawCallback) {
+				const rawColorNode = this._drawCallback();
+				let colorNode = rawColorNode;
+				if (this.antialias === "smaa") {
+					colorNode = smaa(rawColorNode);
+				} else if (this.antialias === "fxaa") {
+					colorNode = fxaa(rawColorNode);
+				}
+				this.material.colorNode = colorNode;
+				this.material.needsUpdate = true;
+			}
+
 			if (this.rendererObj && this.sceneObj && this.cameraObj) {
 				this.rendererObj.render(this.sceneObj, this.cameraObj);
 			}
@@ -175,6 +179,18 @@ export class Canvas2D {
 
 		this.drawingContext.resize(w, h);
 		this.textureObj.needsUpdate = true;
+
+		if (this._drawCallback) {
+			const rawColorNode = this._drawCallback();
+			let colorNode = rawColorNode;
+			if (this.antialias === "smaa") {
+				colorNode = smaa(rawColorNode);
+			} else if (this.antialias === "fxaa") {
+				colorNode = fxaa(rawColorNode);
+			}
+			this.material.colorNode = colorNode;
+			this.material.needsUpdate = true;
+		}
 	}
 
 	get canvasElement(): HTMLCanvasElement {

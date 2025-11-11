@@ -1,24 +1,70 @@
 import "$demo/style.css";
 
-import { Canvas2D, textNode } from "$lib";
-import { uv, uniform, vec2, floor, texture } from "three/tsl";
+import {
+	Canvas2D,
+	getAspectCorrectedUV,
+	textNode,
+	setBackgroundColor
+} from "$lib";
+import { uv, uniform, vec2, floor, texture, time, sin } from "three/tsl";
+import { lerp } from "three/src/math/MathUtils.js";
 
-const canvas = new Canvas2D(800, 800);
+function getRelativeMousePosition(
+	canvasElement: HTMLCanvasElement,
+	event: MouseEvent
+): { x: number; y: number } {
+	const rect = canvasElement.getBoundingClientRect();
+	return {
+		x: (event.clientX - rect.left) / rect.width,
+		y: (event.clientY - rect.top) / rect.height
+	};
+}
+
+const canvas = new Canvas2D(window.innerWidth, window.innerHeight, {
+	stats: true,
+	antialias: "none"
+});
+
+const mouse = { x: 0.5, y: 0.5 };
+
+window.addEventListener("resize", () => {
+	canvas.resize(window.innerWidth, window.innerHeight);
+});
+
+const tileAmount = uniform(8);
+const speed = uniform(1);
+const waveStrength = uniform(0.05);
 
 await canvas.draw(() => {
+	const canvasSize = vec2(canvas.widthUniform, canvas.heightUniform);
+
+	const UV = getAspectCorrectedUV(uv(), canvasSize, "contain");
+
+	waveStrength.value = lerp(0, 0.1, mouse.x);
+
+	setBackgroundColor("blue");
+
 	const textTexture = textNode({
 		string: "a",
-		size: 800,
-		weight: 500,
-		color: "#00ff00"
+		size: Math.max(canvas.widthUniform.value, canvas.heightUniform.value),
+		weight: lerp(300, 900, mouse.y),
+		color: "#00ff00",
+		fontFamily: "OST"
 	});
-	const uvCoord = uv();
-	const uTiles = uniform(100);
-	const pixelatedUVs = vec2(
-		floor(uvCoord.x.mul(uTiles)).div(uTiles),
-		floor(uvCoord.y.mul(uTiles)).div(uTiles)
-	);
-	return texture(textTexture, pixelatedUVs);
+	const tileX = floor(UV.x.mul(tileAmount));
+	const tileY = floor(UV.y.mul(tileAmount));
+
+	const wave = sin(time.mul(speed).add(tileX.add(tileY))).mul(waveStrength);
+
+	const displacedUV = UV.add(vec2(wave, 0));
+
+	return texture(textTexture, displacedUV);
+});
+
+canvas.canvasElement.addEventListener("mousemove", (event) => {
+	const pos = getRelativeMousePosition(canvas.canvasElement, event);
+	mouse.x = pos.x;
+	mouse.y = pos.y;
 });
 
 document.body.appendChild(canvas.canvasElement);

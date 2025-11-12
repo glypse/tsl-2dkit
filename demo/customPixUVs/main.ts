@@ -47,9 +47,9 @@ await canvas.draw(() => {
 	const textTexture = textNode({
 		string: "a",
 		size: Math.max(canvas.widthUniform.value, canvas.heightUniform.value),
-		weight: lerp(300, 900, mouse.y),
+		weight: lerp(200, 800, mouse.y),
 		color: "#00ff00",
-		fontFamily: "OST"
+		fontFamily: "Fustat"
 	});
 	const tileX = floor(UV.x.mul(tileAmount));
 	const tileY = floor(UV.y.mul(tileAmount));

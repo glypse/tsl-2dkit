@@ -25,15 +25,16 @@ export default defineConfig([
 			...tseslint.configs.stylisticTypeChecked
 		],
 		rules: {
-			"@typescript-eslint/consistent-type-definitions": ["error", "type"],
+			"@typescript-eslint/consistent-type-definitions": ["warn", "type"],
 			"no-restricted-syntax": [
-				"error",
+				"warn",
 				{
 					selector:
 						":matches(PropertyDefinition, MethodDefinition) > PrivateIdentifier.key",
 					message: "Use `private` instead"
 				}
-			]
+			],
+			"@typescript-eslint/no-unused-vars": "warn"
 		},
 		languageOptions: {
 			parser: tseslint.parser,

@@ -238,4 +238,12 @@ export class Canvas2D {
 	get heightUniform(): UniformNode<number> {
 		return this._heightUniform;
 	}
+
+	get aspect(): number {
+		return this._width / this._height;
+	}
+
+	get aspectUniform(): Node {
+		return this._widthUniform.div(this._heightUniform);
+	}
 }

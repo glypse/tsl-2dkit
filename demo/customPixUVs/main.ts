@@ -1,11 +1,6 @@
 import "$demo/style.css";
 
-import {
-	Canvas2D,
-	getAspectCorrectedUV,
-	textNode,
-	setBackgroundColor
-} from "$lib";
+import { Canvas2D, textNode, setBackgroundColor } from "$lib";
 import { uv, uniform, vec2, floor, texture, time, sin } from "three/tsl";
 import { lerp } from "three/src/math/MathUtils.js";
 
@@ -36,9 +31,7 @@ const speed = uniform(1);
 const waveStrength = uniform(0.05);
 
 await canvas.draw(() => {
-	const canvasSize = vec2(canvas.widthUniform, canvas.heightUniform);
-
-	const UV = getAspectCorrectedUV(uv(), canvasSize, "contain");
+	const UV = uv();
 
 	waveStrength.value = lerp(0, 0.1, mouse.x);
 
@@ -46,12 +39,12 @@ await canvas.draw(() => {
 
 	const textTexture = textNode({
 		string: "a",
-		size: Math.max(canvas.widthUniform.value, canvas.heightUniform.value),
+		size: Math.min(canvas.widthUniform.value, canvas.heightUniform.value),
 		weight: lerp(200, 800, mouse.y),
 		color: "#00ff00",
 		fontFamily: "Fustat"
 	});
-	const tileX = floor(UV.x.mul(tileAmount));
+	const tileX = floor(UV.x.mul(tileAmount).mul(canvas.aspectUniform));
 	const tileY = floor(UV.y.mul(tileAmount));
 
 	const wave = sin(time.mul(speed).add(tileX.add(tileY))).mul(waveStrength);

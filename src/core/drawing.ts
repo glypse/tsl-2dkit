@@ -30,16 +30,15 @@ export class DrawingContext {
 		weight?: number;
 		fontFamily?: string;
 	}) {
-		const size = Math.max(this.width, this.height);
-		const { ctx, canvasTexture } = initCanvas(size, size);
+		const { ctx, canvasTexture } = initCanvas(this.width, this.height);
 		if (this.backgroundColor !== "transparent") {
 			ctx.fillStyle = this.backgroundColor;
-			ctx.fillRect(0, 0, size, size);
+			ctx.fillRect(0, 0, this.width, this.height);
 		}
 		const shape = new TextShape({
 			string: opts.string,
-			x: opts.x ?? size / 2,
-			y: opts.y ?? size / 2,
+			x: opts.x ?? this.width / 2,
+			y: opts.y ?? this.height / 2,
 			rotation: opts.rotation ?? 0,
 			color: opts.color ?? "#000000",
 			size: opts.size ?? 16,

@@ -7,7 +7,7 @@ import {
 	textNode,
 	voronoi
 } from "$lib";
-import { uv, texture, vec2, vec3, float } from "three/tsl";
+import { uv, texture, vec2, vec3, float, time } from "three/tsl";
 const canvas = new Canvas2D(window.innerWidth, window.innerHeight, {
 	stats: true,
 	antialias: "none"
@@ -34,10 +34,24 @@ await canvas.draw(() => {
 		letterSpacing: "-0.05em"
 	});
 
-	const myVoronoi = voronoi(vec3(UV.x, UV.y, 1).mul(10), {
-		exponent: float(2),
-		featureOutput: "f2"
-	});
+	const voronoiScale = float(4);
+	const voronoiSpeed = float(0);
+	const voronoiPos = vec3(
+		UV.x.mul(voronoiScale),
+		UV.y.mul(voronoiScale),
+		time.mul(voronoiSpeed)
+	);
+	const voronoiCutoff = float(4);
+
+	const screenSpaceSmoothness = float(1).div(window.devicePixelRatio).div(1);
+
+	const myVoronoi = voronoi(voronoiPos, {
+		featureOutput: "edge",
+		outputMode: "screenDistance"
+	}).smoothstep(
+		voronoiCutoff.sub(screenSpaceSmoothness),
+		voronoiCutoff.add(screenSpaceSmoothness)
+	);
 
 	return myVoronoi;
 });

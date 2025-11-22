@@ -84,12 +84,12 @@ export class Canvas2D {
 
 			this.rendererObj = new WebGPURenderer({ forceWebGL: false });
 			await this.rendererObj.init();
-			this.rendererObj.outputColorSpace = THREE.SRGBColorSpace;
+			this.rendererObj.outputColorSpace = THREE.LinearSRGBColorSpace;
 			this.rendererObj.setClearColor(new THREE.Color(0x808080));
 
 			this.canvasEl = this.rendererObj.domElement;
 			this.textureObj = new CanvasTexture(this.canvasEl);
-			this.textureObj.colorSpace = THREE.SRGBColorSpace;
+			this.textureObj.colorSpace = THREE.NoColorSpace;
 
 			Canvas2D.configRenderer(
 				this.rendererObj,

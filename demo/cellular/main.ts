@@ -7,9 +7,9 @@ import {
 	textNode,
 	voronoi
 } from "$lib";
-import { uv, texture, vec2, vec3 } from "three/tsl";
+import { uv, texture, vec2, vec3, float } from "three/tsl";
 const canvas = new Canvas2D(window.innerWidth, window.innerHeight, {
-	stats: false,
+	stats: true,
 	antialias: "none"
 });
 
@@ -34,7 +34,10 @@ await canvas.draw(() => {
 		letterSpacing: "-0.05em"
 	});
 
-	const myVoronoi = voronoi(vec3(UV.x, UV.y, 1).mul(10));
+	const myVoronoi = voronoi(vec3(UV.x, UV.y, 1).mul(10), {
+		exponent: float(2),
+		featureOutput: "f2"
+	});
 
 	return myVoronoi;
 });

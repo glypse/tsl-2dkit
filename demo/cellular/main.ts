@@ -41,13 +41,14 @@ await canvas.draw(() => {
 		UV.y.mul(voronoiScale),
 		time.mul(voronoiSpeed)
 	);
-	const voronoiCutoff = float(4);
+	const voronoiCutoff = float(10);
 
-	const screenSpaceSmoothness = float(1).div(window.devicePixelRatio).div(1);
+	const screenSpaceSmoothness = float(1)
+		.div(window.devicePixelRatio)
+		.div(0.2);
 
 	const myVoronoi = voronoi(voronoiPos, {
-		featureOutput: "edge",
-		outputMode: "screenDistance"
+		featureOutput: "screenSpaceEdge"
 	}).smoothstep(
 		voronoiCutoff.sub(screenSpaceSmoothness),
 		voronoiCutoff.add(screenSpaceSmoothness)

@@ -35,14 +35,14 @@ const FEATURE_TO_INDEX = {
 	f1: 0,
 	f2: 1,
 	edge: 2,
-	smoothF1: 3
+	screenSpaceEdge: 3,
+	smoothF1: 4
 } as const;
 
 const OUTPUT_TO_INDEX = {
 	distance: 0,
 	color: 1,
-	position: 2,
-	screenDistance: 3
+	position: 2
 } as const;
 
 const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node]) => {
@@ -117,12 +117,28 @@ const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node]) => {
 	);
 
 	const baseFeature = select(featureVar.equal(int(1)), minima.y, minima.x);
+	const rawEdgeDistance = minima.y.sub(minima.x);
+	const edgeGradient = abs(dFdx(rawEdgeDistance)).add(
+		abs(dFdy(rawEdgeDistance))
+	);
+	const screenSpaceEdgeDistance = rawEdgeDistance.div(
+		select(edgeGradient.lessThan(float(0.001)), float(0.001), edgeGradient)
+	);
 	const edgeFeature = select(
 		featureVar.equal(int(2)),
-		minima.y.sub(minima.x),
+		rawEdgeDistance,
 		baseFeature
 	);
-	const value = select(featureVar.equal(int(3)), smoothMin, edgeFeature);
+	const screenSpaceEdgeFeature = select(
+		featureVar.equal(int(3)),
+		screenSpaceEdgeDistance,
+		edgeFeature
+	);
+	const value = select(
+		featureVar.equal(int(4)),
+		smoothMin,
+		screenSpaceEdgeFeature
+	);
 
 	const closestSeed = select(
 		featureVar.equal(int(1)),
@@ -131,27 +147,12 @@ const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node]) => {
 	);
 	const colorOutput = hash(closestSeed);
 	const positionOutput = closestSeed;
-	const rawDistance = value;
-	const screenNormalizedDistance = rawDistance.div(
-		vec2(dFdx(rawDistance), dFdy(rawDistance)).length().max(float(0.001))
-	);
+	const distanceOutput = vec3(value, value, value);
 
 	const outputValue = select(
 		outputModeVar.equal(int(1)),
 		colorOutput,
-		select(
-			outputModeVar.equal(int(2)),
-			positionOutput,
-			select(
-				outputModeVar.equal(int(3)),
-				vec3(
-					screenNormalizedDistance,
-					screenNormalizedDistance,
-					screenNormalizedDistance
-				),
-				vec3(rawDistance, rawDistance, rawDistance)
-			)
-		)
+		select(outputModeVar.equal(int(2)), positionOutput, distanceOutput)
 	);
 
 	return outputValue;
@@ -172,10 +173,10 @@ export function voronoi(
 	position: Node,
 	opts: {
 		exponent?: Node;
-		featureOutput?: "f1" | "f2" | "edge" | "smoothF1";
+		featureOutput?: "f1" | "f2" | "edge" | "screenSpaceEdge" | "smoothF1";
 		randomness?: Node;
 		smoothness?: Node;
-		outputMode?: "distance" | "color" | "position" | "screenDistance";
+		outputMode?: "distance" | "color" | "position";
 	} = {}
 ): Node {
 	const exponent = opts.exponent ?? float(2);

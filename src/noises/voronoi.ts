@@ -66,9 +66,9 @@ const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node]) => {
 	const closestSeed2 = vec3(0).toVar();
 	const sumExp = float(0).toVar();
 
-	for (let i = -1; i <= 1; i++) {
-		for (let j = -1; j <= 1; j++) {
-			for (let k = -1; k <= 1; k++) {
+	for (let i = -1.5; i <= 1.5; i++) {
+		for (let j = -1.5; j <= 1.5; j++) {
+			for (let k = -1.5; k <= 1.5; k++) {
 				const offset = vec3(float(i), float(j), float(k));
 				const neighborCell = cell.add(offset);
 				const seed = neighborCell.add(

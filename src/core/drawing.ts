@@ -29,6 +29,7 @@ export class DrawingContext {
 		size?: number;
 		weight?: number;
 		fontFamily?: string;
+		letterSpacing?: string;
 	}) {
 		const { ctx, canvasTexture } = initCanvas(this.width, this.height);
 		if (this.backgroundColor !== "transparent") {
@@ -43,7 +44,8 @@ export class DrawingContext {
 			color: opts.color ?? "#000000",
 			size: opts.size ?? 16,
 			weight: opts.weight ?? 500,
-			fontFamily: opts.fontFamily ?? "Arial"
+			fontFamily: opts.fontFamily ?? "Arial",
+			letterSpacing: opts.letterSpacing ?? "0"
 		});
 		shape.draw(ctx);
 		canvasTexture.needsUpdate = true;
@@ -67,6 +69,7 @@ class TextShape implements Shape {
 		size: number;
 		weight: number;
 		fontFamily: string;
+		letterSpacing: string;
 	};
 
 	constructor(opts: {
@@ -78,6 +81,7 @@ class TextShape implements Shape {
 		size: number;
 		weight: number;
 		fontFamily: string;
+		letterSpacing: string;
 	}) {
 		this.opts = opts;
 	}
@@ -89,6 +93,7 @@ class TextShape implements Shape {
 		ctx.font = `${this.opts.weight.toString()} ${this.opts.size.toString()}px ${this.opts.fontFamily}`;
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
+		ctx.letterSpacing = this.opts.letterSpacing;
 		ctx.fillText(this.opts.string, this.opts.x, this.opts.y);
 		ctx.restore();
 	}

@@ -67,6 +67,7 @@ const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node, Node]) => {
 	const closestSeed1 = vec3(0).toVar();
 	const closestSeed2 = vec3(0).toVar();
 	const sumExp = float(0).toVar();
+	const smallSmooth = float(1e-6);
 
 	for (let i = -1; i <= 1; i++) {
 		for (let j = -1; j <= 1; j++) {
@@ -98,11 +99,8 @@ const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node, Node]) => {
 					closestSeed2.assign(seed);
 				});
 
-				const kSmooth = select(
-					smoothnessVar.equal(float(0)),
-					float(1000),
-					float(1).div(smoothnessVar)
-				);
+				const safeSmoothness = max(smoothnessVar, smallSmooth);
+				const kSmooth = float(1).div(safeSmoothness);
 				const expTerm = exp(metric.negate().mul(kSmooth));
 				sumExp.addAssign(expTerm);
 			}
@@ -110,12 +108,14 @@ const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node, Node]) => {
 	}
 
 	const smoothMin = select(
-		smoothnessVar.equal(float(0)),
+		smoothnessVar.lessThan(smallSmooth),
 		minima.x,
 		select(
-			sumExp.lessThan(float(1e-10)),
+			sumExp.lessThan(float(0)),
 			minima.x,
-			log(sumExp).negate().div(float(1).div(smoothnessVar))
+			log(sumExp)
+				.negate()
+				.div(float(1).div(max(smoothnessVar, smallSmooth)))
 		)
 	);
 

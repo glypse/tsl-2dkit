@@ -59,7 +59,7 @@ export class Canvas2D {
 	) {
 		this._width = width;
 		this._height = height;
-		this.antialias = opts?.antialias ?? "fxaa";
+		this.antialias = opts?.antialias ?? "none";
 
 		this._widthUniform = uniform(this._width);
 		this._heightUniform = uniform(this._height);

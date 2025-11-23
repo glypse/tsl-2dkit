@@ -14,8 +14,8 @@ import {
 	exp,
 	log,
 	clamp,
-	dFdx,
-	dFdy
+	length,
+	max
 } from "three/tsl";
 import { Node } from "three/webgpu";
 
@@ -35,8 +35,8 @@ const FEATURE_TO_INDEX = {
 	f1: 0,
 	f2: 1,
 	edge: 2,
-	screenSpaceEdge: 3,
-	smoothF1: 4
+	smoothF1: 3,
+	edgeProjected: 4
 } as const;
 
 const OUTPUT_TO_INDEX = {
@@ -45,14 +45,15 @@ const OUTPUT_TO_INDEX = {
 	position: 2
 } as const;
 
-const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node]) => {
+const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node, Node]) => {
 	const [
 		positionInput,
 		exponentInput,
 		featureInput,
 		randomnessInput,
 		smoothnessInput,
-		outputModeInput
+		outputModeInput,
+		sliceNormalInput
 	] = inputs;
 	const exponentVar = float(exponentInput).toVar();
 	const featureVar = int(featureInput).toVar();
@@ -60,15 +61,16 @@ const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node]) => {
 	const smoothnessVar = float(smoothnessInput).toVar();
 	const outputModeVar = int(outputModeInput).toVar();
 	const positionVar = vec3(positionInput).toVar();
+	const sliceNormalVar = vec3(sliceNormalInput).toVar();
 	const cell = floor(positionVar).toVar();
 	const minima = vec2(1e10, 1e10).toVar();
 	const closestSeed1 = vec3(0).toVar();
 	const closestSeed2 = vec3(0).toVar();
 	const sumExp = float(0).toVar();
 
-	for (let i = -1.5; i <= 1.5; i++) {
-		for (let j = -1.5; j <= 1.5; j++) {
-			for (let k = -1.5; k <= 1.5; k++) {
+	for (let i = -1; i <= 1; i++) {
+		for (let j = -1; j <= 1; j++) {
+			for (let k = -1; k <= 1; k++) {
 				const offset = vec3(float(i), float(j), float(k));
 				const neighborCell = cell.add(offset);
 				const seed = neighborCell.add(
@@ -89,6 +91,7 @@ const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node]) => {
 				If(metric.lessThan(minima.x), () => {
 					minima.y.assign(minima.x);
 					minima.x.assign(metric);
+					closestSeed2.assign(closestSeed1);
 					closestSeed1.assign(seed);
 				}).ElseIf(metric.lessThan(minima.y), () => {
 					minima.y.assign(metric);
@@ -116,28 +119,46 @@ const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node]) => {
 		)
 	);
 
+	const seedDelta = closestSeed2.sub(closestSeed1).toVar();
+	const seedDeltaLength = length(seedDelta).toVar();
+	const safeSeedDeltaLength = max(seedDeltaLength, float(1e-5));
+	const edgePlaneNormal = seedDelta.div(safeSeedDeltaLength).toVar();
+	const midpoint = closestSeed1.add(closestSeed2).mul(float(0.5)).toVar();
+	const signedEdgeDistance = abs(
+		dot(positionVar.sub(midpoint), edgePlaneNormal)
+	).toVar();
+	const sliceNormalLength = length(sliceNormalVar).toVar();
+	const safeSliceNormalLength = max(sliceNormalLength, float(1e-5));
+	const normalizedSliceNormal = sliceNormalVar
+		.div(safeSliceNormalLength)
+		.toVar();
+	const tangentComponent = edgePlaneNormal
+		.sub(
+			normalizedSliceNormal.mul(
+				dot(edgePlaneNormal, normalizedSliceNormal)
+			)
+		)
+		.toVar();
+	const tangentLength = length(tangentComponent).toVar();
+	// Project the perpendicular distance into the slice plane so edge widths stay uniform.
+	const planarEdgeDistance = select(
+		tangentLength.lessThan(float(1e-5)),
+		signedEdgeDistance,
+		signedEdgeDistance.div(tangentLength)
+	);
+
 	const baseFeature = select(featureVar.equal(int(1)), minima.y, minima.x);
 	const rawEdgeDistance = minima.y.sub(minima.x);
-	const edgeGradient = abs(dFdx(rawEdgeDistance)).add(
-		abs(dFdy(rawEdgeDistance))
-	);
-	const screenSpaceEdgeDistance = rawEdgeDistance.div(
-		select(edgeGradient.lessThan(float(0.001)), float(0.001), edgeGradient)
-	);
-	const edgeFeature = select(
+	const edgeOrF = select(
 		featureVar.equal(int(2)),
 		rawEdgeDistance,
 		baseFeature
 	);
-	const screenSpaceEdgeFeature = select(
-		featureVar.equal(int(3)),
-		screenSpaceEdgeDistance,
-		edgeFeature
-	);
+	const smoothOrEdge = select(featureVar.equal(int(3)), smoothMin, edgeOrF);
 	const value = select(
 		featureVar.equal(int(4)),
-		smoothMin,
-		screenSpaceEdgeFeature
+		planarEdgeDistance,
+		smoothOrEdge
 	);
 
 	const closestSeed = select(
@@ -165,7 +186,8 @@ const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node]) => {
 		{ name: "featureOutput", type: "int" },
 		{ name: "randomness", type: "float" },
 		{ name: "smoothness", type: "float" },
-		{ name: "outputMode", type: "int" }
+		{ name: "outputMode", type: "int" },
+		{ name: "sliceNormal", type: "vec3" }
 	]
 });
 
@@ -173,10 +195,11 @@ export function voronoi(
 	position: Node,
 	opts: {
 		exponent?: Node;
-		featureOutput?: "f1" | "f2" | "edge" | "screenSpaceEdge" | "smoothF1";
+		featureOutput?: "f1" | "f2" | "edge" | "smoothF1" | "edgeProjected";
 		randomness?: Node;
 		smoothness?: Node;
 		outputMode?: "distance" | "color" | "position";
+		sliceNormal?: Node;
 	} = {}
 ): Node {
 	const exponent = opts.exponent ?? float(2);
@@ -184,6 +207,7 @@ export function voronoi(
 	const randomness = opts.randomness ?? float(1);
 	const smoothness = clamp(opts.smoothness ?? float(0), float(0), float(1));
 	const outputMode = opts.outputMode ?? "distance";
+	const sliceNormal = opts.sliceNormal ?? vec3(0, 0, 1);
 	const featureIndex = FEATURE_TO_INDEX[feature];
 	const featureNode = int(featureIndex);
 	const outputModeIndex = OUTPUT_TO_INDEX[outputMode];
@@ -194,6 +218,7 @@ export function voronoi(
 		featureNode,
 		randomness,
 		smoothness,
-		outputModeNode
+		outputModeNode,
+		sliceNormal
 	);
 }

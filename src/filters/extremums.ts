@@ -15,12 +15,10 @@ import {
 	int,
 	min
 } from "three/tsl";
-import { Node } from "three/webgpu";
+import { Node, TextureNode } from "three/webgpu";
 
-const maximumFn = Fn(([tex, radius, isRound]: [Node, Node, Node]) => {
-	const inputTexture = convertToTexture(tex);
-
-	const texSize = textureSize(inputTexture);
+const maximumFn = Fn(([tex, radius, isRound]: [TextureNode, Node, Node]) => {
+	const texSize = textureSize(tex);
 	const pixelSize = vec2(1).div(texSize);
 	const r = floor(radius).toVar();
 	const rInt = int(r).toVar();
@@ -32,7 +30,7 @@ const maximumFn = Fn(([tex, radius, isRound]: [Node, Node, Node]) => {
 		const offset = vec2(float(x), float(y)).toVar();
 		const dist = length(offset);
 		const sampleUV = uv().add(offset.mul(pixelSize));
-		const sample = texture(inputTexture, sampleUV).x;
+		const sample = texture(tex, sampleUV).x;
 		const shouldInclude = select(
 			isRound,
 			dist.lessThanEqual(r),
@@ -44,15 +42,14 @@ const maximumFn = Fn(([tex, radius, isRound]: [Node, Node, Node]) => {
 });
 
 export function maximum(tex: Node, opts: { radius: Node; isRound?: Node }) {
+	const realTex = convertToTexture(tex);
 	const radius = opts.radius;
 	const isRound = opts.isRound ?? bool(false);
-	return maximumFn(tex, radius, isRound);
+	return maximumFn(realTex, radius, isRound);
 }
 
-const minimumFn = Fn(([tex, radius, isRound]: [Node, Node, Node]) => {
-	const inputTexture = convertToTexture(tex);
-
-	const texSize = textureSize(inputTexture);
+const minimumFn = Fn(([tex, radius, isRound]: [TextureNode, Node, Node]) => {
+	const texSize = textureSize(tex);
 	const pixelSize = vec2(1).div(texSize);
 	const r = floor(radius).toVar();
 	const rInt = int(r).toVar();
@@ -64,7 +61,7 @@ const minimumFn = Fn(([tex, radius, isRound]: [Node, Node, Node]) => {
 		const offset = vec2(float(x), float(y)).toVar();
 		const dist = length(offset);
 		const sampleUV = uv().add(offset.mul(pixelSize));
-		const sample = texture(inputTexture, sampleUV).x;
+		const sample = texture(tex, sampleUV).x;
 		const shouldInclude = select(
 			isRound,
 			dist.lessThanEqual(r),
@@ -76,7 +73,8 @@ const minimumFn = Fn(([tex, radius, isRound]: [Node, Node, Node]) => {
 });
 
 export function minimum(tex: Node, opts: { radius: Node; isRound?: Node }) {
+	const realTex = convertToTexture(tex);
 	const radius = opts.radius;
 	const isRound = opts.isRound ?? bool(false);
-	return minimumFn(tex, radius, isRound);
+	return minimumFn(realTex, radius, isRound);
 }

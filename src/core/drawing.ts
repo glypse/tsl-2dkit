@@ -30,6 +30,7 @@ export class DrawingContext {
 		weight?: number;
 		fontFamily?: string;
 		letterSpacing?: string;
+		lineHeight?: number;
 	}) {
 		const { ctx, canvasTexture } = initCanvas(this.width, this.height);
 		if (this.backgroundColor !== "transparent") {
@@ -45,7 +46,8 @@ export class DrawingContext {
 			size: opts.size ?? 16,
 			weight: opts.weight ?? 500,
 			fontFamily: opts.fontFamily ?? "Arial",
-			letterSpacing: opts.letterSpacing ?? "0"
+			letterSpacing: opts.letterSpacing ?? "0",
+			lineHeight: opts.lineHeight ?? 1.2
 		});
 		shape.draw(ctx);
 		canvasTexture.needsUpdate = true;
@@ -70,6 +72,7 @@ class TextShape implements Shape {
 		weight: number;
 		fontFamily: string;
 		letterSpacing: string;
+		lineHeight: number;
 	};
 
 	constructor(opts: {
@@ -82,6 +85,7 @@ class TextShape implements Shape {
 		weight: number;
 		fontFamily: string;
 		letterSpacing: string;
+		lineHeight: number;
 	}) {
 		this.opts = opts;
 	}
@@ -94,7 +98,17 @@ class TextShape implements Shape {
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
 		ctx.letterSpacing = this.opts.letterSpacing;
-		ctx.fillText(this.opts.string, this.opts.x, this.opts.y);
+
+		const lines = this.opts.string.split("\n");
+		const lineHeight = this.opts.size * this.opts.lineHeight;
+		const totalHeight = lines.length * lineHeight;
+		let currentY = this.opts.y - totalHeight / 2 + lineHeight / 2;
+
+		for (const line of lines) {
+			ctx.fillText(line, this.opts.x, currentY);
+			currentY += lineHeight;
+		}
+
 		ctx.restore();
 	}
 }

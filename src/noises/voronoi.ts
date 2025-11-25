@@ -15,21 +15,31 @@ import {
 	log,
 	clamp,
 	length,
-	max
+	max,
+	struct
 } from "three/tsl";
 import { Node } from "three/webgpu";
 
 function hash(p: Node): Node {
-	const p3 = p.mul(vec3(0.1031, 0.103, 0.0973));
-	const temp = p3.add(dot(p3, p3.add(vec3(19.19))));
+	const p3 = fract(p.mul(vec3(0.1031, 0.103, 0.0973)));
+	const temp = p3.add(dot(p3, p3.yzx.add(vec3(33.33))));
 	return fract(
 		vec3(
 			temp.x.add(temp.y).mul(temp.z),
-			temp.x.add(temp.z).mul(temp.y),
-			temp.y.add(temp.z).mul(temp.x)
+			temp.y.add(temp.z).mul(temp.x),
+			temp.z.add(temp.x).mul(temp.y)
 		)
 	);
 }
+
+const VoronoiResult = struct(
+	{
+		distance: "vec3",
+		color: "vec3",
+		position: "vec3"
+	},
+	"VoronoiResult"
+);
 
 const FEATURE_TO_INDEX = {
 	f1: 0,
@@ -39,27 +49,19 @@ const FEATURE_TO_INDEX = {
 	edgeProjected: 4
 } as const;
 
-const OUTPUT_TO_INDEX = {
-	distance: 0,
-	color: 1,
-	position: 2
-} as const;
-
-const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node, Node]) => {
+const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node]) => {
 	const [
 		positionInput,
 		exponentInput,
 		featureInput,
 		randomnessInput,
 		smoothnessInput,
-		outputModeInput,
 		sliceNormalInput
 	] = inputs;
 	const exponentVar = float(exponentInput).toVar();
 	const featureVar = int(featureInput).toVar();
 	const randomnessVar = float(randomnessInput).toVar();
 	const smoothnessVar = float(smoothnessInput).toVar();
-	const outputModeVar = int(outputModeInput).toVar();
 	const positionVar = vec3(positionInput).toVar();
 	const sliceNormalVar = vec3(sliceNormalInput).toVar();
 	const cell = floor(positionVar).toVar();
@@ -170,24 +172,17 @@ const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node, Node]) => {
 	const positionOutput = closestSeed;
 	const distanceOutput = vec3(value, value, value);
 
-	const outputValue = select(
-		outputModeVar.equal(int(1)),
-		colorOutput,
-		select(outputModeVar.equal(int(2)), positionOutput, distanceOutput)
-	);
-
-	return outputValue;
+	return VoronoiResult(distanceOutput, colorOutput, positionOutput);
 }).setLayout({
 	name: "voronoi",
-	type: "vec3",
+	type: "VoronoiResult",
 	inputs: [
-		{ name: "position", type: "vec3" },
-		{ name: "exponent", type: "float" },
-		{ name: "featureOutput", type: "int" },
-		{ name: "randomness", type: "float" },
-		{ name: "smoothness", type: "float" },
-		{ name: "outputMode", type: "int" },
-		{ name: "sliceNormal", type: "vec3" }
+		{ name: "position", type: "vec3", qualifier: "in" },
+		{ name: "exponent", type: "float", qualifier: "in" },
+		{ name: "featureOutput", type: "int", qualifier: "in" },
+		{ name: "randomness", type: "float", qualifier: "in" },
+		{ name: "smoothness", type: "float", qualifier: "in" },
+		{ name: "sliceNormal", type: "vec3", qualifier: "in" }
 	]
 });
 
@@ -198,7 +193,6 @@ export function voronoi(
 		featureOutput?: "f1" | "f2" | "edge" | "smoothF1" | "edgeProjected";
 		randomness?: Node;
 		smoothness?: Node;
-		outputMode?: "distance" | "color" | "position";
 		sliceNormal?: Node;
 	} = {}
 ): Node {
@@ -206,19 +200,15 @@ export function voronoi(
 	const feature = opts.featureOutput ?? "f1";
 	const randomness = opts.randomness ?? float(1);
 	const smoothness = clamp(opts.smoothness ?? float(0), float(0), float(1));
-	const outputMode = opts.outputMode ?? "distance";
 	const sliceNormal = opts.sliceNormal ?? vec3(0, 0, 1);
 	const featureIndex = FEATURE_TO_INDEX[feature];
 	const featureNode = int(featureIndex);
-	const outputModeIndex = OUTPUT_TO_INDEX[outputMode];
-	const outputModeNode = int(outputModeIndex);
 	return voronoiFn(
 		position,
 		exponent,
 		featureNode,
 		randomness,
 		smoothness,
-		outputModeNode,
 		sliceNormal
 	);
 }

@@ -1,7 +1,7 @@
 import "$demo/style.css";
 
 import { Canvas2D, textNode, setBackgroundColor } from "$lib";
-import { uv, uniform, vec2, floor, texture, time, sin } from "three/tsl";
+import { uv, uniform, vec2, floor, time, sin } from "three/tsl";
 import { lerp } from "three/src/math/MathUtils.js";
 
 function getRelativeMousePosition(
@@ -37,7 +37,7 @@ await canvas.draw(() => {
 
 	setBackgroundColor("blue");
 
-	const textTexture = textNode({
+	const textSampler = textNode({
 		string: "a",
 		size: Math.min(canvas.widthUniform.value, canvas.heightUniform.value),
 		weight: lerp(200, 800, mouse.y),
@@ -51,7 +51,7 @@ await canvas.draw(() => {
 
 	const displacedUV = UV.add(vec2(wave, 0));
 
-	return texture(textTexture, displacedUV);
+	return textSampler(displacedUV);
 });
 
 canvas.canvasElement.addEventListener("mousemove", (event) => {

@@ -1,4 +1,6 @@
 import { initCanvas } from "./canvas";
+import { sRGBTransferEOTF, texture, vec4 } from "three/tsl";
+import type { Node } from "three/webgpu";
 
 export class DrawingContext {
 	private width: number;
@@ -51,7 +53,10 @@ export class DrawingContext {
 		});
 		shape.draw(ctx);
 		canvasTexture.needsUpdate = true;
-		return canvasTexture;
+		return (uv: Node) => {
+			const sampled = texture(canvasTexture, uv);
+			return vec4(sRGBTransferEOTF(sampled.rgb), sampled.a);
+		};
 	}
 
 	// Add more shapes here (rect, etc.)

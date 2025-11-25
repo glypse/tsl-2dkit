@@ -1,4 +1,4 @@
-import { CanvasTexture } from "three/webgpu";
+import { CanvasTexture, NoColorSpace } from "three/webgpu";
 
 export function initCanvas(width: number, height: number) {
 	const dpr = window.devicePixelRatio;
@@ -9,6 +9,7 @@ export function initCanvas(width: number, height: number) {
 	if (!ctx) throw new Error("2d context not supported");
 	ctx.scale(dpr, dpr);
 	const canvasTexture = new CanvasTexture(canvas);
+	canvasTexture.colorSpace = NoColorSpace;
 
 	return {
 		canvas,

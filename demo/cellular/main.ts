@@ -1,13 +1,7 @@
 import "$demo/style.css";
 
-import {
-	Canvas2D,
-	getAspectCorrectedUV,
-	setBackgroundColor,
-	textNode,
-	voronoi
-} from "$lib";
-import { uv, vec2, vec3, float, time, color, mix, uniform } from "three/tsl";
+import { Canvas2D, getAspectCorrectedUV, text, voronoi } from "$lib";
+import { vec2, vec3, float, time, color, mix, uniform } from "three/tsl";
 
 const canvas = new Canvas2D(window.innerWidth, window.innerHeight, {
 	stats: true,
@@ -29,17 +23,12 @@ const voronoiSpeed = uniform(0.4);
 const voronoiCutoff = uniform(0.009);
 const displaceStrength = uniform(0.05);
 
-setBackgroundColor("#ff2800");
-
 await canvas.draw(() => {
 	const screenSpaceSmoothness = float(window.devicePixelRatio)
 		.div(15000)
 		.mul(voronoiScale);
 
-	const UV = getAspectCorrectedUV(
-		uv(),
-		vec2(canvas.widthUniform, canvas.heightUniform)
-	);
+	const UV = getAspectCorrectedUV();
 
 	const voronoiPos = vec3(
 		UV.x.mul(voronoiScale),
@@ -86,19 +75,27 @@ await canvas.draw(() => {
 			voronoiCutoff.add(screenSpaceSmoothness)
 		);
 
-	const textSampler = textNode({
-		string: "Cellular",
-		color: "#d1cfbb",
-		fontFamily: "Fustat",
-		size: 150,
-		weight: 700,
-		letterSpacing: "-0.05em",
-		lineHeight: 0.8
-	});
-
-	const displacedText = textSampler(
-		uv().add(vec2(0, voronoiF1Color.mul(displaceStrength).x))
+	const textSample = text(
+		{
+			string: "Cellular",
+			color: "#d1cfbb",
+			fontFamily: "Fustat",
+			size: 150,
+			weight: 700,
+			letterSpacing: "-0.05em",
+			lineHeight: 0.8,
+			debug: false
+		},
+		(textUV) => {
+			return textUV
+				.sub(vec2(0.5, 0.5))
+				.add(vec2(0, voronoiF1Color.mul(displaceStrength).x));
+		}
 	);
+
+	// Blend text with background color using alpha
+	const backgroundColor = color("#ff2800");
+	const displacedText = mix(backgroundColor, textSample.rgb, textSample.a);
 
 	const textAndCrosses = mix(displacedText, color("#d1cfbb"), crosses);
 

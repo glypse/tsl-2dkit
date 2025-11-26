@@ -1,7 +1,7 @@
 import "$demo/style.css";
 
-import { Canvas2D, textNode, setBackgroundColor } from "$lib";
-import { uv, uniform, vec2, floor, time, sin } from "three/tsl";
+import { Canvas2D, text } from "$lib";
+import { uniform, vec2, floor, time, sin, color, mix, uv } from "three/tsl";
 import { lerp } from "three/src/math/MathUtils.js";
 
 function getRelativeMousePosition(
@@ -35,23 +35,30 @@ await canvas.draw(() => {
 
 	waveStrength.value = lerp(0, 0.1, mouse.x);
 
-	setBackgroundColor("blue");
-
-	const textSampler = textNode({
-		string: "a",
-		size: Math.min(canvas.widthUniform.value, canvas.heightUniform.value),
-		weight: lerp(200, 800, mouse.y),
-		color: "#00ff00",
-		fontFamily: "Fustat"
-	});
 	const tileX = floor(UV.x.mul(tileAmount).mul(canvas.aspectUniform));
 	const tileY = floor(UV.y.mul(tileAmount));
 
 	const wave = sin(time.mul(speed).add(tileX.add(tileY))).mul(waveStrength);
 
-	const displacedUV = UV.add(vec2(wave, 0));
+	const textSample = text(
+		{
+			string: "a",
+			size: Math.min(
+				canvas.widthUniform.value,
+				canvas.heightUniform.value
+			),
+			weight: lerp(200, 800, mouse.y),
+			color: "#00ff00",
+			fontFamily: "Fustat"
+		},
+		(textUV) => {
+			return textUV.sub(vec2(0.5, 0.5)).add(vec2(wave, 0));
+		}
+	);
 
-	return textSampler(displacedUV);
+	const compositedText = mix(color("#0000ff"), textSample.rgb, textSample.a);
+
+	return compositedText;
 });
 
 canvas.canvasElement.addEventListener("mousemove", (event) => {

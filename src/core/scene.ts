@@ -9,7 +9,6 @@ import {
 import { Fn, vec3, uniform } from "three/tsl";
 import { smaa } from "three/addons/tsl/display/SMAANode.js";
 import { fxaa } from "three/addons/tsl/display/FXAANode.js";
-import { DrawingContext, setDrawingContext } from "./drawing";
 import Stats from "three/addons/libs/stats.module.js";
 
 type MaterialWithColorNode = MeshBasicNodeMaterial & { colorNode: Node };
@@ -24,8 +23,7 @@ export class Canvas2D {
 	private canvasEl: HTMLCanvasElement | null = null;
 	private textureObj: CanvasTexture | null = null;
 
-	// drawing and material
-	private drawingContext: DrawingContext;
+	// material
 	private material: MaterialWithColorNode;
 
 	// uniforms
@@ -38,6 +36,16 @@ export class Canvas2D {
 	private _height: number;
 	private antialias: "fxaa" | "smaa" | "none";
 	private _drawCallback?: () => Node;
+
+	// Static reference to current canvas for auto-detection
+	private static _currentCanvas: Canvas2D | null = null;
+
+	/**
+	 * Get the currently active canvas (the one being drawn to)
+	 */
+	static get currentCanvas(): Canvas2D | null {
+		return Canvas2D._currentCanvas;
+	}
 
 	private static configRenderer(
 		renderer: WebGPURenderer,
@@ -69,9 +77,6 @@ export class Canvas2D {
 			colorNode: outputNode()
 		}) as MaterialWithColorNode;
 
-		this.drawingContext = new DrawingContext(width, height);
-		setDrawingContext(this.drawingContext);
-
 		if (opts?.stats) {
 			this.stats = new Stats();
 			document.body.appendChild(this.stats.dom);
@@ -79,6 +84,9 @@ export class Canvas2D {
 	}
 
 	async draw(callback: () => Node) {
+		// Set this as the current canvas for auto-detection
+		Canvas2D._currentCanvas = this;
+
 		if (!this.sceneObj) {
 			this.sceneObj = new THREE.Scene();
 
@@ -177,7 +185,6 @@ export class Canvas2D {
 		this.cameraObj.bottom = -newPlaneSize.h / 2;
 		this.cameraObj.updateProjectionMatrix();
 
-		this.drawingContext.resize(w, h);
 		this.textureObj.needsUpdate = true;
 
 		if (this._drawCallback) {

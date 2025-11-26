@@ -36,7 +36,7 @@
 		"dev": "vite",
 		"build": "tsc --project tsconfig-build.json && vite build",
 		"preview": "vite preview",
-		"lint": "prettier --check . && eslint . && tsc --noEmit",
+		"lint": "prettier --check . ; eslint . ; tsc --noEmit",
 		"format": "prettier --write ."
 	},
 	"devDependencies": {

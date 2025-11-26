@@ -16,8 +16,6 @@ import {
 	remap,
 	time,
 	uniform,
-	uv,
-	vec2,
 	vec3
 } from "three/tsl";
 import { Node } from "three/webgpu";
@@ -151,9 +149,7 @@ await canvas.draw(() => {
 		);
 	});
 
-	const canvasSize = vec2(canvas.widthUniform, canvas.heightUniform);
-
-	const UV = getAspectCorrectedUV(uv(), canvasSize, "cover");
+	const UV = getAspectCorrectedUV();
 
 	// range is -1 to 1
 	const dispNoise = mx_noise_float(

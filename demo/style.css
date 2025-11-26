@@ -12,7 +12,7 @@
 *::after {
 	box-sizing: border-box;
 	margin: 0;
-	font-family: "Fustat";
+	font-family: "Fustat", Helvetica, Arial, sans-serif;
 }
 
 body {
@@ -30,6 +30,7 @@ body {
 	color: white;
 }
 
+/* eslint-disable-next-line css/use-baseline */
 :fullscreen #controls {
 	display: none;
 }

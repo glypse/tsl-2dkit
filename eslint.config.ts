@@ -14,7 +14,8 @@ export default defineConfig([
 		extends: ["js/recommended"],
 		rules: {
 			"func-style": ["warn", "declaration"],
-			"require-atomic-updates": "error"
+			"require-atomic-updates": "error",
+			"arrow-body-style": ["warn", "always"]
 		},
 		languageOptions: { globals: globals.browser }
 	},

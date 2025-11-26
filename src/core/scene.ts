@@ -72,7 +72,9 @@ export class Canvas2D {
 		this._widthUniform = uniform(this._width);
 		this._heightUniform = uniform(this._height);
 
-		const outputNode = Fn(() => vec3(0));
+		const outputNode = Fn(() => {
+			return vec3(0);
+		});
 		this.material = new MeshBasicNodeMaterial({
 			colorNode: outputNode()
 		}) as MaterialWithColorNode;

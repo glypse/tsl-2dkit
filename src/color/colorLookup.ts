@@ -44,7 +44,9 @@ export function gradient(
 		ctx.fillRect(0, 0, width, height);
 	} else {
 		const convertRgb = converter("rgb");
-		const sortedStops = stops.sort((a, b) => a.position - b.position);
+		const sortedStops = stops.sort((a, b) => {
+			return a.position - b.position;
+		});
 		for (let x = 0; x < width; x++) {
 			const t = x / (width - 1);
 			let color;

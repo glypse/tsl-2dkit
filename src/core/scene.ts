@@ -10,6 +10,7 @@ import { Fn, vec3, uniform } from "three/tsl";
 import { smaa } from "three/addons/tsl/display/SMAANode.js";
 import { fxaa } from "three/addons/tsl/display/FXAANode.js";
 import Stats from "three/addons/libs/stats.module.js";
+import { FixedTime } from "../time/fixedTime";
 
 type MaterialWithColorNode = MeshBasicNodeMaterial & { colorNode: Node };
 
@@ -36,6 +37,10 @@ export class Canvas2D {
 	private _height: number;
 	private antialias: "fxaa" | "smaa" | "none";
 	private _drawCallback?: () => Node;
+	private _animationFrameId: number | null = null;
+
+	// Time control
+	private _fixedTime: FixedTime | null = null;
 
 	// Static reference to current canvas for auto-detection
 	private static _currentCanvas: Canvas2D | null = null;
@@ -137,6 +142,11 @@ export class Canvas2D {
 		this._drawCallback = callback;
 
 		const animate = () => {
+			// Update fixed time if enabled
+			if (this._fixedTime) {
+				this._fixedTime.update();
+			}
+
 			if (this._drawCallback) {
 				const rawColorNode = this._drawCallback();
 				let colorNode = rawColorNode;
@@ -153,13 +163,114 @@ export class Canvas2D {
 				this.rendererObj.render(this.sceneObj, this.cameraObj);
 			}
 
-			if (this.textureObj) this.textureObj.needsUpdate = true;
-			if (this.stats) this.stats.update();
+			if (this.textureObj) {
+				this.textureObj.needsUpdate = true;
+			}
+			if (this.stats) {
+				this.stats.update();
+			}
 
-			requestAnimationFrame(animate);
+			this._animationFrameId = requestAnimationFrame(animate);
 		};
 
 		animate();
+	}
+
+	/**
+	 * Render a single frame. Useful for manual frame-by-frame rendering.
+	 */
+	renderFrame(): void {
+		// Update fixed time if enabled
+		if (this._fixedTime) {
+			this._fixedTime.step();
+		}
+
+		if (this._drawCallback) {
+			const rawColorNode = this._drawCallback();
+			let colorNode = rawColorNode;
+			if (this.antialias === "smaa") {
+				colorNode = smaa(rawColorNode);
+			} else if (this.antialias === "fxaa") {
+				colorNode = fxaa(rawColorNode);
+			}
+			this.material.colorNode = colorNode;
+			this.material.needsUpdate = true;
+		}
+
+		if (this.rendererObj && this.sceneObj && this.cameraObj) {
+			this.rendererObj.render(this.sceneObj, this.cameraObj);
+		}
+
+		if (this.textureObj) {
+			this.textureObj.needsUpdate = true;
+		}
+	}
+
+	/**
+	 * Stop the animation loop.
+	 */
+	stopAnimationLoop(): void {
+		if (this._animationFrameId !== null) {
+			cancelAnimationFrame(this._animationFrameId);
+			this._animationFrameId = null;
+		}
+	}
+
+	/**
+	 * Resume the animation loop.
+	 */
+	resumeAnimationLoop(): void {
+		if (this._animationFrameId !== null) {
+			return; // Already running
+		}
+
+		const animate = () => {
+			if (this._fixedTime) {
+				this._fixedTime.update();
+			}
+
+			if (this._drawCallback) {
+				const rawColorNode = this._drawCallback();
+				let colorNode = rawColorNode;
+				if (this.antialias === "smaa") {
+					colorNode = smaa(rawColorNode);
+				} else if (this.antialias === "fxaa") {
+					colorNode = fxaa(rawColorNode);
+				}
+				this.material.colorNode = colorNode;
+				this.material.needsUpdate = true;
+			}
+
+			if (this.rendererObj && this.sceneObj && this.cameraObj) {
+				this.rendererObj.render(this.sceneObj, this.cameraObj);
+			}
+
+			if (this.textureObj) {
+				this.textureObj.needsUpdate = true;
+			}
+			if (this.stats) {
+				this.stats.update();
+			}
+
+			this._animationFrameId = requestAnimationFrame(animate);
+		};
+
+		animate();
+	}
+
+	/**
+	 * Set the FixedTime instance to use for time control.
+	 * When set, the canvas will update the FixedTime on each frame.
+	 */
+	setFixedTime(fixedTime: FixedTime | null): void {
+		this._fixedTime = fixedTime;
+	}
+
+	/**
+	 * Get the current FixedTime instance.
+	 */
+	get fixedTime(): FixedTime | null {
+		return this._fixedTime;
 	}
 
 	resize(w: number, h: number) {

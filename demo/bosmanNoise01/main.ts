@@ -2,7 +2,9 @@ import "$demo/style.css";
 
 import {
 	Canvas2D,
+	CanvasRecorder,
 	colorLookup,
+	FixedTime,
 	getAspectCorrectedUV,
 	oklchToRgb,
 	UniformSlider
@@ -14,16 +16,24 @@ import {
 	/* int, */
 	mx_noise_float,
 	remap,
-	time,
 	uniform,
 	vec3
 } from "three/tsl";
 import { Node } from "three/webgpu";
 
+// Create FixedTime for controllable time (needed for fixed-framerate recording)
+const fixedTime = new FixedTime();
+
 const canvas = new Canvas2D(window.innerWidth, window.innerHeight, {
 	stats: true,
 	antialias: "none"
 });
+
+// Connect fixedTime to canvas for automatic updates
+canvas.setFixedTime(fixedTime);
+
+// Use fixedTime.timeUniform instead of `time` from three/tsl
+const time = fixedTime.timeUniform;
 
 window.addEventListener("resize", () => {
 	canvas.resize(window.innerWidth, window.innerHeight);
@@ -226,6 +236,53 @@ fullscreenButton.addEventListener("click", () => {
 	} else {
 		void document.documentElement.requestFullscreen();
 	}
+});
+
+// Recording setup - now takes Canvas2D and FixedTime directly
+const recorder = new CanvasRecorder(canvas, fixedTime, {
+	fps: 60,
+	format: "webm",
+	filename: "bosman-noise-recording"
+});
+
+// Manual start/stop recording
+const recordButton = document.getElementById(
+	"record-button"
+) as HTMLButtonElement;
+
+recordButton.addEventListener("click", () => {
+	if (recorder.isRecording) {
+		void recorder.stop();
+		recordButton.textContent = "🔴 Record";
+	} else {
+		void recorder.start();
+		recordButton.textContent = "⏹ Stop";
+	}
+});
+
+// Fixed-duration recording (records exactly 5 seconds at 60fps)
+const recordFixedButton = document.getElementById(
+	"record-fixed-button"
+) as HTMLButtonElement;
+
+recordFixedButton.addEventListener("click", () => {
+	recordFixedButton.disabled = true;
+	recordFixedButton.textContent = "⏳ Recording...";
+
+	void recorder
+		.start({
+			duration: 5,
+			filename: "bosman-noise-5s"
+		})
+		.then(() => {
+			recordFixedButton.disabled = false;
+			recordFixedButton.textContent = "🎬 Record 5s @ 60fps";
+		})
+		.catch((err: unknown) => {
+			console.error("Recording failed:", err);
+			recordFixedButton.disabled = false;
+			recordFixedButton.textContent = "🎬 Record 5s @ 60fps";
+		});
 });
 
 /* await canvas.renderer.debug

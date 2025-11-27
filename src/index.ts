@@ -6,6 +6,7 @@ export { UniformSlider } from "./components/UniformSlider";
 export * from "./noises";
 export * from "./filters";
 export * from "./text";
+export * from "./time";
 
 // Re-export TSL's native shaders for more user-friendly imports
 export * from "three/addons/tsl/display/SobelOperatorNode.js";

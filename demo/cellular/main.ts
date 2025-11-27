@@ -88,7 +88,7 @@ await canvas.draw(() => {
 		},
 		(textUV) => {
 			return textUV
-				.sub(vec2(0.5, 0.5))
+				.add(vec2(0.5, 0.5))
 				.add(vec2(0, voronoiF1Color.mul(displaceStrength).x));
 		}
 	);

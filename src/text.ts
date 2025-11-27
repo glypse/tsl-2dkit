@@ -357,10 +357,10 @@ export function text(
 	}
 
 	// Get screen UV and apply user's transform in screen/canvas space
-	const screenUV = uv();
+	const screenUV = uv().sub(vec2(1));
 	const transformedScreenUV = uvTransform
 		? uvTransform(screenUV)
-		: screenUV.sub(vec2(0.5, 0.5));
+		: screenUV.add(vec2(0.5, 0.5));
 
 	// Convert to text UV space after the transform
 	const textUV = screenToTextUV(transformedScreenUV, targetCanvas);

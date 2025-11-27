@@ -52,7 +52,7 @@ await canvas.draw(() => {
 			fontFamily: "Fustat"
 		},
 		(textUV) => {
-			return textUV.sub(vec2(0.5, 0.5)).add(vec2(wave, 0));
+			return textUV.add(vec2(0.5, 0.5)).add(vec2(wave, 0));
 		}
 	);
 

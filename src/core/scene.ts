@@ -43,7 +43,12 @@ export class Canvas2D {
 	/**
 	 * Get the currently active canvas (the one being drawn to)
 	 */
-	static get currentCanvas(): Canvas2D | null {
+	static get currentCanvas(): Canvas2D {
+		if (!Canvas2D._currentCanvas) {
+			throw new Error(
+				"No active Canvas2D found. Make sure you're calling this within a canvas.draw() callback."
+			);
+		}
 		return Canvas2D._currentCanvas;
 	}
 

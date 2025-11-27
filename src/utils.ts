@@ -7,11 +7,6 @@ export function getAspectCorrectedUV(
 ): Node {
 	const UV = uv();
 	const canvas = Canvas2D.currentCanvas;
-	if (!canvas) {
-		throw new Error(
-			"No active Canvas2D found. Make sure you're calling this within a canvas.draw() callback."
-		);
-	}
 	const canvasSize = vec2(canvas.widthUniform, canvas.heightUniform);
 
 	if (fit == "stretch") {

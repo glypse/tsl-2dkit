@@ -350,11 +350,6 @@ export function text(
 
 	// Auto-detect canvas
 	const targetCanvas = Canvas2D.currentCanvas;
-	if (!targetCanvas) {
-		throw new Error(
-			"No active Canvas2D found. Make sure you're calling this within a canvas.draw() callback."
-		);
-	}
 
 	// Get screen UV and apply user's transform in screen/canvas space
 	const screenUV = uv().sub(vec2(1));

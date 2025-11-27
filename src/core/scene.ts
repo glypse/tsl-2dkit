@@ -14,6 +14,12 @@ import { FixedTime } from "../time/fixedTime";
 
 type MaterialWithColorNode = MeshBasicNodeMaterial & { colorNode: Node };
 
+// Type for RTTNode which has a renderTarget property
+type RTTNodeLike = Node & {
+	isRTTNode?: boolean;
+	renderTarget?: THREE.RenderTarget;
+};
+
 export class Canvas2D {
 	// renderer / scene objects
 	private sceneObj: THREE.Scene | null = null;
@@ -38,6 +44,8 @@ export class Canvas2D {
 	private antialias: "fxaa" | "smaa" | "none";
 	private _drawCallback?: () => Node;
 	private _animationFrameId: number | null = null;
+	private _nodeGraphBuilt = false;
+	private _currentColorNode: Node | null = null;
 
 	// Time control
 	private _fixedTime: FixedTime | null = null;
@@ -141,24 +149,30 @@ export class Canvas2D {
 
 		this._drawCallback = callback;
 
+		// Build the node graph ONCE and reuse it
+		// RTTNodes (from convertToTexture) have updateBeforeType = NodeUpdateType.RENDER
+		// which means they automatically re-render their content each frame
+		if (!this._nodeGraphBuilt) {
+			const rawColorNode = this._drawCallback();
+			let colorNode = rawColorNode;
+			if (this.antialias === "smaa") {
+				colorNode = smaa(rawColorNode);
+			} else if (this.antialias === "fxaa") {
+				colorNode = fxaa(rawColorNode);
+			}
+			this._currentColorNode = colorNode;
+			this.material.colorNode = colorNode;
+			this.material.needsUpdate = true;
+			this._nodeGraphBuilt = true;
+		}
+
 		const animate = () => {
 			// Update fixed time if enabled
 			if (this._fixedTime) {
 				this._fixedTime.update();
 			}
 
-			if (this._drawCallback) {
-				const rawColorNode = this._drawCallback();
-				let colorNode = rawColorNode;
-				if (this.antialias === "smaa") {
-					colorNode = smaa(rawColorNode);
-				} else if (this.antialias === "fxaa") {
-					colorNode = fxaa(rawColorNode);
-				}
-				this.material.colorNode = colorNode;
-				this.material.needsUpdate = true;
-			}
-
+			// Only render - node graph is already built and RTTNodes auto-update
 			if (this.rendererObj && this.sceneObj && this.cameraObj) {
 				this.rendererObj.render(this.sceneObj, this.cameraObj);
 			}
@@ -185,7 +199,8 @@ export class Canvas2D {
 			this._fixedTime.step();
 		}
 
-		if (this._drawCallback) {
+		// Build node graph if not already built
+		if (!this._nodeGraphBuilt && this._drawCallback) {
 			const rawColorNode = this._drawCallback();
 			let colorNode = rawColorNode;
 			if (this.antialias === "smaa") {
@@ -193,10 +208,13 @@ export class Canvas2D {
 			} else if (this.antialias === "fxaa") {
 				colorNode = fxaa(rawColorNode);
 			}
+			this._currentColorNode = colorNode;
 			this.material.colorNode = colorNode;
 			this.material.needsUpdate = true;
+			this._nodeGraphBuilt = true;
 		}
 
+		// Only render - node graph auto-updates
 		if (this.rendererObj && this.sceneObj && this.cameraObj) {
 			this.rendererObj.render(this.sceneObj, this.cameraObj);
 		}
@@ -217,6 +235,44 @@ export class Canvas2D {
 	}
 
 	/**
+	 * Force a rebuild of the node graph on the next frame.
+	 * Use this when you need to change the node graph structure (not just uniform values).
+	 * This will properly dispose all RTT render targets to prevent memory leaks.
+	 */
+	invalidateNodeGraph(): void {
+		// Dispose old node graph resources before rebuilding
+		if (this._currentColorNode) {
+			this._disposeNodeGraph(this._currentColorNode);
+			this._currentColorNode = null;
+		}
+		this._nodeGraphBuilt = false;
+	}
+
+	/**
+	 * Traverse and dispose all RTTNode render targets in the node graph.
+	 */
+	private _disposeNodeGraph(node: Node): void {
+		const disposed = new Set<Node>();
+
+		function disposeNode(n: Node) {
+			if (disposed.has(n)) return;
+			disposed.add(n);
+
+			// Check if this is an RTTNode and dispose its renderTarget
+			const rttNode = n as RTTNodeLike;
+			if (rttNode.isRTTNode && rttNode.renderTarget) {
+				rttNode.renderTarget.dispose();
+			}
+
+			// Call dispose on the node itself (triggers 'dispose' event)
+			n.dispose();
+		}
+
+		// Traverse the entire node graph
+		node.traverse(disposeNode);
+	}
+
+	/**
 	 * Resume the animation loop.
 	 */
 	resumeAnimationLoop(): void {
@@ -229,7 +285,8 @@ export class Canvas2D {
 				this._fixedTime.update();
 			}
 
-			if (this._drawCallback) {
+			// Build node graph if not already built
+			if (!this._nodeGraphBuilt && this._drawCallback) {
 				const rawColorNode = this._drawCallback();
 				let colorNode = rawColorNode;
 				if (this.antialias === "smaa") {
@@ -237,10 +294,13 @@ export class Canvas2D {
 				} else if (this.antialias === "fxaa") {
 					colorNode = fxaa(rawColorNode);
 				}
+				this._currentColorNode = colorNode;
 				this.material.colorNode = colorNode;
 				this.material.needsUpdate = true;
+				this._nodeGraphBuilt = true;
 			}
 
+			// Only render - node graph auto-updates
 			if (this.rendererObj && this.sceneObj && this.cameraObj) {
 				this.rendererObj.render(this.sceneObj, this.cameraObj);
 			}
@@ -305,17 +365,8 @@ export class Canvas2D {
 
 		this.textureObj.needsUpdate = true;
 
-		if (this._drawCallback) {
-			const rawColorNode = this._drawCallback();
-			let colorNode = rawColorNode;
-			if (this.antialias === "smaa") {
-				colorNode = smaa(rawColorNode);
-			} else if (this.antialias === "fxaa") {
-				colorNode = fxaa(rawColorNode);
-			}
-			this.material.colorNode = colorNode;
-			this.material.needsUpdate = true;
-		}
+		// Note: We don't rebuild the node graph on resize.
+		// RTTNodes automatically resize via their autoResize feature.
 	}
 
 	get canvasElement(): HTMLCanvasElement {

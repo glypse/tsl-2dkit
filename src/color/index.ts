@@ -1,2 +1,2 @@
 export * from "./colorLookup";
-export * from "./textureColors.ts";
+export * from "./textureColors";

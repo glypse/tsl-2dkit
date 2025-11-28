@@ -1,6 +1,7 @@
 import "$demo/style.css";
 
 import {
+	boxLumaBlur,
 	Canvas2D,
 	CanvasRecorder,
 	colorLookup,
@@ -9,16 +10,7 @@ import {
 	oklchToRgb,
 	UniformSlider
 } from "$lib";
-/* import { lumaBlur } from "$lib/blur/lumaBlur"; */
-import {
-	float,
-	Fn,
-	/* int, */
-	mx_noise_float,
-	remap,
-	uniform,
-	vec3
-} from "three/tsl";
+import { float, Fn, mx_noise_float, remap, uniform, vec3 } from "three/tsl";
 import { Node } from "three/webgpu";
 
 // Create FixedTime for controllable time (needed for fixed-framerate recording)
@@ -207,7 +199,7 @@ await canvas.draw(() => {
 		)
 		.remap(-1, 1, 0, 1);
 
-	/* const blurNoiseScale = uniform(1.5);
+	const blurNoiseScale = uniform(1.5);
 	const blurNoiseSpeed = uniform(0.5);
 	const blurNoise = mx_noise_float(
 		vec3(
@@ -217,11 +209,9 @@ await canvas.draw(() => {
 		).add(seed)
 	).remap(-0.2, 0.7, 0, 1);
 
-	const blurred = lumaBlur(overlayedStripes, blurNoise.r, {
-		maxIterations: int(16)
-	}); */
+	const blurred = boxLumaBlur(overlayedStripes, blurNoise.r.mul(100));
 
-	return colorLookup(overlayedStripes.r, gradientFn);
+	return colorLookup(blurred.r, gradientFn);
 });
 
 document.body.appendChild(canvas.canvasElement);
@@ -238,14 +228,12 @@ fullscreenButton.addEventListener("click", () => {
 	}
 });
 
-// Recording setup - now takes Canvas2D and FixedTime directly
 const recorder = new CanvasRecorder(canvas, fixedTime, {
 	fps: 60,
 	format: "webm",
 	filename: "bosman-noise-recording"
 });
 
-// Manual start/stop recording
 const recordButton = document.getElementById(
 	"record-button"
 ) as HTMLButtonElement;
@@ -260,7 +248,6 @@ recordButton.addEventListener("click", () => {
 	}
 });
 
-// Fixed-duration recording (records exactly 5 seconds at 60fps)
 const recordFixedButton = document.getElementById(
 	"record-fixed-button"
 ) as HTMLButtonElement;
@@ -284,11 +271,3 @@ recordFixedButton.addEventListener("click", () => {
 			recordFixedButton.textContent = "🎬 Record 5s @ 60fps";
 		});
 });
-
-/* await canvas.renderer.debug
-	.getShaderAsync(canvas.scene, canvas.camera, canvas.mesh)
-	.then((shaderInfo) => {
-		
-		console.log(shaderInfo.fragmentShader);
-	});
- */

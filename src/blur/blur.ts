@@ -16,12 +16,10 @@ import {
 } from "three/tsl";
 import type { Node, TextureNode } from "three/webgpu";
 
-function createBoxLumaBlurPass(axis: "x" | "y") {
+function createBoxBlurPass(axis: "x" | "y") {
 	return Fn(([textureNode, blurAmountMap]: [TextureNode, Node]) => {
 		const baseUV = (textureNode.uvNode ?? uv()).toVar();
 		const pixelSize = vec2(1).div(textureSize(textureNode)).toVar();
-
-		// Sample the blur amount map at current UV
 		const blurAmount = float(blurAmountMap).toVar();
 		const safeRadius = max(float(0), blurAmount).toVar();
 		const flooredRadius = floor(safeRadius).toVar();
@@ -54,7 +52,7 @@ function createBoxLumaBlurPass(axis: "x" | "y") {
 	});
 }
 
-function createGaussianLumaBlurPass(axis: "x" | "y") {
+function createGaussianBlurPass(axis: "x" | "y") {
 	return Fn(([textureNode, blurAmountMap]: [TextureNode, Node]) => {
 		const baseUV = (textureNode.uvNode ?? uv()).toVar();
 		const pixelSize = vec2(1).div(textureSize(textureNode)).toVar();
@@ -97,10 +95,10 @@ function createGaussianLumaBlurPass(axis: "x" | "y") {
 	});
 }
 
-const horizontalBoxLumaBlurPass = createBoxLumaBlurPass("x");
-const verticalBoxLumaBlurPass = createBoxLumaBlurPass("y");
-const horizontalGaussianLumaBlurPass = createGaussianLumaBlurPass("x");
-const verticalGaussianLumaBlurPass = createGaussianLumaBlurPass("y");
+const horizontalBoxBlurPass = createBoxBlurPass("x");
+const verticalBoxBlurPass = createBoxBlurPass("y");
+const horizontalGaussianBlurPass = createGaussianBlurPass("x");
+const verticalGaussianBlurPass = createGaussianBlurPass("y");
 
 /**
  * Applies a separable box blur where the blur radius is controlled per-pixel
@@ -110,15 +108,15 @@ const verticalGaussianLumaBlurPass = createGaussianLumaBlurPass("y");
  * @param blurAmountMap - A Node that determines the blur radius at each pixel
  * @returns The blurred result as a Node
  */
-export function boxLumaBlur(value: Node, blurAmountMap: Node) {
+export function boxBlur(value: Node, blurAmountMap: Node) {
 	const blurAmountNode = nodeObject(blurAmountMap);
 	const sourceTexture = convertToTexture(value);
-	const horizontalBlurred = horizontalBoxLumaBlurPass(
+	const horizontalBlurred = horizontalBoxBlurPass(
 		sourceTexture,
 		blurAmountNode
 	);
 	const horizontalTexture = convertToTexture(horizontalBlurred);
-	return verticalBoxLumaBlurPass(horizontalTexture, blurAmountNode);
+	return verticalBoxBlurPass(horizontalTexture, blurAmountNode);
 }
 
 /**
@@ -129,13 +127,13 @@ export function boxLumaBlur(value: Node, blurAmountMap: Node) {
  * @param blurAmountMap - A Node that determines the blur radius at each pixel
  * @returns The blurred result as a Node
  */
-export function gaussianLumaBlur(value: Node, blurAmountMap: Node) {
+export function gaussianBlur(value: Node, blurAmountMap: Node) {
 	const blurAmountNode = nodeObject(blurAmountMap);
 	const sourceTexture = convertToTexture(value);
-	const horizontalBlurred = horizontalGaussianLumaBlurPass(
+	const horizontalBlurred = horizontalGaussianBlurPass(
 		sourceTexture,
 		blurAmountNode
 	);
 	const horizontalTexture = convertToTexture(horizontalBlurred);
-	return verticalGaussianLumaBlurPass(horizontalTexture, blurAmountNode);
+	return verticalGaussianBlurPass(horizontalTexture, blurAmountNode);
 }

@@ -1,7 +1,7 @@
 import "$demo/style.css";
 
 import {
-	boxLumaBlur,
+	boxBlur,
 	Canvas2D,
 	CanvasRecorder,
 	colorLookup,
@@ -49,6 +49,7 @@ const noiseOverlayScale = uniform(1);
 const noiseOverlaySpeed = uniform(0.3);
 const noiseOverlayStrength = uniform(1);
 const baseNoiseStrength = uniform(0.1);
+const maxBlur = uniform(60);
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const controls = document.getElementById("controls")!;
@@ -120,6 +121,10 @@ new UniformSlider(controls, "Noise Overlay Strength:", noiseOverlayStrength, {
 new UniformSlider(controls, "Base Noise Strength:", baseNoiseStrength, {
 	min: 0,
 	max: 0.5
+});
+new UniformSlider(controls, "Max Blur:", maxBlur, {
+	min: 0,
+	max: 100
 });
 
 await canvas.draw(() => {
@@ -209,7 +214,7 @@ await canvas.draw(() => {
 		).add(seed)
 	).remap(-0.2, 0.7, 0, 1);
 
-	const blurred = boxLumaBlur(overlayedStripes, blurNoise.r.mul(100));
+	const blurred = boxBlur(overlayedStripes, blurNoise.r.mul(maxBlur));
 
 	return colorLookup(blurred.r, gradientFn);
 });

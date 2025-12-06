@@ -1,41 +1,14 @@
-import { type ShaderNodeFn } from "three/src/nodes/TSL.js";
-import { CanvasTexture, MeshBasicNodeMaterial } from "three/webgpu";
+export * from "./core";
+export * from "./color";
+export * from "./utils";
+export * from "./blur";
+export { UniformSlider } from "./components/UniformSlider";
+export * from "./noises";
+export * from "./filters";
+export * from "./text";
+export * from "./time";
 
-export function initCanvas(size: { width: number; height: number }) {
-	const dpr = window.devicePixelRatio;
-	let canvas = document.createElement("canvas");
-	canvas.width = size.width * dpr;
-	canvas.height = size.height * dpr;
-	let ctx = canvas.getContext("2d", { colorSpace: "srgb" })!;
-	let canvasTexture = new CanvasTexture(canvas);
-
-	return {
-		canvas,
-		ctx,
-		canvasTexture,
-		dpr
-	};
-}
-
-export function handleCanvasResize(
-	newWidth: number,
-	newHeight: number,
-	canvasTexture: CanvasTexture,
-	material: MeshBasicNodeMaterial,
-	outputNode: ShaderNodeFn<[]>
-) {
-	canvasTexture.dispose();
-	let {
-		canvas,
-		ctx,
-		canvasTexture: newCanvasTexture
-	} = initCanvas({
-		width: newWidth,
-		height: newHeight
-	});
-	canvasTexture = newCanvasTexture;
-	material.colorNode = outputNode();
-	material.needsUpdate = true;
-
-	return { canvas, ctx, canvasTexture };
-}
+// Re-export TSL's native shaders for more user-friendly imports
+export * from "three/addons/tsl/display/SobelOperatorNode.js";
+export * from "three/addons/tsl/display/hashBlur.js";
+export * from "three/addons/tsl/display/TransitionNode.js";

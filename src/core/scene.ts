@@ -153,41 +153,10 @@ export class Canvas2D {
 		// RTTNodes (from convertToTexture) have updateBeforeType = NodeUpdateType.RENDER
 		// which means they automatically re-render their content each frame
 		if (!this._nodeGraphBuilt) {
-			const rawColorNode = this._drawCallback();
-			let colorNode = rawColorNode;
-			if (this.antialias === "smaa") {
-				colorNode = smaa(rawColorNode);
-			} else if (this.antialias === "fxaa") {
-				colorNode = fxaa(rawColorNode);
-			}
-			this._currentColorNode = colorNode;
-			this.material.colorNode = colorNode;
-			this.material.needsUpdate = true;
-			this._nodeGraphBuilt = true;
+			this._buildNodeGraph();
 		}
 
-		const animate = () => {
-			// Update fixed time if enabled
-			if (this._fixedTime) {
-				this._fixedTime.update();
-			}
-
-			// Only render - node graph is already built and RTTNodes auto-update
-			if (this.rendererObj && this.sceneObj && this.cameraObj) {
-				this.rendererObj.render(this.sceneObj, this.cameraObj);
-			}
-
-			if (this.textureObj) {
-				this.textureObj.needsUpdate = true;
-			}
-			if (this.stats) {
-				this.stats.update();
-			}
-
-			this._animationFrameId = requestAnimationFrame(animate);
-		};
-
-		animate();
+		this._startAnimationLoop();
 	}
 
 	/**
@@ -200,18 +169,8 @@ export class Canvas2D {
 		}
 
 		// Build node graph if not already built
-		if (!this._nodeGraphBuilt && this._drawCallback) {
-			const rawColorNode = this._drawCallback();
-			let colorNode = rawColorNode;
-			if (this.antialias === "smaa") {
-				colorNode = smaa(rawColorNode);
-			} else if (this.antialias === "fxaa") {
-				colorNode = fxaa(rawColorNode);
-			}
-			this._currentColorNode = colorNode;
-			this.material.colorNode = colorNode;
-			this.material.needsUpdate = true;
-			this._nodeGraphBuilt = true;
+		if (!this._nodeGraphBuilt) {
+			this._buildNodeGraph();
 		}
 
 		// Only render - node graph auto-updates
@@ -232,6 +191,25 @@ export class Canvas2D {
 			cancelAnimationFrame(this._animationFrameId);
 			this._animationFrameId = null;
 		}
+	}
+
+	/**
+	 * Build the node graph from the draw callback.
+	 */
+	private _buildNodeGraph(): void {
+		if (!this._drawCallback) return;
+
+		const rawColorNode = this._drawCallback();
+		let colorNode = rawColorNode;
+		if (this.antialias === "smaa") {
+			colorNode = smaa(rawColorNode);
+		} else if (this.antialias === "fxaa") {
+			colorNode = fxaa(rawColorNode);
+		}
+		this._currentColorNode = colorNode;
+		this.material.colorNode = colorNode;
+		this.material.needsUpdate = true;
+		this._nodeGraphBuilt = true;
 	}
 
 	/**
@@ -280,27 +258,25 @@ export class Canvas2D {
 			return; // Already running
 		}
 
+		this._startAnimationLoop();
+	}
+
+	/**
+	 * Start the animation loop (internal method).
+	 */
+	private _startAnimationLoop(): void {
 		const animate = () => {
+			// Update fixed time if enabled
 			if (this._fixedTime) {
 				this._fixedTime.update();
 			}
 
 			// Build node graph if not already built
-			if (!this._nodeGraphBuilt && this._drawCallback) {
-				const rawColorNode = this._drawCallback();
-				let colorNode = rawColorNode;
-				if (this.antialias === "smaa") {
-					colorNode = smaa(rawColorNode);
-				} else if (this.antialias === "fxaa") {
-					colorNode = fxaa(rawColorNode);
-				}
-				this._currentColorNode = colorNode;
-				this.material.colorNode = colorNode;
-				this.material.needsUpdate = true;
-				this._nodeGraphBuilt = true;
+			if (!this._nodeGraphBuilt) {
+				this._buildNodeGraph();
 			}
 
-			// Only render - node graph auto-updates
+			// Only render - node graph is already built and RTTNodes auto-update
 			if (this.rendererObj && this.sceneObj && this.cameraObj) {
 				this.rendererObj.render(this.sceneObj, this.cameraObj);
 			}

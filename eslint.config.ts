@@ -7,7 +7,7 @@ import css from "@eslint/css";
 import { defineConfig } from "eslint/config";
 
 export default defineConfig([
-	{ ignores: ["eslint.config.ts", "vite.config.ts"] },
+	{ ignores: ["dist/**"] },
 	{
 		files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
 		plugins: { js },

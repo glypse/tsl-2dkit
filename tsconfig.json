@@ -16,7 +16,7 @@
 
 		/* Linting */
 		"strict": true,
-		//"noUnusedLocals": true,
+		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"erasableSyntaxOnly": true,
 		"noFallthroughCasesInSwitch": true,
@@ -25,6 +25,5 @@
 			"$lib": ["./src"],
 			"$lib/*": ["./src/*"]
 		}
-	},
-	"include": ["src", "demo"]
+	}
 }

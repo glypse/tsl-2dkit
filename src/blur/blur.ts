@@ -10,7 +10,6 @@ import {
 	int,
 	floor,
 	max,
-	nodeObject,
 	convertToTexture,
 	exp
 } from "three/tsl";
@@ -109,7 +108,7 @@ const verticalGaussianBlurPass = createGaussianBlurPass("y");
  * @returns The blurred result as a Node
  */
 export function boxBlur(value: Node, blurAmountMap: Node) {
-	const blurAmountNode = nodeObject(blurAmountMap);
+	const blurAmountNode = blurAmountMap;
 	const sourceTexture = convertToTexture(value);
 	const horizontalBlurred = horizontalBoxBlurPass(
 		sourceTexture,
@@ -128,7 +127,7 @@ export function boxBlur(value: Node, blurAmountMap: Node) {
  * @returns The blurred result as a Node
  */
 export function gaussianBlur(value: Node, blurAmountMap: Node) {
-	const blurAmountNode = nodeObject(blurAmountMap);
+	const blurAmountNode = blurAmountMap;
 	const sourceTexture = convertToTexture(value);
 	const horizontalBlurred = horizontalGaussianBlurPass(
 		sourceTexture,

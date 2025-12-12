@@ -1,7 +1,3 @@
 {
-	"recommendations": [
-		"dbaeumer.vscode-eslint",
-		"esbenp.prettier-vscode",
-		"io.github.upstash/context7"
-	]
+	"recommendations": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"]
 }

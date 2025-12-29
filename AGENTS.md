@@ -1,6 +1,6 @@
-You are able to use the Context7 MCP Server, where you can find relevant documentation for libraries used in this project, such as:
+You are able to use the Context7 MCP Server, where you can find relevant documentation for libraries used in this project: feel free to use it at any point if you have any questions regarding the API of any library (better be safe than spend time trying to piece together a solution to a problem we're not understanding fully). You'll be able to find documentation for libraries such as:
 
-- three.js: websites/threejs
+- three.js (under 'websites/threejs')
 
 Project specification:
 

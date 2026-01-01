@@ -7,7 +7,7 @@ import { lerp } from "three/src/math/MathUtils.js";
 function getRelativeMousePosition(
 	canvasElement: HTMLCanvasElement,
 	event: MouseEvent
-): { x: number; y: number } {
+) {
 	const rect = canvasElement.getBoundingClientRect();
 	return {
 		x: (event.clientX - rect.left) / rect.width,
@@ -20,17 +20,18 @@ const canvas = new Canvas2D(window.innerWidth, window.innerHeight, {
 	antialias: "none"
 });
 
+const mouse = { x: 0.5, y: 0.5 };
+
 const textTexture = new TextTexture({
 	string: "a",
 	size: Math.min(window.innerWidth, window.innerHeight),
-	weight: 900,
+	// Initial value, not reactive value
+	weight: lerp(200, 800, mouse.y),
 	color: "#00ff00",
 	fontFamily: "Fustat",
 	debug: true,
 	padding: 0
 });
-
-const mouse = { x: 0.5, y: 0.5 };
 
 window.addEventListener("resize", () => {
 	canvas.resize(window.innerWidth, window.innerHeight);
@@ -41,7 +42,8 @@ window.addEventListener("resize", () => {
 const tileAmount = uniform(8);
 const speed = uniform(1);
 
-const waveStrength = uniform(0);
+// Initial value, not reactive value
+const waveStrength = uniform(lerp(0, 0.1, mouse.x));
 
 await canvas.draw(() => {
 	const UV = uv();
@@ -51,10 +53,8 @@ await canvas.draw(() => {
 
 	const wave = sin(time.mul(speed).add(tileX.add(tileY))).mul(waveStrength);
 
-	//const textSample = textTexture;
 	const textSample = textTexture.sample(
 		uv().sub(vec2(0.5, 0.5)).add(vec2(wave, 0))
-		//uv().sub(vec2(0.5, 0.5))
 	);
 
 	const compositedText = mix(color("#0000ff"), textSample.rgb, textSample.a);
@@ -63,11 +63,10 @@ await canvas.draw(() => {
 });
 
 canvas.canvasElement.addEventListener("mousemove", (event) => {
-	const pos = getRelativeMousePosition(canvas.canvasElement, event);
-	mouse.y = pos.y;
-	waveStrength.value = lerp(0, 0.1, pos.x);
-	textTexture.config.weight = lerp(200, 800, pos.y);
-	//textTexture.config.string = "test";
+	const mouse = getRelativeMousePosition(canvas.canvasElement, event);
+	waveStrength.value = lerp(0, 0.1, mouse.x);
+
+	textTexture.config.weight = lerp(200, 800, mouse.y);
 	textTexture.needsUpdate = true;
 });
 

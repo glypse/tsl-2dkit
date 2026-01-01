@@ -11,6 +11,7 @@ import { smaa } from "three/addons/tsl/display/SMAANode.js";
 import { fxaa } from "three/addons/tsl/display/FXAANode.js";
 import Stats from "three/addons/libs/stats.module.js";
 import { FixedTime } from "../time/fixedTime";
+import type { DynamicTexture } from "../textures/DynamicTexture";
 
 type MaterialWithColorNode = MeshBasicNodeMaterial & { colorNode: Node };
 
@@ -46,6 +47,7 @@ export class Canvas2D {
 	private _animationFrameId: number | null = null;
 	private _nodeGraphBuilt = false;
 	private _currentColorNode: Node | null = null;
+	private dynamicTextures = new Set<DynamicTexture>();
 
 	// Time control
 	private _fixedTime: FixedTime | null = null;
@@ -162,7 +164,7 @@ export class Canvas2D {
 	/**
 	 * Render a single frame. Useful for manual frame-by-frame rendering.
 	 */
-	renderFrame(): void {
+	async renderFrame(): Promise<void> {
 		// Update fixed time if enabled
 		if (this._fixedTime) {
 			this._fixedTime.step();
@@ -172,6 +174,8 @@ export class Canvas2D {
 		if (!this._nodeGraphBuilt) {
 			this._buildNodeGraph();
 		}
+
+		await this._updateDynamicTextures();
 
 		// Only render - node graph auto-updates
 		if (this.rendererObj && this.sceneObj && this.cameraObj) {
@@ -265,33 +269,51 @@ export class Canvas2D {
 	 * Start the animation loop (internal method).
 	 */
 	private _startAnimationLoop(): void {
-		const animate = () => {
-			// Update fixed time if enabled
-			if (this._fixedTime) {
-				this._fixedTime.update();
-			}
+		function animate(this: Canvas2D) {
+			void (async () => {
+				// Update fixed time if enabled
+				if (this._fixedTime) {
+					this._fixedTime.update();
+				}
 
-			// Build node graph if not already built
-			if (!this._nodeGraphBuilt) {
-				this._buildNodeGraph();
-			}
+				// Build node graph if not already built
+				if (!this._nodeGraphBuilt) {
+					this._buildNodeGraph();
+				}
 
-			// Only render - node graph is already built and RTTNodes auto-update
-			if (this.rendererObj && this.sceneObj && this.cameraObj) {
-				this.rendererObj.render(this.sceneObj, this.cameraObj);
-			}
+				await this._updateDynamicTextures();
 
-			if (this.textureObj) {
-				this.textureObj.needsUpdate = true;
-			}
-			if (this.stats) {
-				this.stats.update();
-			}
+				// Only render - node graph is already built and RTTNodes auto-update
+				if (this.rendererObj && this.sceneObj && this.cameraObj) {
+					this.rendererObj.render(this.sceneObj, this.cameraObj);
+				}
 
-			this._animationFrameId = requestAnimationFrame(animate);
-		};
+				if (this.textureObj) {
+					this.textureObj.needsUpdate = true;
+				}
+				if (this.stats) {
+					this.stats.update();
+				}
 
-		animate();
+				this._animationFrameId = requestAnimationFrame(boundAnimate);
+			})();
+		}
+
+		const boundAnimate = animate.bind(this);
+		this._animationFrameId = requestAnimationFrame(boundAnimate);
+	}
+
+	registerDynamicTexture(texture: DynamicTexture): void {
+		this.dynamicTextures.add(texture);
+	}
+
+	private async _updateDynamicTextures(): Promise<void> {
+		if (!this.dynamicTextures.size) return;
+		await Promise.all(
+			Array.from(this.dynamicTextures, (tex) => {
+				return tex.updateIfNeeded();
+			})
+		);
 	}
 
 	/**

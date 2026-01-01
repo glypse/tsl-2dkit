@@ -262,7 +262,7 @@ export class CanvasRecorder {
 					this.fixedTime.setTime(this.frameCount * frameDuration);
 
 					// Render the frame
-					this.canvas2d.renderFrame();
+					await this.canvas2d.renderFrame();
 
 					// Add the frame to the video with exact timestamp
 					const timestamp = this.frameCount * frameDuration;

@@ -5,7 +5,7 @@ export * from "./blur";
 export { UniformSlider } from "./components/UniformSlider";
 export * from "./noises";
 export * from "./filters";
-export * from "./text";
+export * from "./textures";
 export * from "./time";
 
 // Re-export TSL's native shaders for more user-friendly imports

@@ -1,14 +1,5 @@
 import { CanvasTexture, TextureNode } from "three/webgpu";
-import {
-	texture,
-	vec4,
-	vec3,
-	vec2,
-	uniform,
-	float,
-	select,
-	uv
-} from "three/tsl";
+import { texture, vec4, vec2, uniform, float, select, uv } from "three/tsl";
 import type { Node } from "three/webgpu";
 import { Color, LinearFilter } from "three";
 import { Canvas2D } from "../core/scene";
@@ -114,12 +105,6 @@ export class TextTexture extends DynamicTexture {
 		b: uniform(0)
 	};
 
-	private colorNode = vec3(
-		this.colorUniform.r,
-		this.colorUniform.g,
-		this.colorUniform.b
-	);
-
 	// Track allocated GPU texture dimensions to detect when recreation is needed
 	private gpuTextureWidth = 0;
 	private gpuTextureHeight = 0;
@@ -165,6 +150,7 @@ export class TextTexture extends DynamicTexture {
 		const rawUV = inputUV ?? uv();
 		const textUV = this.screenToTextUV(rawUV, canvas);
 		return this.sampleTexture(textUV);
+		/* return this.sampleTexture(rawUV); */
 	}
 
 	protected async update(): Promise<void> {
@@ -221,9 +207,6 @@ export class TextTexture extends DynamicTexture {
 			newTexture.minFilter = LinearFilter;
 			newTexture.magFilter = LinearFilter;
 
-			// Update internal reference
-			//this._texture = newTexture; // investigate, not needed?
-
 			// Update the TextureNode's value to point to new texture
 			// This allows the node graph to use the new texture without rebuilding
 			if (this.textureNode) {
@@ -235,7 +218,6 @@ export class TextTexture extends DynamicTexture {
 			this.gpuTextureHeight = newCanvasHeight;
 		}
 
-		this.ctx.setTransform(1, 0, 0, 1, 0, 0);
 		this.ctx.scale(dpr, dpr);
 		this.ctx.font = `${String(weight)} ${String(size)}px ${fontFamily ?? "Arial"}`;
 		this.ctx.letterSpacing = letterSpacing;
@@ -293,9 +275,9 @@ export class TextTexture extends DynamicTexture {
 		const sampled = this.textureNode;
 		const alpha = sampled.r.pow(2.2);
 		const textColor = vec4(
-			this.colorNode.x,
-			this.colorNode.y,
-			this.colorNode.z,
+			this.colorUniform.r,
+			this.colorUniform.g,
+			this.colorUniform.b,
 			alpha
 		);
 

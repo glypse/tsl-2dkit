@@ -1,7 +1,7 @@
 import "$demo/style.css";
 
-import { Canvas2D, MediaTexture } from "$lib";
-import { mix, color, vec2, uv } from "three/tsl";
+import { Canvas2D, MediaTexture, getAspectCorrectedUV } from "$lib";
+import { mix, color } from "three/tsl";
 
 const canvas = new Canvas2D(window.innerWidth, window.innerHeight, {
 	stats: true,
@@ -9,35 +9,24 @@ const canvas = new Canvas2D(window.innerWidth, window.innerHeight, {
 });
 
 const imageTexture = new MediaTexture({
-	src: "./test-image.png",
+	src: "./test-image.webp",
 	anchorX: "left",
 	anchorY: "bottom",
 	debug: false
 });
-imageTexture.wrapMode = "repeat";
+imageTexture.wrapMode = "edge";
 
 window.addEventListener("resize", () => {
 	canvas.resize(window.innerWidth, window.innerHeight);
 });
 
 await canvas.draw(() => {
-	// Get aspect ratios - imageTexture.aspectRatioUniform auto-updates when media loads
-	const canvasAspect = canvas.aspectUniform;
-	const imageAspect = imageTexture.aspectRatioUniform;
-
-	// Calculate scale to fit image in canvas while preserving aspect ratio (contain mode)
-	const scaleX = canvasAspect
-		.greaterThan(imageAspect)
-		.select(imageAspect.div(canvasAspect), 1);
-	const scaleY = canvasAspect
-		.lessThan(imageAspect)
-		.select(canvasAspect.div(imageAspect), 1);
-
-	// Transform UV to preserve aspect ratio
-	const rawUV = uv();
-	const centeredUV = rawUV.sub(vec2(0.5));
-	const scaledUV = vec2(centeredUV.x.div(scaleX), centeredUV.y.div(scaleY));
-	const aspectCorrectedUV = scaledUV.add(vec2(0.5));
+	// Use the new getAspectCorrectedUV function with the image's aspect ratio
+	const aspectCorrectedUV = getAspectCorrectedUV(
+		"contain",
+		imageTexture.aspectRatioUniform,
+		"sampling"
+	);
 
 	const imageSample = imageTexture.sample(aspectCorrectedUV);
 

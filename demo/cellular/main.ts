@@ -39,7 +39,11 @@ await canvas.draw(() => {
 		.div(15000)
 		.mul(voronoiScale);
 
-	const UV = getAspectCorrectedUV();
+	const UV = getAspectCorrectedUV(
+		"contain",
+		canvas.aspectUniform,
+		"generation"
+	);
 
 	const voronoiPos = vec3(
 		UV.x.mul(voronoiScale),

@@ -1,6 +1,8 @@
 import type { WrapMode } from "$lib/utils";
 import type { Texture } from "three";
 import { LinearFilter, NearestFilter } from "three";
+import { Canvas2D } from "../core/scene";
+import { uniform } from "three/tsl";
 
 export type InterpolationMode = "linear" | "nearest";
 
@@ -23,6 +25,91 @@ export abstract class DynamicTexture {
 
 	get texture(): Texture {
 		return this._texture;
+	}
+
+	/**
+	 * Get the width of the texture in pixels.
+	 * Subclasses should implement this to return their actual width.
+	 */
+	protected abstract getWidth(): number;
+
+	/**
+	 * Get the height of the texture in pixels.
+	 * Subclasses should implement this to return their actual height.
+	 */
+	protected abstract getHeight(): number;
+
+	/**
+	 * Width of the texture in pixels.
+	 * Warns if accessed outside of canvas.draw() context.
+	 */
+	get width(): number {
+		try {
+			void Canvas2D.currentCanvas;
+		} catch {
+			console.warn(
+				`[${this.constructor.name}] Accessing width outside of canvas.draw() context. The value may not be initialized yet.`
+			);
+		}
+		return this.getWidth();
+	}
+
+	/**
+	 * Height of the texture in pixels.
+	 * Warns if accessed outside of canvas.draw() context.
+	 */
+	get height(): number {
+		try {
+			void Canvas2D.currentCanvas;
+		} catch {
+			console.warn(
+				`[${this.constructor.name}] Accessing height outside of canvas.draw() context. The value may not be initialized yet.`
+			);
+		}
+		return this.getHeight();
+	}
+
+	/**
+	 * Get the aspect ratio of the texture.
+	 * Subclasses can override this to provide custom aspect ratio logic.
+	 * Default implementation returns width / height, or 1 if height is 0.
+	 */
+	protected abstract getAspectRatio(): number;
+
+	/**
+	 * Get a uniform node representing the texture's width in pixels.
+	 * This uniform automatically updates when the texture changes.
+	 * Use this in your node graph for reactive width handling.
+	 */
+	abstract get widthUniform(): ReturnType<typeof uniform<number>>;
+
+	/**
+	 * Get a uniform node representing the texture's height in pixels.
+	 * This uniform automatically updates when the texture changes.
+	 * Use this in your node graph for reactive height handling.
+	 */
+	abstract get heightUniform(): ReturnType<typeof uniform<number>>;
+
+	/**
+	 * Get a uniform node representing the texture's aspect ratio (width/height).
+	 * This uniform automatically updates when the texture changes.
+	 * Use this in your node graph for reactive aspect ratio handling.
+	 */
+	abstract get aspectRatioUniform(): ReturnType<typeof uniform<number>>;
+
+	/**
+	 * Aspect ratio (width / height).
+	 * Warns if accessed outside of canvas.draw() context.
+	 */
+	get aspectRatio(): number {
+		try {
+			void Canvas2D.currentCanvas;
+		} catch {
+			console.warn(
+				`[${this.constructor.name}] Accessing aspectRatio outside of canvas.draw() context. The value may not be initialized yet.`
+			);
+		}
+		return this.getAspectRatio();
 	}
 
 	get interpolation(): InterpolationMode {

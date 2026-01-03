@@ -19,8 +19,9 @@ export type MediaTextureOptions = {
 export class MediaTexture extends DynamicTexture {
 	config: MediaTextureOptions;
 
-	private widthUniform = uniform(0);
-	private heightUniform = uniform(0);
+	private _widthUniform = uniform(0);
+	private _heightUniform = uniform(0);
+	private _aspectRatioUniform = uniform(1);
 	private anchorOffsetXUniform = uniform(0.5);
 	private anchorOffsetYUniform = uniform(0.5);
 	private debugUniform = uniform(0);
@@ -303,8 +304,7 @@ export class MediaTexture extends DynamicTexture {
 		canvas.registerDynamicTexture(this);
 
 		const rawUV = inputUV ?? uv();
-		const imageUV = this.screenToImageUV(rawUV, canvas);
-		return this.sampleTexture(imageUV);
+		return this.sampleTexture(rawUV);
 	}
 
 	protected update(): void {
@@ -342,8 +342,9 @@ export class MediaTexture extends DynamicTexture {
 			this._texture.needsUpdate = true;
 		}
 
-		this.widthUniform.value = mediaWidth;
-		this.heightUniform.value = mediaHeight;
+		this._widthUniform.value = mediaWidth;
+		this._heightUniform.value = mediaHeight;
+		this._aspectRatioUniform.value = mediaWidth / mediaHeight;
 		this.debugUniform.value = debug ? 1 : 0;
 		this.debugLineWidthX.value = 1 / mediaWidth;
 		this.debugLineWidthY.value = 1 / mediaHeight;
@@ -396,16 +397,6 @@ export class MediaTexture extends DynamicTexture {
 				sampled
 			),
 			vec4(0, 0, 0, 0)
-		);
-	}
-
-	private screenToImageUV(screenUV: Node, canvas: Canvas2D): Node {
-		const screenPixelX = screenUV.x.mul(canvas.widthUniform);
-		const screenPixelY = screenUV.y.mul(canvas.heightUniform);
-
-		return vec2(
-			screenPixelX.div(this.widthUniform),
-			screenPixelY.div(this.heightUniform)
 		);
 	}
 
@@ -505,5 +496,61 @@ export class MediaTexture extends DynamicTexture {
 			return this.mediaElement.paused;
 		}
 		return true;
+	}
+
+	protected getWidth(): number {
+		if (!this.isLoaded) return 0;
+
+		const media = this.mediaElement;
+		if (media instanceof HTMLVideoElement) {
+			return media.videoWidth;
+		} else if (media instanceof HTMLImageElement) {
+			return media.naturalWidth || media.width;
+		}
+		return 0;
+	}
+
+	protected getHeight(): number {
+		if (!this.isLoaded) return 0;
+
+		const media = this.mediaElement;
+		if (media instanceof HTMLVideoElement) {
+			return media.videoHeight;
+		} else if (media instanceof HTMLImageElement) {
+			return media.naturalHeight || media.height;
+		}
+		return 0;
+	}
+
+	protected getAspectRatio(): number {
+		const h = this.getHeight();
+		return h > 0 ? this.getWidth() / h : 1;
+	}
+
+	/**
+	 * Get a uniform node representing the texture's width in pixels.
+	 * This uniform automatically updates when the media loads.
+	 * Use this in your node graph for reactive width handling.
+	 */
+	get widthUniform() {
+		return this._widthUniform;
+	}
+
+	/**
+	 * Get a uniform node representing the texture's height in pixels.
+	 * This uniform automatically updates when the media loads.
+	 * Use this in your node graph for reactive height handling.
+	 */
+	get heightUniform() {
+		return this._heightUniform;
+	}
+
+	/**
+	 * Get a uniform node representing the texture's aspect ratio (width/height).
+	 * This uniform automatically updates when the media loads.
+	 * Use this in your node graph for reactive aspect ratio handling.
+	 */
+	get aspectRatioUniform() {
+		return this._aspectRatioUniform;
 	}
 }

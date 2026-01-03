@@ -92,8 +92,9 @@ export class TextTexture extends DynamicTexture {
 	private canvas: HTMLCanvasElement;
 	private ctx: CanvasRenderingContext2D;
 
-	private widthUniform = uniform(0);
-	private heightUniform = uniform(0);
+	private _widthUniform = uniform(0);
+	private _heightUniform = uniform(0);
+	private _aspectRatioUniform = uniform(1);
 	private anchorOffsetXUniform = uniform(0.5);
 	private anchorOffsetYUniform = uniform(0.5);
 	private debugUniform = uniform(0);
@@ -151,7 +152,6 @@ export class TextTexture extends DynamicTexture {
 		const rawUV = inputUV ?? uv();
 		const textUV = this.screenToTextUV(rawUV, canvas);
 		return this.sampleTexture(textUV);
-		/* return this.sampleTexture(rawUV); */
 	}
 
 	protected async update(): Promise<void> {
@@ -220,6 +220,8 @@ export class TextTexture extends DynamicTexture {
 			this.gpuTextureHeight = newCanvasHeight;
 		}
 
+		// Reset transform and apply DPR scaling
+		this.ctx.setTransform(1, 0, 0, 1, 0, 0);
 		this.ctx.scale(dpr, dpr);
 		this.ctx.font = `${String(weight)} ${String(size)}px ${fontFamily ?? "Arial"}`;
 		this.ctx.letterSpacing = letterSpacing;
@@ -238,8 +240,9 @@ export class TextTexture extends DynamicTexture {
 			this.ctx.fillText(line, drawX, drawY);
 		}
 
-		this.widthUniform.value = canvasWidth;
-		this.heightUniform.value = canvasHeight;
+		this._widthUniform.value = canvasWidth;
+		this._heightUniform.value = canvasHeight;
+		this._aspectRatioUniform.value = canvasWidth / canvasHeight;
 		this.debugUniform.value = debug ? 1 : 0;
 		this.debugLineWidthX.value = 1 / canvasWidth;
 		this.debugLineWidthY.value = 1 / canvasHeight;
@@ -315,8 +318,8 @@ export class TextTexture extends DynamicTexture {
 		const screenPixelY = screenUV.y.mul(canvas.heightUniform);
 
 		return vec2(
-			screenPixelX.div(this.widthUniform),
-			screenPixelY.div(this.heightUniform)
+			screenPixelX.div(this._widthUniform),
+			screenPixelY.div(this._heightUniform)
 		);
 	}
 
@@ -354,5 +357,45 @@ export class TextTexture extends DynamicTexture {
 			default:
 				return 0.5;
 		}
+	}
+
+	protected getWidth(): number {
+		return this.gpuTextureWidth / window.devicePixelRatio;
+	}
+
+	protected getHeight(): number {
+		return this.gpuTextureHeight / window.devicePixelRatio;
+	}
+
+	protected getAspectRatio(): number {
+		const h = this.getHeight();
+		return h > 0 ? this.getWidth() / h : 1;
+	}
+
+	/**
+	 * Get a uniform node representing the texture's width in pixels.
+	 * This uniform automatically updates when the text changes.
+	 * Use this in your node graph for reactive width handling.
+	 */
+	get widthUniform() {
+		return this._widthUniform;
+	}
+
+	/**
+	 * Get a uniform node representing the texture's height in pixels.
+	 * This uniform automatically updates when the text changes.
+	 * Use this in your node graph for reactive height handling.
+	 */
+	get heightUniform() {
+		return this._heightUniform;
+	}
+
+	/**
+	 * Get a uniform node representing the texture's aspect ratio (width/height).
+	 * This uniform automatically updates when the text changes.
+	 * Use this in your node graph for reactive aspect ratio handling.
+	 */
+	get aspectRatioUniform() {
+		return this._aspectRatioUniform;
 	}
 }

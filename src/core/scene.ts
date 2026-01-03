@@ -1,4 +1,14 @@
-import * as THREE from "three";
+import {
+	Scene,
+	RenderTarget,
+	OrthographicCamera,
+	Mesh,
+	PlaneGeometry,
+	SRGBColorSpace,
+	Color,
+	NoColorSpace,
+	LinearFilter
+} from "three";
 import {
 	WebGPURenderer,
 	Node,
@@ -18,16 +28,16 @@ type MaterialWithColorNode = MeshBasicNodeMaterial & { colorNode: Node };
 // Type for RTTNode which has a renderTarget property
 type RTTNodeLike = Node & {
 	isRTTNode?: boolean;
-	renderTarget?: THREE.RenderTarget;
+	renderTarget?: RenderTarget;
 };
 
 export class Canvas2D {
 	// renderer / scene objects
-	private sceneObj: THREE.Scene | null = null;
+	private sceneObj: Scene | null = null;
 	private rendererObj: WebGPURenderer | null = null;
-	private cameraObj: THREE.OrthographicCamera | null = null;
-	private planeMesh: THREE.Mesh | null = null;
-	private planeGeometry: THREE.PlaneGeometry | null = null;
+	private cameraObj: OrthographicCamera | null = null;
+	private planeMesh: Mesh | null = null;
+	private planeGeometry: PlaneGeometry | null = null;
 	private canvasEl: HTMLCanvasElement | null = null;
 	private textureObj: CanvasTexture | null = null;
 
@@ -110,16 +120,19 @@ export class Canvas2D {
 		Canvas2D._currentCanvas = this;
 
 		if (!this.sceneObj) {
-			this.sceneObj = new THREE.Scene();
+			this.sceneObj = new Scene();
 
 			this.rendererObj = new WebGPURenderer({ forceWebGL: false });
 			await this.rendererObj.init();
-			this.rendererObj.outputColorSpace = THREE.SRGBColorSpace;
-			this.rendererObj.setClearColor(new THREE.Color(0x808080));
+			this.rendererObj.outputColorSpace = SRGBColorSpace;
+			this.rendererObj.setClearColor(new Color(0x808080));
 
 			this.canvasEl = this.rendererObj.domElement;
 			this.textureObj = new CanvasTexture(this.canvasEl);
-			this.textureObj.colorSpace = THREE.NoColorSpace;
+			this.textureObj.colorSpace = NoColorSpace;
+			this.textureObj.generateMipmaps = false;
+			this.textureObj.minFilter = LinearFilter;
+			this.textureObj.magFilter = LinearFilter;
 
 			Canvas2D.configRenderer(
 				this.rendererObj,
@@ -128,8 +141,8 @@ export class Canvas2D {
 				window.devicePixelRatio
 			);
 
-			this.planeGeometry = new THREE.PlaneGeometry(1, 1);
-			this.planeMesh = new THREE.Mesh(this.planeGeometry, this.material);
+			this.planeGeometry = new PlaneGeometry(1, 1);
+			this.planeMesh = new Mesh(this.planeGeometry, this.material);
 			this.sceneObj.add(this.planeMesh);
 
 			const planeSize = {
@@ -138,7 +151,7 @@ export class Canvas2D {
 			};
 			this.planeMesh.scale.set(planeSize.w, planeSize.h, 1);
 
-			this.cameraObj = new THREE.OrthographicCamera(
+			this.cameraObj = new OrthographicCamera(
 				-planeSize.w / 2,
 				planeSize.w / 2,
 				planeSize.h / 2,
@@ -382,17 +395,17 @@ export class Canvas2D {
 		return this.rendererObj;
 	}
 
-	get scene(): THREE.Scene {
+	get scene(): Scene {
 		if (!this.sceneObj) throw new Error("Canvas not initialized");
 		return this.sceneObj;
 	}
 
-	get camera(): THREE.OrthographicCamera {
+	get camera(): OrthographicCamera {
 		if (!this.cameraObj) throw new Error("Canvas not initialized");
 		return this.cameraObj;
 	}
 
-	get mesh(): THREE.Mesh {
+	get mesh(): Mesh {
 		if (!this.planeMesh) throw new Error("Canvas not initialized");
 		return this.planeMesh;
 	}

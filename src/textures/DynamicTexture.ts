@@ -31,4 +31,12 @@ export abstract class DynamicTexture {
 	}
 
 	protected abstract update(): void | Promise<void>;
+
+	/**
+	 * Dispose of the texture resources. Subclasses should override to clean up
+	 * additional resources.
+	 */
+	dispose(): void {
+		this._texture.dispose();
+	}
 }

@@ -8,8 +8,8 @@ const canvas = new Canvas2D(window.innerWidth, window.innerHeight, {
 	antialias: "none"
 });
 
-const imageTexture = new ImageTexture({
-	src: "./test-image.png",
+const imageTexture = new MediaTexture({
+	src: "./test-video.mp4",
 	anchorX: "left",
 	anchorY: "bottom",
 	debug: true
@@ -23,7 +23,7 @@ await canvas.draw(() => {
 	const imageSample = imageTexture.sample();
 
 	// Composite image over a background color
-	const backgroundColor = color("#000000");
+	const backgroundColor = color("#ff0000");
 	const composited = mix(backgroundColor, imageSample.rgb, imageSample.a);
 
 	return composited;

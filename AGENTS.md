@@ -12,3 +12,4 @@ Notes:
 
 1. The three.js documentation is often incomplete, and you will have to search through the three.js source files using `find` or `rg` in terminal, as your `regex` command doesn't allow to search in `node_modules`.
 2. `three-tsl-lab` is currently unpublished and in early alpha. No changes made to the project should be backwards-compatible.
+3. Whenever you finish implementing something, unless explicitely requested not to, always run `pnpm lint` to make sure you have no errors. If you do, iterate until all problems are fixed.

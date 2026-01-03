@@ -4,6 +4,7 @@ import type { Node } from "three/webgpu";
 import { LinearFilter, SRGBColorSpace } from "three";
 import { Canvas2D } from "../core/scene";
 import { DynamicTexture } from "./DynamicTexture";
+import { wrapUV } from "../utils";
 
 export type MediaTextureOptions = {
 	src: string | HTMLImageElement | HTMLVideoElement;
@@ -189,8 +190,6 @@ export class MediaTexture extends DynamicTexture {
 		this._texture.dispose();
 		const imageTexture = new Texture(image);
 		imageTexture.generateMipmaps = false;
-		imageTexture.minFilter = LinearFilter;
-		imageTexture.magFilter = LinearFilter;
 		imageTexture.colorSpace = SRGBColorSpace; // Required for WebGPU
 		imageTexture.needsUpdate = true;
 
@@ -201,6 +200,7 @@ export class MediaTexture extends DynamicTexture {
 		}
 
 		this._texture = imageTexture;
+		this.applyInterpolation();
 
 		console.debug(
 			"[MediaTexture] Replaced with Image Texture, colorSpace set to SRGB"
@@ -280,8 +280,6 @@ export class MediaTexture extends DynamicTexture {
 		this._texture.dispose();
 		const videoTexture = new VideoTexture(video);
 		videoTexture.generateMipmaps = false;
-		videoTexture.minFilter = LinearFilter;
-		videoTexture.magFilter = LinearFilter;
 		videoTexture.colorSpace = SRGBColorSpace; // Required for WebGPU
 
 		// Update the TextureNode's value to point to new texture
@@ -291,6 +289,7 @@ export class MediaTexture extends DynamicTexture {
 		}
 
 		this._texture = videoTexture;
+		this.applyInterpolation();
 
 		console.debug(
 			"[MediaTexture] Replaced with VideoTexture, colorSpace set to SRGB"
@@ -359,30 +358,29 @@ export class MediaTexture extends DynamicTexture {
 			inputUV.y.add(this.anchorOffsetYUniform)
 		);
 
-		const inBoundsX = transformedUV.x
-			.greaterThanEqual(0)
-			.and(transformedUV.x.lessThanEqual(1));
-		const inBoundsY = transformedUV.y
-			.greaterThanEqual(0)
-			.and(transformedUV.y.lessThanEqual(1));
-		const inBounds = inBoundsX.and(inBoundsY);
+		// Apply texture wrapping
+		const { uv: wrappedUV, inBounds } = wrapUV(
+			transformedUV,
+			this.wrapMode
+		);
 
-		// Create or reuse TextureNode
-		this.textureNode ??= texture(this.texture, transformedUV);
+		// Create or reuse TextureNode with wrapped UVs
+		this.textureNode ??= texture(this.texture, wrappedUV);
 		const sampled = this.textureNode;
 
-		const nearLeftEdge = transformedUV.x
+		// Debug edges using wrapped UV coordinates
+		const nearLeftEdge = wrappedUV.x
 			.greaterThanEqual(0)
-			.and(transformedUV.x.lessThan(this.debugLineWidthX));
-		const nearRightEdge = transformedUV.x
+			.and(wrappedUV.x.lessThan(this.debugLineWidthX));
+		const nearRightEdge = wrappedUV.x
 			.greaterThan(float(1).sub(this.debugLineWidthX))
-			.and(transformedUV.x.lessThanEqual(1));
-		const nearTopEdge = transformedUV.y
+			.and(wrappedUV.x.lessThanEqual(1));
+		const nearTopEdge = wrappedUV.y
 			.greaterThan(float(1).sub(this.debugLineWidthY))
-			.and(transformedUV.y.lessThanEqual(1));
-		const nearBottomEdge = transformedUV.y
+			.and(wrappedUV.y.lessThanEqual(1));
+		const nearBottomEdge = wrappedUV.y
 			.greaterThanEqual(0)
-			.and(transformedUV.y.lessThan(this.debugLineWidthY));
+			.and(wrappedUV.y.lessThan(this.debugLineWidthY));
 		const isEdge = nearLeftEdge
 			.or(nearRightEdge)
 			.or(nearTopEdge)

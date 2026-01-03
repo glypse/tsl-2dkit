@@ -1,4 +1,8 @@
+import type { WrapMode } from "$lib/utils";
 import type { Texture } from "three";
+import { LinearFilter, NearestFilter } from "three";
+
+export type InterpolationMode = "linear" | "nearest";
 
 /**
  * Base class for CPU-driven textures that can be refreshed on demand.
@@ -8,6 +12,8 @@ import type { Texture } from "three";
  */
 export abstract class DynamicTexture {
 	needsUpdate = true;
+	wrapMode: WrapMode = "clamp";
+	private _interpolationMode: InterpolationMode = "linear";
 
 	protected _texture: Texture;
 
@@ -17,6 +23,31 @@ export abstract class DynamicTexture {
 
 	get texture(): Texture {
 		return this._texture;
+	}
+
+	get interpolation(): InterpolationMode {
+		return this._interpolationMode;
+	}
+
+	set interpolation(mode: InterpolationMode) {
+		this._interpolationMode = mode;
+		const filter = mode === "nearest" ? NearestFilter : LinearFilter;
+		this._texture.minFilter = filter;
+		this._texture.magFilter = filter;
+		this._texture.needsUpdate = true;
+	}
+
+	/**
+	 * Apply the current interpolation mode to the texture.
+	 * Should be called whenever the internal texture is replaced.
+	 */
+	protected applyInterpolation(): void {
+		const filter =
+			this._interpolationMode === "nearest"
+				? NearestFilter
+				: LinearFilter;
+		this._texture.minFilter = filter;
+		this._texture.magFilter = filter;
 	}
 
 	/**

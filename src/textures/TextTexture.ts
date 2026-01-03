@@ -1,9 +1,10 @@
 import { CanvasTexture, TextureNode } from "three/webgpu";
 import { texture, vec4, vec2, uniform, float, select, uv } from "three/tsl";
 import type { Node } from "three/webgpu";
-import { Color, LinearFilter } from "three";
+import { Color } from "three";
 import { Canvas2D } from "../core/scene";
 import { DynamicTexture } from "./DynamicTexture";
+import { wrapUV } from "../utils";
 
 type AnchorX = "left" | "center" | "right";
 type AnchorY = "descenders" | "baseline" | "middle" | "ascenders";
@@ -204,14 +205,15 @@ export class TextTexture extends DynamicTexture {
 			// Create new CanvasTexture with the resized canvas
 			const newTexture = new CanvasTexture(this.canvas);
 			newTexture.generateMipmaps = false;
-			newTexture.minFilter = LinearFilter;
-			newTexture.magFilter = LinearFilter;
 
 			// Update the TextureNode's value to point to new texture
 			// This allows the node graph to use the new texture without rebuilding
 			if (this.textureNode) {
 				this.textureNode.value = newTexture;
 			}
+
+			this._texture = newTexture;
+			this.applyInterpolation();
 
 			// Track new GPU dimensions
 			this.gpuTextureWidth = newCanvasWidth;
@@ -262,16 +264,14 @@ export class TextTexture extends DynamicTexture {
 			inputUV.y.add(this.anchorOffsetYUniform)
 		);
 
-		const inBoundsX = transformedUV.x
-			.greaterThanEqual(0)
-			.and(transformedUV.x.lessThanEqual(1));
-		const inBoundsY = transformedUV.y
-			.greaterThanEqual(0)
-			.and(transformedUV.y.lessThanEqual(1));
-		const inBounds = inBoundsX.and(inBoundsY);
+		// Apply texture wrapping
+		const { uv: wrappedUV, inBounds } = wrapUV(
+			transformedUV,
+			this.wrapMode
+		);
 
-		// Create or reuse TextureNode - this allows texture swapping without rebuilding node graph
-		this.textureNode ??= texture(this.texture, transformedUV);
+		// Create or reuse TextureNode with wrapped UVs
+		this.textureNode ??= texture(this.texture, wrappedUV);
 		const sampled = this.textureNode;
 		const alpha = sampled.r.pow(2.2);
 		const textColor = vec4(
@@ -281,18 +281,19 @@ export class TextTexture extends DynamicTexture {
 			alpha
 		);
 
-		const nearLeftEdge = transformedUV.x
+		// Debug edges using wrapped UV coordinates
+		const nearLeftEdge = wrappedUV.x
 			.greaterThanEqual(0)
-			.and(transformedUV.x.lessThan(this.debugLineWidthX));
-		const nearRightEdge = transformedUV.x
+			.and(wrappedUV.x.lessThan(this.debugLineWidthX));
+		const nearRightEdge = wrappedUV.x
 			.greaterThan(float(1).sub(this.debugLineWidthX))
-			.and(transformedUV.x.lessThanEqual(1));
-		const nearTopEdge = transformedUV.y
+			.and(wrappedUV.x.lessThanEqual(1));
+		const nearTopEdge = wrappedUV.y
 			.greaterThan(float(1).sub(this.debugLineWidthY))
-			.and(transformedUV.y.lessThanEqual(1));
-		const nearBottomEdge = transformedUV.y
+			.and(wrappedUV.y.lessThanEqual(1));
+		const nearBottomEdge = wrappedUV.y
 			.greaterThanEqual(0)
-			.and(transformedUV.y.lessThan(this.debugLineWidthY));
+			.and(wrappedUV.y.lessThan(this.debugLineWidthY));
 		const isEdge = nearLeftEdge
 			.or(nearRightEdge)
 			.or(nearTopEdge)

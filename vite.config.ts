@@ -27,11 +27,10 @@ export default defineConfig(({ command }) => {
 					entry: resolve(__dirname, "src/index.ts"),
 					name: "three-tsl-lab",
 					formats: ["es", "umd"],
-					fileName: (format) => {
-						return format === "umd"
+					fileName: (format) =>
+						format === "umd"
 							? "three-tsl-lab.umd.cjs"
-							: "three-tsl-lab.js";
-					}
+							: "three-tsl-lab.js"
 				},
 				rolldownOptions: {
 					external: ["three"],

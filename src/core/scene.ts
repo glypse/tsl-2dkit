@@ -102,9 +102,7 @@ export class Canvas2D {
 		this._widthUniform = uniform(this._width);
 		this._heightUniform = uniform(this._height);
 
-		const outputNode = Fn(() => {
-			return vec3(0);
-		});
+		const outputNode = Fn(() => vec3(0));
 		this.material = new MeshBasicNodeMaterial({
 			colorNode: outputNode()
 		}) as MaterialWithColorNode;
@@ -323,9 +321,7 @@ export class Canvas2D {
 	private async _updateDynamicTextures(): Promise<void> {
 		if (!this.dynamicTextures.size) return;
 		await Promise.all(
-			Array.from(this.dynamicTextures, (tex) => {
-				return tex.updateIfNeeded();
-			})
+			Array.from(this.dynamicTextures, (tex) => tex.updateIfNeeded())
 		);
 	}
 

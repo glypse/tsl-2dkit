@@ -20,18 +20,14 @@ export class FixedTime {
 	 */
 	readonly timeUniform = uniform(0)
 		.setGroup(renderGroup)
-		.onRenderUpdate(() => {
-			return this._time;
-		});
+		.onRenderUpdate(() => this._time);
 
 	/**
 	 * TSL uniform for delta time (in seconds).
 	 */
 	readonly deltaTimeUniform = uniform(0)
 		.setGroup(renderGroup)
-		.onRenderUpdate(() => {
-			return this._deltaTime;
-		});
+		.onRenderUpdate(() => this._deltaTime);
 
 	/**
 	 * Get the current elapsed time in seconds.

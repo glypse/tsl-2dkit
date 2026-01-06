@@ -1,5 +1,6 @@
 import type { WrapMode } from "$lib/utils";
 import type { Texture } from "three";
+import type { Node } from "three/webgpu";
 import { LinearFilter, NearestFilter } from "three";
 import { TSLScene2D } from "../core";
 import { uniform } from "three/tsl";
@@ -96,6 +97,12 @@ export abstract class UpdatableTexture {
 	 * Use this in your node graph for reactive aspect ratio handling.
 	 */
 	abstract get aspectUniform(): ReturnType<typeof uniform<number>>;
+
+	/**
+	 * Sample this texture using provided UVs. Implementations should register
+	 * themselves with the active scene if they need per-frame updates.
+	 */
+	abstract sample(inputUV?: Node): Node;
 
 	/**
 	 * Aspect ratio (width / height).

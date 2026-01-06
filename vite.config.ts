@@ -25,12 +25,10 @@ export default defineConfig(({ command }) => {
 				emptyOutDir: false,
 				lib: {
 					entry: resolve(__dirname, "src/index.ts"),
-					name: "three-tsl-lab",
+					name: "tsl-2dkit",
 					formats: ["es", "umd"],
 					fileName: (format) =>
-						format === "umd"
-							? "three-tsl-lab.umd.cjs"
-							: "three-tsl-lab.js"
+						format === "umd" ? "tsl-2dkit.umd.cjs" : "tsl-2dkit.js"
 				},
 				rolldownOptions: {
 					external: ["three"],

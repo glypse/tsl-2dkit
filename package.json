@@ -1,5 +1,5 @@
 {
-	"name": "three-tsl-lab",
+	"name": "tsl-2dkit",
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
@@ -7,13 +7,13 @@
 	"files": [
 		"dist"
 	],
-	"main": "./dist/three-tsl-lab.umd.cjs",
-	"module": "./dist/three-tsl-lab.js",
+	"main": "./dist/tsl-2dkit.umd.cjs",
+	"module": "./dist/tsl-2dkit.js",
 	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
-			"import": "./dist/three-tsl-lab.js",
-			"require": "./dist/three-tsl-lab.umd.cjs",
+			"import": "./dist/tsl-2dkit.js",
+			"require": "./dist/tsl-2dkit.umd.cjs",
 			"types": "./dist/index.d.ts"
 		}
 	},

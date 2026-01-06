@@ -1,7 +1,7 @@
 import type { WrapMode } from "$lib/utils";
 import type { Texture } from "three";
 import { LinearFilter, NearestFilter } from "three";
-import { Canvas2D } from "../core/scene";
+import { TSLScene2D } from "../core";
 import { uniform } from "three/tsl";
 
 export type InterpolationMode = "linear" | "nearest";
@@ -9,10 +9,10 @@ export type InterpolationMode = "linear" | "nearest";
 /**
  * Base class for CPU-driven textures that can be refreshed on demand.
  * Subclasses set `needsUpdate = true` when their CPU backing changes; the
- * Canvas2D render loop will call `updateIfNeeded()` and upload the new pixels
+ * TSLScene2D render loop will call `updateIfNeeded()` and upload the new pixels
  * before rendering.
  */
-export abstract class DynamicTexture {
+export abstract class UpdatableTexture {
 	needsUpdate = true;
 	wrapMode: WrapMode = "clamp";
 	private _interpolationMode: InterpolationMode = "linear";
@@ -41,14 +41,14 @@ export abstract class DynamicTexture {
 
 	/**
 	 * Width of the texture in pixels.
-	 * Warns if accessed outside of canvas.draw() context.
+	 * Warns if accessed outside of TSLScene2D.build() context.
 	 */
 	get width(): number {
 		try {
-			void Canvas2D.currentCanvas;
+			void TSLScene2D.currentScene;
 		} catch {
 			console.warn(
-				`[${this.constructor.name}] Accessing width outside of canvas.draw() context. The value may not be initialized yet.`
+				`[${this.constructor.name}] Accessing width outside of TSLScene2D.build() context. The value may not be initialized yet.`
 			);
 		}
 		return this.getWidth();
@@ -56,14 +56,14 @@ export abstract class DynamicTexture {
 
 	/**
 	 * Height of the texture in pixels.
-	 * Warns if accessed outside of canvas.draw() context.
+	 * Warns if accessed outside of TSLScene2D.build() context.
 	 */
 	get height(): number {
 		try {
-			void Canvas2D.currentCanvas;
+			void TSLScene2D.currentScene;
 		} catch {
 			console.warn(
-				`[${this.constructor.name}] Accessing height outside of canvas.draw() context. The value may not be initialized yet.`
+				`[${this.constructor.name}] Accessing height outside of TSLScene2D.build() context. The value may not be initialized yet.`
 			);
 		}
 		return this.getHeight();
@@ -95,18 +95,18 @@ export abstract class DynamicTexture {
 	 * This uniform automatically updates when the texture changes.
 	 * Use this in your node graph for reactive aspect ratio handling.
 	 */
-	abstract get aspectRatioUniform(): ReturnType<typeof uniform<number>>;
+	abstract get aspectUniform(): ReturnType<typeof uniform<number>>;
 
 	/**
 	 * Aspect ratio (width / height).
-	 * Warns if accessed outside of canvas.draw() context.
+	 * Warns if accessed outside of TSLScene2D.build() context.
 	 */
 	get aspectRatio(): number {
 		try {
-			void Canvas2D.currentCanvas;
+			void TSLScene2D.currentScene;
 		} catch {
 			console.warn(
-				`[${this.constructor.name}] Accessing aspectRatio outside of canvas.draw() context. The value may not be initialized yet.`
+				`[${this.constructor.name}] Accessing aspectRatio outside of TSLScene2D.build() context. The value may not be initialized yet.`
 			);
 		}
 		return this.getAspectRatio();

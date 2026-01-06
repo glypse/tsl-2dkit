@@ -1,21 +1,29 @@
 import "$demo/style.css";
 
-import { Canvas2D, TextTexture } from "$lib";
+import { TSLScene2D, TextTexture } from "$lib";
 import { uniform, floor, time, sin, color, mix, uv, vec2 } from "three/tsl";
 import { lerp } from "three/src/math/MathUtils.js";
 
+/**
+ * Gets the mouse position on the element in a 0-1 range.
+ * @param element - The element to get the position relative to.
+ * @param event - The mouse event containing the client coordinates.
+ * @returns An object containing the relative mouse position.
+ *          - `x`: The horizontal position as a fraction of the element width (0 to 1).
+ *          - `y`: The vertical position as a fraction of the element height (0 to 1).
+ */
 function getRelativeMousePosition(
-	canvasElement: HTMLCanvasElement,
+	element: HTMLElement,
 	event: MouseEvent
-) {
-	const rect = canvasElement.getBoundingClientRect();
+): { x: number; y: number } {
+	const rect = element.getBoundingClientRect();
 	return {
 		x: (event.clientX - rect.left) / rect.width,
 		y: (event.clientY - rect.top) / rect.height
 	};
 }
 
-const canvas = new Canvas2D(window.innerWidth, window.innerHeight, {
+const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 	stats: true,
 	antialias: "none"
 });
@@ -23,7 +31,7 @@ const canvas = new Canvas2D(window.innerWidth, window.innerHeight, {
 const mouse = { x: 0.5, y: 0.5 };
 
 const textTexture = new TextTexture({
-	string: "a",
+	text: "a",
 	size: Math.min(window.innerWidth, window.innerHeight),
 	// Initial value, not reactive value
 	weight: lerp(200, 800, mouse.y),
@@ -34,8 +42,11 @@ const textTexture = new TextTexture({
 });
 
 window.addEventListener("resize", () => {
-	canvas.resize(window.innerWidth, window.innerHeight);
-	textTexture.config.size = Math.min(window.innerWidth, window.innerHeight);
+	scene.resize(window.innerWidth, window.innerHeight);
+	textTexture.parameters.size = Math.min(
+		window.innerWidth,
+		window.innerHeight
+	);
 	textTexture.needsUpdate = true;
 });
 
@@ -45,10 +56,10 @@ const speed = uniform(1);
 // Initial value, not reactive value
 const waveStrength = uniform(lerp(0, 0.1, mouse.x));
 
-await canvas.draw(() => {
+await scene.build(() => {
 	const UV = uv();
 
-	const tileX = floor(UV.x.mul(tileAmount).mul(canvas.aspectUniform));
+	const tileX = floor(UV.x.mul(tileAmount).mul(scene.aspectUniform));
 	const tileY = floor(UV.y.mul(tileAmount));
 
 	const wave = sin(time.mul(speed).add(tileX.add(tileY))).mul(waveStrength);
@@ -62,12 +73,12 @@ await canvas.draw(() => {
 	return compositedText;
 });
 
-canvas.canvasElement.addEventListener("mousemove", (event) => {
-	const mouse = getRelativeMousePosition(canvas.canvasElement, event);
+scene.canvasElement.addEventListener("mousemove", (event) => {
+	const mouse = getRelativeMousePosition(scene.canvasElement, event);
 	waveStrength.value = lerp(0, 0.1, mouse.x);
 
-	textTexture.config.weight = lerp(200, 800, mouse.y);
+	textTexture.parameters.weight = lerp(200, 800, mouse.y);
 	textTexture.needsUpdate = true;
 });
 
-document.body.appendChild(canvas.canvasElement);
+document.body.appendChild(scene.canvasElement);

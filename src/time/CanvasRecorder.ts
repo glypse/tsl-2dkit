@@ -5,7 +5,7 @@ import {
 	WebMOutputFormat,
 	CanvasSource
 } from "mediabunny";
-import type { Canvas2D } from "../core/scene";
+import type { TSLScene2D } from "../core";
 import type { FixedTime } from "./fixedTime";
 
 export type CanvasRecorderOptions = {
@@ -54,7 +54,7 @@ type RecorderState = "inactive" | "recording";
  * canvas.setFixedTime(fixedTime);
  *
  * // Use fixedTime.timeUniform in your shaders
- * await canvas.draw(() => someShader(fixedTime.timeUniform));
+ * await TSLScene2D.build(() => someShader(fixedTime.timeUniform));
  *
  * const recorder = new CanvasRecorder(canvas, fixedTime);
  *
@@ -68,7 +68,7 @@ type RecorderState = "inactive" | "recording";
  * ```
  */
 export class CanvasRecorder {
-	private canvas2d: Canvas2D;
+	private canvas2d: TSLScene2D;
 	private fixedTime: FixedTime;
 	private _state: RecorderState = "inactive";
 	private options: Required<Omit<CanvasRecorderOptions, "codec">> & {
@@ -84,7 +84,7 @@ export class CanvasRecorder {
 	private recordingResolve: ((blob: Blob) => void) | null = null;
 
 	constructor(
-		canvas2d: Canvas2D,
+		canvas2d: TSLScene2D,
 		fixedTime: FixedTime,
 		options: CanvasRecorderOptions = {}
 	) {
@@ -247,7 +247,7 @@ export class CanvasRecorder {
 		});
 
 		// Start the recording loop
-		const recordLoop = async () => {
+		const recordLoop = async (): Promise<Blob> => {
 			try {
 				while (!this.stopRequested) {
 					// Check if we've reached the target duration

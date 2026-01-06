@@ -1,3 +1,3 @@
-export * from "./DynamicTexture";
+export * from "./UpdatableTexture";
 export * from "./MediaTexture";
 export * from "./TextTexture";

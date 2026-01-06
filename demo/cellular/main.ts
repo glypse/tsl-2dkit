@@ -1,15 +1,15 @@
 import "$demo/style.css";
 
-import { Canvas2D, getAspectCorrectedUV, TextTexture, voronoi } from "$lib";
+import { TSLScene2D, aspectCorrectedUV, TextTexture, voronoi } from "$lib";
 import { vec2, vec3, float, time, color, mix, uniform, uv } from "three/tsl";
 
-const canvas = new Canvas2D(window.innerWidth, window.innerHeight, {
+const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 	stats: true,
 	antialias: "none"
 });
 
 window.addEventListener("resize", () => {
-	canvas.resize(window.innerWidth, window.innerHeight);
+	scene.resize(window.innerWidth, window.innerHeight);
 });
 
 const seed = uniform(Math.random() * 10000);
@@ -24,7 +24,7 @@ const voronoiCutoff = uniform(0.009);
 const displaceStrength = uniform(0.05);
 
 const textTexture = new TextTexture({
-	string: "Cellular",
+	text: "Cellular",
 	color: "#d1cfbb",
 	fontFamily: "Fustat",
 	size: 150,
@@ -34,16 +34,12 @@ const textTexture = new TextTexture({
 	debug: false
 });
 
-await canvas.draw(() => {
+await scene.build(() => {
 	const screenSpaceSmoothness = float(window.devicePixelRatio)
 		.div(15000)
 		.mul(voronoiScale);
 
-	const UV = getAspectCorrectedUV(
-		"contain",
-		canvas.aspectUniform,
-		"generation"
-	);
+	const UV = aspectCorrectedUV("contain", scene.aspectUniform, "generation");
 
 	const voronoiPos = vec3(
 		UV.x.mul(voronoiScale),
@@ -112,4 +108,4 @@ await canvas.draw(() => {
 	return voronoiTextAndCrosses;
 });
 
-document.body.appendChild(canvas.canvasElement);
+document.body.appendChild(scene.canvasElement);

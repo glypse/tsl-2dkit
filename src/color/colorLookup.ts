@@ -19,15 +19,15 @@ export function colorLookup(
 
 export function gradient(
 	stops: { position: number; color: string }[],
-	opts: { width?: number; height?: number; mode?: Mode } = {
+	parameters: { width?: number; height?: number; mode?: Mode } = {
 		width: 256,
 		height: 1,
 		mode: "rgb"
 	}
 ): Texture {
-	const width = opts.width ?? 256;
-	const height = opts.height ?? 1;
-	const mode = opts.mode ?? "rgb";
+	const width = parameters.width ?? 256;
+	const height = parameters.height ?? 1;
+	const mode = parameters.mode ?? "rgb";
 
 	const canvas = document.createElement("canvas");
 	canvas.width = width;

@@ -17,7 +17,7 @@ import {
 } from "three/tsl";
 import { Node, TextureNode } from "three/webgpu";
 
-const maximumFn = Fn(([tex, radius, isRound]: [TextureNode, Node, Node]) => {
+const dilateFn = Fn(([tex, radius, isRound]: [TextureNode, Node, Node]) => {
 	const texSize = textureSize(tex);
 	const pixelSize = vec2(1).div(texSize);
 	const r = floor(radius).toVar();
@@ -41,14 +41,17 @@ const maximumFn = Fn(([tex, radius, isRound]: [TextureNode, Node, Node]) => {
 	return maxVal;
 });
 
-export function maximum(tex: Node, opts: { radius: Node; isRound?: Node }) {
+export function dilate(
+	tex: Node,
+	parameters: { radius: Node; isRound?: Node }
+): Node {
 	const realTex = convertToTexture(tex);
-	const radius = opts.radius;
-	const isRound = opts.isRound ?? bool(false);
-	return maximumFn(realTex, radius, isRound);
+	const radius = parameters.radius;
+	const isRound = parameters.isRound ?? bool(false);
+	return dilateFn(realTex, radius, isRound);
 }
 
-const minimumFn = Fn(([tex, radius, isRound]: [TextureNode, Node, Node]) => {
+const erodeFn = Fn(([tex, radius, isRound]: [TextureNode, Node, Node]) => {
 	const texSize = textureSize(tex);
 	const pixelSize = vec2(1).div(texSize);
 	const r = floor(radius).toVar();
@@ -72,9 +75,12 @@ const minimumFn = Fn(([tex, radius, isRound]: [TextureNode, Node, Node]) => {
 	return minVal;
 });
 
-export function minimum(tex: Node, opts: { radius: Node; isRound?: Node }) {
+export function erode(
+	tex: Node,
+	parameters: { radius: Node; isRound?: Node }
+): Node {
 	const realTex = convertToTexture(tex);
-	const radius = opts.radius;
-	const isRound = opts.isRound ?? bool(false);
-	return minimumFn(realTex, radius, isRound);
+	const radius = parameters.radius;
+	const isRound = parameters.isRound ?? bool(false);
+	return erodeFn(realTex, radius, isRound);
 }

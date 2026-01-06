@@ -188,7 +188,7 @@ const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node]) => {
 
 export function voronoi(
 	position: Node,
-	opts: {
+	parameters: {
 		exponent?: Node;
 		featureOutput?: "f1" | "f2" | "edge" | "smoothF1" | "edgeProjected";
 		randomness?: Node;
@@ -196,11 +196,15 @@ export function voronoi(
 		sliceNormal?: Node;
 	} = {}
 ): Node {
-	const exponent = opts.exponent ?? float(2);
-	const feature = opts.featureOutput ?? "f1";
-	const randomness = opts.randomness ?? float(1);
-	const smoothness = clamp(opts.smoothness ?? float(0), float(0), float(1));
-	const sliceNormal = opts.sliceNormal ?? vec3(0, 0, 1);
+	const exponent = parameters.exponent ?? float(2);
+	const feature = parameters.featureOutput ?? "f1";
+	const randomness = parameters.randomness ?? float(1);
+	const smoothness = clamp(
+		parameters.smoothness ?? float(0),
+		float(0),
+		float(1)
+	);
+	const sliceNormal = parameters.sliceNormal ?? vec3(0, 0, 1);
 	const featureIndex = FEATURE_TO_INDEX[feature];
 	const featureNode = int(featureIndex);
 	return voronoiFn(

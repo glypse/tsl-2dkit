@@ -1,1 +1,1 @@
-export * from "./scene";
+export * from "./TSLScene2D";

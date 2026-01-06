@@ -1,16 +1,16 @@
 import { CanvasTexture, TextureNode } from "three/webgpu";
 import { texture, vec4, vec2, uniform, float, select, uv } from "three/tsl";
-import type { Node } from "three/webgpu";
+import type { Node, UniformNode } from "three/webgpu";
 import { Color } from "three";
-import { Canvas2D } from "../core/scene";
-import { DynamicTexture } from "./DynamicTexture";
+import { TSLScene2D } from "../core";
+import { UpdatableTexture } from "./UpdatableTexture";
 import { wrapUV } from "../utils";
 
 type AnchorX = "left" | "center" | "right";
 type AnchorY = "descenders" | "baseline" | "middle" | "ascenders";
 
 export type TextTextureOptions = {
-	string: string;
+	text: string;
 	color: string;
 	size: number;
 	weight: number;
@@ -28,23 +28,37 @@ function parseColor(colorStr: string): { r: number; g: number; b: number } {
 	return { r: c.r, g: c.g, b: c.b };
 }
 
-function measureText(opts: {
-	string: string;
+function measureText(parameters: {
+	text: string;
 	size: number;
 	weight: number;
 	fontFamily: string;
 	letterSpacing: string;
 	lineHeight: number;
-}) {
+}): {
+	width: number;
+	height: number;
+	ascent: number;
+	descent: number;
+	leftOffset: number;
+	lineHeightPx: number;
+	lines: string[];
+	lineMetrics: {
+		width: number;
+		leftOffset: number;
+		ascent: number;
+		descent: number;
+	}[];
+} {
 	const measureCanvas = document.createElement("canvas");
 	const measureCtx = measureCanvas.getContext("2d");
 	if (!measureCtx) throw new Error("2d context not supported");
 
-	measureCtx.font = `${String(opts.weight)} ${String(opts.size)}px ${opts.fontFamily}`;
-	measureCtx.letterSpacing = opts.letterSpacing;
+	measureCtx.font = `${String(parameters.weight)} ${String(parameters.size)}px ${parameters.fontFamily}`;
+	measureCtx.letterSpacing = parameters.letterSpacing;
 
-	const lines = opts.string.split("\n");
-	const lineHeightPx = opts.size * opts.lineHeight;
+	const lines = parameters.text.split("\n");
+	const lineHeightPx = parameters.size * parameters.lineHeight;
 
 	const lineMetrics = lines.map((line) => {
 		const metrics = measureCtx.measureText(line);
@@ -86,15 +100,15 @@ function measureText(opts: {
 	};
 }
 
-export class TextTexture extends DynamicTexture {
-	config: TextTextureOptions;
+export class TextTexture extends UpdatableTexture {
+	parameters: TextTextureOptions;
 
 	private canvas: HTMLCanvasElement;
 	private ctx: CanvasRenderingContext2D;
 
 	private _widthUniform = uniform(0);
 	private _heightUniform = uniform(0);
-	private _aspectRatioUniform = uniform(1);
+	private _aspectUniform = uniform(1);
 	private anchorOffsetXUniform = uniform(0.5);
 	private anchorOffsetYUniform = uniform(0.5);
 	private debugUniform = uniform(0);
@@ -114,7 +128,7 @@ export class TextTexture extends DynamicTexture {
 	// Cached TextureNode for efficient sampling - allows texture swapping without rebuilding node graph
 	private textureNode: TextureNode | null = null;
 
-	constructor(opts?: Partial<TextTextureOptions>) {
+	constructor(parameters?: Partial<TextTextureOptions>) {
 		const canvas = document.createElement("canvas");
 		const canvasTexture = new CanvasTexture(canvas);
 		canvasTexture.generateMipmaps = false;
@@ -127,8 +141,8 @@ export class TextTexture extends DynamicTexture {
 		this.canvas = canvas;
 		this.ctx = ctx;
 
-		this.config = {
-			string: "Lorem ipsum",
+		this.parameters = {
+			text: "Lorem ipsum",
 			color: "#000000",
 			size: 16,
 			weight: 500,
@@ -139,15 +153,15 @@ export class TextTexture extends DynamicTexture {
 			anchorY: "middle",
 			padding: 0,
 			debug: false,
-			...opts
+			...parameters
 		};
 	}
 
 	sample(inputUV?: Node): Node {
-		const canvas = Canvas2D.currentCanvas;
+		const canvas = TSLScene2D.currentScene;
 
 		// Register for per-frame updates once sampling is requested.
-		canvas.registerDynamicTexture(this);
+		canvas.registerUpdatableTexture(this);
 
 		const rawUV = inputUV ?? uv();
 		const textUV = this.screenToTextUV(rawUV, canvas);
@@ -156,7 +170,7 @@ export class TextTexture extends DynamicTexture {
 
 	protected async update(): Promise<void> {
 		const {
-			string,
+			text,
 			color,
 			size,
 			weight,
@@ -167,14 +181,14 @@ export class TextTexture extends DynamicTexture {
 			anchorY,
 			padding,
 			debug
-		} = this.config;
+		} = this.parameters;
 
 		if (fontFamily) {
 			await document.fonts.ready;
 		}
 
 		const metrics = measureText({
-			string,
+			text,
 			size,
 			weight,
 			fontFamily: fontFamily ?? "Arial",
@@ -242,7 +256,7 @@ export class TextTexture extends DynamicTexture {
 
 		this._widthUniform.value = canvasWidth;
 		this._heightUniform.value = canvasHeight;
-		this._aspectRatioUniform.value = canvasWidth / canvasHeight;
+		this._aspectUniform.value = canvasWidth / canvasHeight;
 		this.debugUniform.value = debug ? 1 : 0;
 		this.debugLineWidthX.value = 1 / canvasWidth;
 		this.debugLineWidthY.value = 1 / canvasHeight;
@@ -313,7 +327,7 @@ export class TextTexture extends DynamicTexture {
 		);
 	}
 
-	private screenToTextUV(screenUV: Node, canvas: Canvas2D): Node {
+	private screenToTextUV(screenUV: Node, canvas: TSLScene2D): Node {
 		const screenPixelX = screenUV.x.mul(canvas.widthUniform);
 		const screenPixelY = screenUV.y.mul(canvas.heightUniform);
 
@@ -377,7 +391,7 @@ export class TextTexture extends DynamicTexture {
 	 * This uniform automatically updates when the text changes.
 	 * Use this in your node graph for reactive width handling.
 	 */
-	get widthUniform() {
+	get widthUniform(): UniformNode<number> {
 		return this._widthUniform;
 	}
 
@@ -386,7 +400,7 @@ export class TextTexture extends DynamicTexture {
 	 * This uniform automatically updates when the text changes.
 	 * Use this in your node graph for reactive height handling.
 	 */
-	get heightUniform() {
+	get heightUniform(): UniformNode<number> {
 		return this._heightUniform;
 	}
 
@@ -395,7 +409,7 @@ export class TextTexture extends DynamicTexture {
 	 * This uniform automatically updates when the text changes.
 	 * Use this in your node graph for reactive aspect ratio handling.
 	 */
-	get aspectRatioUniform() {
-		return this._aspectRatioUniform;
+	get aspectUniform(): UniformNode<number> {
+		return this._aspectUniform;
 	}
 }

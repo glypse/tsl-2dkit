@@ -21,17 +21,16 @@ import { smaa } from "three/addons/tsl/display/SMAANode.js";
 import { fxaa } from "three/addons/tsl/display/FXAANode.js";
 import Stats from "three/addons/libs/stats.module.js";
 import { FixedTime } from "../time/fixedTime";
-import type { DynamicTexture } from "../textures/DynamicTexture";
+import type { UpdatableTexture } from "../textures/UpdatableTexture";
 
 type MaterialWithColorNode = MeshBasicNodeMaterial & { colorNode: Node };
 
-// Type for RTTNode which has a renderTarget property
 type RTTNodeLike = Node & {
 	isRTTNode?: boolean;
 	renderTarget?: RenderTarget;
 };
 
-export class Canvas2D {
+export class TSLScene2D {
 	// renderer / scene objects
 	private sceneObj: Scene | null = null;
 	private rendererObj: WebGPURenderer | null = null;
@@ -57,47 +56,37 @@ export class Canvas2D {
 	private _animationFrameId: number | null = null;
 	private _nodeGraphBuilt = false;
 	private _currentColorNode: Node | null = null;
-	private dynamicTextures = new Set<DynamicTexture>();
+	private UpdatableTextures = new Set<UpdatableTexture>();
 
 	// Time control
 	private _fixedTime: FixedTime | null = null;
 
 	// Static reference to current canvas for auto-detection
-	private static _currentCanvas: Canvas2D | null = null;
+	private static _currentScene: TSLScene2D | null = null;
 
 	/**
 	 * Get the currently active canvas (the one being drawn to)
 	 */
-	static get currentCanvas(): Canvas2D {
-		if (!Canvas2D._currentCanvas) {
+	static get currentScene(): TSLScene2D {
+		if (!TSLScene2D._currentScene) {
 			throw new Error(
-				"No active Canvas2D found. Make sure you're calling this within a canvas.draw() callback."
+				"No active TSLScene2D found. Make sure you're calling this within a TSLScene2D.build() callback."
 			);
 		}
-		return Canvas2D._currentCanvas;
-	}
-
-	private static configRenderer(
-		renderer: WebGPURenderer,
-		width: number,
-		height: number,
-		dpr: number
-	) {
-		renderer.setSize(width, height);
-		renderer.setPixelRatio(dpr);
+		return TSLScene2D._currentScene;
 	}
 
 	constructor(
 		width: number,
 		height: number,
-		opts?: {
+		parameters?: {
 			stats?: boolean;
 			antialias?: "fxaa" | "smaa" | "none";
 		}
 	) {
 		this._width = width;
 		this._height = height;
-		this.antialias = opts?.antialias ?? "none";
+		this.antialias = parameters?.antialias ?? "none";
 
 		this._widthUniform = uniform(this._width);
 		this._heightUniform = uniform(this._height);
@@ -107,15 +96,15 @@ export class Canvas2D {
 			colorNode: outputNode()
 		}) as MaterialWithColorNode;
 
-		if (opts?.stats) {
+		if (parameters?.stats) {
 			this.stats = new Stats();
 			document.body.appendChild(this.stats.dom);
 		}
 	}
 
-	async draw(callback: () => Node) {
+	async build(callback: () => Node): Promise<void> {
 		// Set this as the current canvas for auto-detection
-		Canvas2D._currentCanvas = this;
+		TSLScene2D._currentScene = this;
 
 		if (!this.sceneObj) {
 			this.sceneObj = new Scene();
@@ -132,12 +121,8 @@ export class Canvas2D {
 			this.textureObj.minFilter = LinearFilter;
 			this.textureObj.magFilter = LinearFilter;
 
-			Canvas2D.configRenderer(
-				this.rendererObj,
-				this._width,
-				this._height,
-				window.devicePixelRatio
-			);
+			this.rendererObj.setSize(this._width, this._height);
+			this.rendererObj.setPixelRatio(window.devicePixelRatio);
 
 			this.planeGeometry = new PlaneGeometry(1, 1);
 			this.planeMesh = new Mesh(this.planeGeometry, this.material);
@@ -186,7 +171,7 @@ export class Canvas2D {
 			this._buildNodeGraph();
 		}
 
-		await this._updateDynamicTextures();
+		await this._updateUpdatableTextures();
 
 		// Only render - node graph auto-updates
 		if (this.rendererObj && this.sceneObj && this.cameraObj) {
@@ -209,7 +194,7 @@ export class Canvas2D {
 	}
 
 	/**
-	 * Build the node graph from the draw callback.
+	 * Build the node graph from the build callback.
 	 */
 	private _buildNodeGraph(): void {
 		if (!this._drawCallback) return;
@@ -247,7 +232,7 @@ export class Canvas2D {
 	private _disposeNodeGraph(node: Node): void {
 		const disposed = new Set<Node>();
 
-		function disposeNode(n: Node) {
+		function disposeNode(n: Node): void {
 			if (disposed.has(n)) return;
 			disposed.add(n);
 
@@ -280,7 +265,7 @@ export class Canvas2D {
 	 * Start the animation loop (internal method).
 	 */
 	private _startAnimationLoop(): void {
-		function animate(this: Canvas2D) {
+		function animate(this: TSLScene2D): void {
 			void (async () => {
 				// Update fixed time if enabled
 				if (this._fixedTime) {
@@ -292,7 +277,7 @@ export class Canvas2D {
 					this._buildNodeGraph();
 				}
 
-				await this._updateDynamicTextures();
+				await this._updateUpdatableTextures();
 
 				// Only render - node graph is already built and RTTNodes auto-update
 				if (this.rendererObj && this.sceneObj && this.cameraObj) {
@@ -314,14 +299,14 @@ export class Canvas2D {
 		this._animationFrameId = requestAnimationFrame(boundAnimate);
 	}
 
-	registerDynamicTexture(texture: DynamicTexture): void {
-		this.dynamicTextures.add(texture);
+	registerUpdatableTexture(texture: UpdatableTexture): void {
+		this.UpdatableTextures.add(texture);
 	}
 
-	private async _updateDynamicTextures(): Promise<void> {
-		if (!this.dynamicTextures.size) return;
+	private async _updateUpdatableTextures(): Promise<void> {
+		if (!this.UpdatableTextures.size) return;
 		await Promise.all(
-			Array.from(this.dynamicTextures, (tex) => tex.updateIfNeeded())
+			Array.from(this.UpdatableTextures, (tex) => tex.updateIfNeeded())
 		);
 	}
 
@@ -340,7 +325,7 @@ export class Canvas2D {
 		return this._fixedTime;
 	}
 
-	resize(w: number, h: number) {
+	resize(w: number, h: number): void {
 		if (
 			!this.rendererObj ||
 			!this.planeMesh ||
@@ -354,12 +339,8 @@ export class Canvas2D {
 		this._height = h;
 		this._widthUniform.value = w;
 		this._heightUniform.value = h;
-		Canvas2D.configRenderer(
-			this.rendererObj,
-			w,
-			h,
-			window.devicePixelRatio
-		);
+		this.rendererObj.setSize(w, h);
+		this.rendererObj.setPixelRatio(window.devicePixelRatio);
 
 		const newPlaneSize = { w: w / 100, h: h / 100 };
 		this.planeMesh.scale.set(newPlaneSize.w, newPlaneSize.h, 1);
@@ -371,9 +352,6 @@ export class Canvas2D {
 		this.cameraObj.updateProjectionMatrix();
 
 		this.textureObj.needsUpdate = true;
-
-		// Note: We don't rebuild the node graph on resize.
-		// RTTNodes automatically resize via their autoResize feature.
 	}
 
 	get canvasElement(): HTMLCanvasElement {

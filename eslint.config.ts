@@ -4,6 +4,7 @@ import tseslint from "typescript-eslint";
 import json from "@eslint/json";
 import markdown from "@eslint/markdown";
 import css from "@eslint/css";
+import jsdoc from "eslint-plugin-jsdoc";
 import { defineConfig } from "eslint/config";
 
 export default defineConfig([
@@ -24,6 +25,7 @@ export default defineConfig([
 		extends: [
 			...tseslint.configs.strictTypeChecked,
 			...tseslint.configs.stylisticTypeChecked
+			//jsdoc.configs["flat/recommended-typescript-error"]
 		],
 		rules: {
 			"@typescript-eslint/consistent-type-definitions": ["warn", "type"],
@@ -35,7 +37,24 @@ export default defineConfig([
 					message: "Use `private` instead"
 				}
 			],
-			"@typescript-eslint/no-unused-vars": "warn"
+			"@typescript-eslint/no-unused-vars": "warn",
+			"@typescript-eslint/explicit-function-return-type": [
+				"warn",
+				{ allowExpressions: true }
+			]
+			/* "jsdoc/require-description": "warn",
+			"jsdoc/require-jsdoc": [
+				"warn",
+				{
+					contexts: [
+						"ClassDeclaration",
+						"MethodDefinition",
+						"TSMethodSignature",
+						"TSTypeAliasDeclaration",
+						"TSInterfaceDeclaration"
+					]
+				}
+			] */
 		},
 		languageOptions: {
 			parser: tseslint.parser,

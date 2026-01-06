@@ -1,34 +1,34 @@
 import "$demo/style.css";
 
-import { Canvas2D, MediaTexture, getAspectCorrectedUV } from "$lib";
+import { TSLScene2D, MediaTexture, aspectCorrectedUV } from "$lib";
 import { mix, color } from "three/tsl";
 
-const canvas = new Canvas2D(window.innerWidth, window.innerHeight, {
+const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 	stats: true,
 	antialias: "none"
 });
 
-const imageTexture = new MediaTexture({
-	src: "./test-image.webp",
+const mediaTexture = new MediaTexture({
+	src: "./test.webp",
 	anchorX: "left",
 	anchorY: "bottom",
 	debug: false
 });
-imageTexture.wrapMode = "edge";
+mediaTexture.wrapMode = "edge";
 
 window.addEventListener("resize", () => {
-	canvas.resize(window.innerWidth, window.innerHeight);
+	scene.resize(window.innerWidth, window.innerHeight);
 });
 
-await canvas.draw(() => {
-	// Use the new getAspectCorrectedUV function with the image's aspect ratio
-	const aspectCorrectedUV = getAspectCorrectedUV(
+await scene.build(() => {
+	// Use the new aspectCorrectedUV function with the image's aspect ratio
+	const UV = aspectCorrectedUV(
 		"contain",
-		imageTexture.aspectRatioUniform,
+		mediaTexture.aspectUniform,
 		"sampling"
 	);
 
-	const imageSample = imageTexture.sample(aspectCorrectedUV);
+	const imageSample = mediaTexture.sample(UV);
 
 	// Composite image over a background color
 	const backgroundColor = color("#1a1a1a");
@@ -37,4 +37,4 @@ await canvas.draw(() => {
 	return composited;
 });
 
-document.body.appendChild(canvas.canvasElement);
+document.body.appendChild(scene.canvasElement);

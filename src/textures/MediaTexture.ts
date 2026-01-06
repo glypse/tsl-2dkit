@@ -1,9 +1,9 @@
 import { Texture, TextureNode, VideoTexture } from "three/webgpu";
 import { texture, vec4, vec2, uniform, select, uv, float } from "three/tsl";
-import type { Node } from "three/webgpu";
+import type { Node, UniformNode } from "three/webgpu";
 import { LinearFilter, SRGBColorSpace } from "three";
-import { Canvas2D } from "../core/scene";
-import { DynamicTexture } from "./DynamicTexture";
+import { TSLScene2D } from "../core";
+import { UpdatableTexture } from "./UpdatableTexture";
 import { wrapUV } from "../utils";
 
 export type MediaTextureOptions = {
@@ -16,12 +16,12 @@ export type MediaTextureOptions = {
 	muted: boolean;
 };
 
-export class MediaTexture extends DynamicTexture {
-	config: MediaTextureOptions;
+export class MediaTexture extends UpdatableTexture {
+	parameters: MediaTextureOptions;
 
 	private _widthUniform = uniform(0);
 	private _heightUniform = uniform(0);
-	private _aspectRatioUniform = uniform(1);
+	private _aspectUniform = uniform(1);
 	private anchorOffsetXUniform = uniform(0.5);
 	private anchorOffsetYUniform = uniform(0.5);
 	private debugUniform = uniform(0);
@@ -35,7 +35,7 @@ export class MediaTexture extends DynamicTexture {
 	private requestVideoFrameCallbackId = 0;
 
 	constructor(
-		opts: Partial<MediaTextureOptions> & {
+		parameters: Partial<MediaTextureOptions> & {
 			src: string | HTMLImageElement | HTMLVideoElement;
 		}
 	) {
@@ -58,23 +58,25 @@ export class MediaTexture extends DynamicTexture {
 
 		console.debug(
 			"[MediaTexture] Constructor called with src:",
-			typeof opts.src === "string" ? opts.src : opts.src.tagName
+			typeof parameters.src === "string"
+				? parameters.src
+				: parameters.src.tagName
 		);
 
-		this.config = {
-			src: opts.src,
-			anchorX: opts.anchorX ?? "center",
-			anchorY: opts.anchorY ?? "center",
-			debug: opts.debug ?? false,
-			autoplay: opts.autoplay ?? true,
-			loop: opts.loop ?? true,
-			muted: opts.muted ?? true
+		this.parameters = {
+			src: parameters.src,
+			anchorX: parameters.anchorX ?? "center",
+			anchorY: parameters.anchorY ?? "center",
+			debug: parameters.debug ?? false,
+			autoplay: parameters.autoplay ?? true,
+			loop: parameters.loop ?? true,
+			muted: parameters.muted ?? true
 		};
 
 		// Determine if source is video
-		if (typeof opts.src === "string") {
+		if (typeof parameters.src === "string") {
 			// Check file extension
-			const ext = opts.src.toLowerCase().split(".").pop();
+			const ext = parameters.src.toLowerCase().split(".").pop();
 			this.isVideo = ["mp4", "webm", "ogg", "mov"].includes(ext ?? "");
 			console.debug(
 				"[MediaTexture] Source type determined from extension:",
@@ -83,26 +85,26 @@ export class MediaTexture extends DynamicTexture {
 				this.isVideo
 			);
 		} else {
-			this.isVideo = opts.src instanceof HTMLVideoElement;
+			this.isVideo = parameters.src instanceof HTMLVideoElement;
 			console.debug(
 				"[MediaTexture] Source type determined from element:",
-				opts.src.tagName,
+				parameters.src.tagName,
 				"isVideo:",
 				this.isVideo
 			);
 		}
 
 		// Load media
-		if (typeof opts.src === "string") {
+		if (typeof parameters.src === "string") {
 			if (this.isVideo) {
-				this.mediaElement = this.createVideoElement(opts.src);
+				this.mediaElement = this.createVideoElement(parameters.src);
 			} else {
-				this.mediaElement = this.createImageElement(opts.src);
+				this.mediaElement = this.createImageElement(parameters.src);
 			}
 		} else {
-			this.mediaElement = opts.src;
-			if (this.isVideo && opts.src instanceof HTMLVideoElement) {
-				const videoElement = opts.src;
+			this.mediaElement = parameters.src;
+			if (this.isVideo && parameters.src instanceof HTMLVideoElement) {
+				const videoElement = parameters.src;
 				// Check if video is already ready
 				if (
 					videoElement.readyState >=
@@ -129,8 +131,8 @@ export class MediaTexture extends DynamicTexture {
 						{ once: true }
 					);
 				}
-			} else if (opts.src instanceof HTMLImageElement) {
-				const imageElement = opts.src;
+			} else if (parameters.src instanceof HTMLImageElement) {
+				const imageElement = parameters.src;
 				// Check if image is already loaded
 				if (imageElement.complete && imageElement.naturalWidth > 0) {
 					console.debug(
@@ -213,9 +215,9 @@ export class MediaTexture extends DynamicTexture {
 		const video = document.createElement("video");
 		video.crossOrigin = "anonymous";
 		video.playsInline = true;
-		video.autoplay = this.config.autoplay;
-		video.loop = this.config.loop;
-		video.muted = this.config.muted;
+		video.autoplay = this.parameters.autoplay;
+		video.loop = this.parameters.loop;
+		video.muted = this.parameters.muted;
 
 		video.addEventListener("loadedmetadata", () => {
 			console.debug(
@@ -238,7 +240,7 @@ export class MediaTexture extends DynamicTexture {
 				this.needsUpdate = true;
 			}
 
-			if (this.config.autoplay) {
+			if (this.parameters.autoplay) {
 				video.play().catch((err: unknown) => {
 					console.error(
 						"[MediaTexture] Failed to autoplay video:",
@@ -269,7 +271,7 @@ export class MediaTexture extends DynamicTexture {
 		console.debug(
 			"[MediaTexture] Using requestVideoFrameCallback for video updates"
 		);
-		const updateVideo = () => {
+		const updateVideo = (): void => {
 			this.needsUpdate = true;
 			this.requestVideoFrameCallbackId =
 				video.requestVideoFrameCallback(updateVideo);
@@ -298,10 +300,10 @@ export class MediaTexture extends DynamicTexture {
 	}
 
 	sample(inputUV?: Node): Node {
-		const canvas = Canvas2D.currentCanvas;
+		const canvas = TSLScene2D.currentScene;
 
 		// Register for per-frame updates once sampling is requested
-		canvas.registerDynamicTexture(this);
+		canvas.registerUpdatableTexture(this);
 
 		const rawUV = inputUV ?? uv();
 		return this.sampleTexture(rawUV);
@@ -310,7 +312,7 @@ export class MediaTexture extends DynamicTexture {
 	protected update(): void {
 		if (!this.isLoaded) return;
 
-		const { anchorX, anchorY, debug } = this.config;
+		const { anchorX, anchorY, debug } = this.parameters;
 
 		let mediaWidth = 0;
 		let mediaHeight = 0;
@@ -344,7 +346,7 @@ export class MediaTexture extends DynamicTexture {
 
 		this._widthUniform.value = mediaWidth;
 		this._heightUniform.value = mediaHeight;
-		this._aspectRatioUniform.value = mediaWidth / mediaHeight;
+		this._aspectUniform.value = mediaWidth / mediaHeight;
 		this.debugUniform.value = debug ? 1 : 0;
 		this.debugLineWidthX.value = 1 / mediaWidth;
 		this.debugLineWidthY.value = 1 / mediaHeight;
@@ -532,7 +534,7 @@ export class MediaTexture extends DynamicTexture {
 	 * This uniform automatically updates when the media loads.
 	 * Use this in your node graph for reactive width handling.
 	 */
-	get widthUniform() {
+	get widthUniform(): UniformNode<number> {
 		return this._widthUniform;
 	}
 
@@ -541,7 +543,7 @@ export class MediaTexture extends DynamicTexture {
 	 * This uniform automatically updates when the media loads.
 	 * Use this in your node graph for reactive height handling.
 	 */
-	get heightUniform() {
+	get heightUniform(): UniformNode<number> {
 		return this._heightUniform;
 	}
 
@@ -550,7 +552,7 @@ export class MediaTexture extends DynamicTexture {
 	 * This uniform automatically updates when the media loads.
 	 * Use this in your node graph for reactive aspect ratio handling.
 	 */
-	get aspectRatioUniform() {
-		return this._aspectRatioUniform;
+	get aspectUniform(): UniformNode<number> {
+		return this._aspectUniform;
 	}
 }

@@ -1,6 +1,6 @@
 import { float, uv, vec2 } from "three/tsl";
 import { Node } from "three/webgpu";
-import { Canvas2D } from "./core";
+import { TSLScene2D } from "./core";
 
 /**
  * Aspect-correct UV coordinates. Has two modes:
@@ -11,7 +11,7 @@ import { Canvas2D } from "./core";
  * @param aspectRatio - Target aspect ratio (width/height). If omitted, uses canvas aspect ratio
  * @param mode - "sampling" for external textures (default), "generation" for generated content
  */
-export function getAspectCorrectedUV(
+export function aspectCorrectedUV(
 	fit: "cover" | "contain" | "stretch" = "cover",
 	aspectRatio?: Node,
 	mode: "sampling" | "generation" = "sampling"
@@ -20,7 +20,7 @@ export function getAspectCorrectedUV(
 
 	if (fit === "stretch") return UV;
 
-	const canvas = Canvas2D.currentCanvas;
+	const canvas = TSLScene2D.currentScene;
 
 	// Use provided aspect ratio, or fall back to canvas aspect ratio
 	const canvasAspectRatio = canvas.aspectUniform;
@@ -102,10 +102,10 @@ export type WrapMode = "clamp" | "repeat" | "mirror" | "edge";
  * Apply texture wrapping to UV coordinates
  * @param uv - Input UV coordinates
  * @param mode - Wrapping mode:
- *   - "clamp-to-border": UVs outside 0-1 are out of bounds (default)
+ *   - "clamp": UVs outside 0-1 are out of bounds (default)
  *   - "repeat": Tiles the texture infinitely
  *   - "mirror": Tiles with alternating mirroring
- *   - "clamp-to-edge": Clamps to 0-1 range, stretching edge pixels
+ *   - "edge": Clamps to 0-1 range, stretching edge pixels
  * @returns Object with wrapped UV and inBounds flag
  */
 export function wrapUV(uv: Node, mode: WrapMode): { uv: Node; inBounds: Node } {

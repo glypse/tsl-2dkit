@@ -1,3 +1,4 @@
+import type { ShaderNodeFn } from "three/src/nodes/TSL.js";
 import {
 	Fn,
 	vec2,
@@ -15,7 +16,9 @@ import {
 } from "three/tsl";
 import type { Node, TextureNode } from "three/webgpu";
 
-function createBoxBlurPass(axis: "x" | "y") {
+function createBoxBlurPass(
+	axis: "x" | "y"
+): ShaderNodeFn<[Node | number, Node | number]> {
 	return Fn(([textureNode, blurAmountMap]: [TextureNode, Node]) => {
 		const baseUV = (textureNode.uvNode ?? uv()).toVar();
 		const pixelSize = vec2(1).div(textureSize(textureNode)).toVar();
@@ -51,7 +54,9 @@ function createBoxBlurPass(axis: "x" | "y") {
 	});
 }
 
-function createGaussianBlurPass(axis: "x" | "y") {
+function createGaussianBlurPass(
+	axis: "x" | "y"
+): ShaderNodeFn<[Node | number, Node | number]> {
 	return Fn(([textureNode, blurAmountMap]: [TextureNode, Node]) => {
 		const baseUV = (textureNode.uvNode ?? uv()).toVar();
 		const pixelSize = vec2(1).div(textureSize(textureNode)).toVar();
@@ -107,7 +112,7 @@ const verticalGaussianBlurPass = createGaussianBlurPass("y");
  * @param blurAmountMap - A Node that determines the blur radius at each pixel
  * @returns The blurred result as a Node
  */
-export function boxBlur(value: Node, blurAmountMap: Node) {
+export function boxBlur(value: Node, blurAmountMap: Node): Node {
 	const blurAmountNode = blurAmountMap;
 	const sourceTexture = convertToTexture(value);
 	const horizontalBlurred = horizontalBoxBlurPass(
@@ -126,7 +131,7 @@ export function boxBlur(value: Node, blurAmountMap: Node) {
  * @param blurAmountMap - A Node that determines the blur radius at each pixel
  * @returns The blurred result as a Node
  */
-export function gaussianBlur(value: Node, blurAmountMap: Node) {
+export function gaussianBlur(value: Node, blurAmountMap: Node): Node {
 	const blurAmountNode = blurAmountMap;
 	const sourceTexture = convertToTexture(value);
 	const horizontalBlurred = horizontalGaussianBlurPass(

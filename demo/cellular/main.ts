@@ -5,7 +5,8 @@ import { vec2, vec3, float, time, color, mix, uniform, uv } from "three/tsl";
 
 const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 	stats: true,
-	antialias: "none"
+	antialias: "none",
+	renderMode: "continuous" // Uses time-based animation
 });
 
 window.addEventListener("resize", () => {

@@ -25,7 +25,8 @@ function getRelativeMousePosition(
 
 const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 	stats: true,
-	antialias: "none"
+	antialias: "none",
+	renderMode: "continuous" // Uses time-based animation
 });
 
 const mouse = { x: 0.5, y: 0.5 };

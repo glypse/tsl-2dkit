@@ -18,7 +18,8 @@ const fixedTime = new FixedTime();
 
 const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 	stats: true,
-	antialias: "none"
+	antialias: "none",
+	renderMode: "continuous" // Uses time-based animation
 });
 
 // Connect fixedTime to canvas for automatic updates

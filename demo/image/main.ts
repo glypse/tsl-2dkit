@@ -8,6 +8,8 @@ const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 	antialias: "none"
 });
 
+// TODO: Since this renders on request, we should only render once the mediaTexture is ready
+
 const mediaTexture = new MediaTexture({
 	src: "./test.webp",
 	anchorX: "left",

@@ -22,12 +22,35 @@ import { fxaa } from "three/addons/tsl/display/FXAANode.js";
 import Stats from "three/addons/libs/stats.module.js";
 import { FixedTime } from "../time/fixedTime";
 import type { UpdatableTexture } from "../textures/UpdatableTexture";
+import type { FeedbackTextureNode } from "../textures/FeedbackTexture";
 
 type MaterialWithColorNode = MeshBasicNodeMaterial & { colorNode: Node };
 
 type RTTNodeLike = Node & {
 	isRTTNode?: boolean;
 	renderTarget?: RenderTarget;
+};
+
+export type RenderMode = "on-demand" | "continuous";
+
+export type TSLScene2DParameters = {
+	/**
+	 * Show FPS stats panel.
+	 * @default false
+	 */
+	stats?: boolean;
+	/**
+	 * Anti-aliasing mode.
+	 * @default "none"
+	 */
+	antialias?: "fxaa" | "smaa" | "none";
+	/**
+	 * Rendering mode:
+	 * - "on-demand": Only renders when requestRender() is called or when tracked changes occur
+	 * - "continuous": Traditional animation loop (requestAnimationFrame)
+	 * @default "on-demand"
+	 */
+	renderMode?: RenderMode;
 };
 
 export class TSLScene2D {
@@ -57,9 +80,14 @@ export class TSLScene2D {
 	private _nodeGraphBuilt = false;
 	private _currentColorNode: Node | null = null;
 	private UpdatableTextures = new Set<UpdatableTexture>();
+	private FeedbackTextures = new Set<FeedbackTextureNode>();
 
 	// Time control
 	private _fixedTime: FixedTime | null = null;
+
+	// Render mode
+	private _renderMode: RenderMode;
+	private _renderRequested = false;
 
 	// Static reference to current canvas for auto-detection
 	private static _currentScene: TSLScene2D | null = null;
@@ -79,14 +107,12 @@ export class TSLScene2D {
 	constructor(
 		width: number,
 		height: number,
-		parameters?: {
-			stats?: boolean;
-			antialias?: "fxaa" | "smaa" | "none";
-		}
+		parameters?: TSLScene2DParameters
 	) {
 		this._width = width;
 		this._height = height;
 		this.antialias = parameters?.antialias ?? "none";
+		this._renderMode = parameters?.renderMode ?? "on-demand";
 
 		this._widthUniform = uniform(this._width);
 		this._heightUniform = uniform(this._height);
@@ -154,7 +180,29 @@ export class TSLScene2D {
 			this._buildNodeGraph();
 		}
 
-		this._startAnimationLoop();
+		// Start rendering based on mode
+		if (this._renderMode === "continuous") {
+			this._startContinuousLoop();
+		} else {
+			// On-demand: render initial frame
+			await this.renderFrame();
+		}
+	}
+
+	/**
+	 * Request a render on the next animation frame.
+	 * In on-demand mode, this schedules a single render.
+	 * In continuous mode, this is a no-op (rendering happens automatically).
+	 */
+	requestRender(): void {
+		if (this._renderMode === "continuous") return;
+		if (this._renderRequested) return;
+
+		this._renderRequested = true;
+		requestAnimationFrame(() => {
+			this._renderRequested = false;
+			void this.renderFrame();
+		});
 	}
 
 	/**
@@ -184,7 +232,8 @@ export class TSLScene2D {
 	}
 
 	/**
-	 * Stop the animation loop.
+	 * Stop the continuous animation loop.
+	 * Only relevant in continuous render mode.
 	 */
 	stopAnimationLoop(): void {
 		if (this._animationFrameId !== null) {
@@ -251,20 +300,27 @@ export class TSLScene2D {
 	}
 
 	/**
-	 * Resume the animation loop.
+	 * Resume the continuous animation loop.
+	 * Only relevant in continuous render mode.
 	 */
 	resumeAnimationLoop(): void {
+		if (this._renderMode !== "continuous") {
+			console.warn(
+				"[TSLScene2D] resumeAnimationLoop() called in on-demand mode. Use requestRender() instead."
+			);
+			return;
+		}
 		if (this._animationFrameId !== null) {
 			return; // Already running
 		}
 
-		this._startAnimationLoop();
+		this._startContinuousLoop();
 	}
 
 	/**
-	 * Start the animation loop (internal method).
+	 * Start the continuous animation loop (internal method).
 	 */
-	private _startAnimationLoop(): void {
+	private _startContinuousLoop(): void {
 		function animate(this: TSLScene2D): void {
 			void (async () => {
 				// Update fixed time if enabled
@@ -301,6 +357,15 @@ export class TSLScene2D {
 
 	registerUpdatableTexture(texture: UpdatableTexture): void {
 		this.UpdatableTextures.add(texture);
+	}
+
+	/**
+	 * Register a FeedbackTexture for tracking purposes.
+	 * Note: FeedbackTextureNode handles ping-pong internally via updateBefore,
+	 * so this is primarily for potential future disposal management.
+	 */
+	registerFeedbackTexture(feedbackTexture: FeedbackTextureNode): void {
+		this.FeedbackTextures.add(feedbackTexture);
 	}
 
 	private async _updateUpdatableTextures(): Promise<void> {
@@ -352,6 +417,16 @@ export class TSLScene2D {
 		this.cameraObj.updateProjectionMatrix();
 
 		this.textureObj.needsUpdate = true;
+
+		// Auto-render in on-demand mode after resize
+		this.requestRender();
+	}
+
+	/**
+	 * Get the current render mode.
+	 */
+	get renderMode(): RenderMode {
+		return this._renderMode;
 	}
 
 	get canvasElement(): HTMLCanvasElement {

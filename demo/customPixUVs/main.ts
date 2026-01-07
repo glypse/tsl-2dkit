@@ -43,7 +43,7 @@ const textTexture = new TextTexture({
 });
 
 window.addEventListener("resize", () => {
-	scene.resize(window.innerWidth, window.innerHeight);
+	scene.setSize(window.innerWidth, window.innerHeight);
 	textTexture.parameters.size = Math.min(
 		window.innerWidth,
 		window.innerHeight

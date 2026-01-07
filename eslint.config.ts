@@ -4,7 +4,8 @@ import tseslint from "typescript-eslint";
 import json from "@eslint/json";
 import markdown from "@eslint/markdown";
 import css from "@eslint/css";
-import jsdoc from "eslint-plugin-jsdoc";
+// TODO: Enable JSDoc linting
+/* import jsdoc from "eslint-plugin-jsdoc"; */
 import { defineConfig } from "eslint/config";
 
 export default defineConfig([

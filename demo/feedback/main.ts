@@ -38,7 +38,7 @@ const mouseY = uniform(0.5);
 const decay = uniform(0.97);
 
 window.addEventListener("resize", () => {
-	scene.resize(window.innerWidth, window.innerHeight);
+	scene.setSize(window.innerWidth, window.innerHeight);
 });
 
 await scene.build(() => {

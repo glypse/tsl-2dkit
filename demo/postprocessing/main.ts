@@ -12,15 +12,14 @@
 
 import "$demo/style.css";
 
-import * as THREE from "three";
-import { WebGPURenderer, PostProcessing } from "three/webgpu";
+import * as THREE from "three/webgpu";
 import { pass, vec3, uv, sin, time, mix } from "three/tsl";
 import { bloom } from "three/addons/tsl/display/BloomNode.js";
-import { TextTexture, tslEffect } from "$lib";
+import { TextTexture, tslPass } from "$lib";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 // Setup renderer
-const renderer = new WebGPURenderer({ antialias: true });
+const renderer = new THREE.WebGPURenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
@@ -79,7 +78,7 @@ pointLight.position.set(5, 5, 5);
 scene.add(pointLight);
 
 // Setup post-processing
-const postProcessing = new PostProcessing(renderer);
+const postProcessing = new THREE.PostProcessing(renderer);
 
 // 1. Scene pass - renders the 3D scene
 const scenePass = pass(scene, camera);
@@ -95,9 +94,13 @@ const textTexture = new TextTexture({
 	padding: 0
 });
 
-// 2. TSLPass - our custom 2D effect using tslEffect helper
+// Get the scene pass texture
+const scenePassColor = scenePass.getTextureNode("output");
+
+// 2. TSLPass - our custom 2D effect using tslPass functional API
 // This creates a color shift/tint effect that oscillates over time
-const colorShiftEffect = tslEffect((input) => {
+// Size and texture updates are handled automatically!
+const colorShiftedScene = tslPass(scenePassColor, (input) => {
 	const UV = uv();
 
 	const textSample = textTexture.sample(UV.sub(0.5));
@@ -120,18 +123,8 @@ const colorShiftEffect = tslEffect((input) => {
 	return vec3(final);
 });
 
-// Get the scene pass texture
-const scenePassColor = scenePass.getTextureNode("output");
-
-// Apply our TSL effect to the scene pass texture
-const colorShiftedScene = colorShiftEffect(scenePassColor);
-
 // 3. Bloom pass - adds glow after our effect
-const bloomPass = bloom(colorShiftedScene);
-// Adjust bloom parameters
-bloomPass.strength.value = 0.5;
-bloomPass.radius.value = 0.4;
-bloomPass.threshold.value = 0.1;
+const bloomPass = bloom(colorShiftedScene, 0.5, 0.4, 0.1);
 
 // Combine: scene + bloom
 postProcessing.outputNode = colorShiftedScene.add(bloomPass);
@@ -145,6 +138,7 @@ window.addEventListener("resize", () => {
 	camera.updateProjectionMatrix();
 
 	renderer.setSize(width, height);
+	// TSLPass automatically handles size updates from renderer!
 });
 
 // Animation loop
@@ -157,6 +151,8 @@ function animate(): void {
 	});
 
 	controls.update();
+
+	// TSLPass automatically updates textures before each frame!
 	postProcessing.render();
 }
 

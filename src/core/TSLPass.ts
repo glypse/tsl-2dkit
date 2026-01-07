@@ -1,18 +1,7 @@
-import { texture, uv, uniform, convertToTexture } from "three/tsl";
-import type { Node, UniformNode } from "three/webgpu";
-import type { FeedbackTextureNode } from "../textures/FeedbackTexture";
-import type { UpdatableTexture } from "../textures/UpdatableTexture";
-
-export type TSLPassOptions = {
-	/**
-	 * Width of the pass. If not provided, will be inferred from the renderer.
-	 */
-	width?: number;
-	/**
-	 * Height of the pass. If not provided, will be inferred from the renderer.
-	 */
-	height?: number;
-};
+import { texture, uv, convertToTexture, nodeObject, uniform } from "three/tsl";
+import type { Node, NodeFrame, UniformNode } from "three/webgpu";
+import { TempNode, NodeUpdateType } from "three/webgpu";
+import { Vector2 } from "three";
 
 /**
  * A TSL-based post-processing pass that can be integrated with Three.js's PostProcessing system.
@@ -22,168 +11,138 @@ export type TSLPassOptions = {
  * ```ts
  * import { PostProcessing } from "three/webgpu";
  * import { pass } from "three/tsl";
- * import { TSLPass } from "tsl-2dkit";
+ * import { tslPass } from "tsl-2dkit";
  *
- * // Create the post-processing instance
  * const postProcessing = new PostProcessing(renderer);
- *
- * // Create a scene pass (renders your 3D scene)
  * const scenePass = pass(scene, camera);
+ * const scenePassColor = scenePass.getTextureNode("output");
  *
- * // Create a TSL pass for 2D effects
- * const tslPass = new TSLPass();
- *
- * // Build your effect chain
- * const effectNode = tslPass.build((inputTexture) => {
- *   // inputTexture is the result from the previous pass
- *   const sampled = inputTexture.sample(uv());
- *
- *   // Apply some effect
- *   return sampled.rgb.mul(vec3(1.2, 1.0, 0.8)); // Warm color grade
+ * // Simple functional API - like bloom!
+ * const colorGraded = tslPass(scenePassColor, (input) => {
+ *   const color = input.sample(uv());
+ *   return color.rgb.mul(vec3(1.2, 1.0, 0.8)); // Warm color grade
  * });
  *
- * // Connect the scene pass to the TSL pass
- * postProcessing.outputNode = tslPass.apply(scenePass);
+ * postProcessing.outputNode = colorGraded;
  * ```
  */
-export class TSLPass {
-	private _width: number;
-	private _height: number;
+export class TSLPassNode extends TempNode {
+	private _effectCallback: (inputTexture: InputTextureNode) => Node;
+	private _inputNode: Node;
 
-	private _widthUniform: UniformNode<number>;
-	private _heightUniform: UniformNode<number>;
+	// Current pass width/height (updated automatically from renderer)
+	_width = 0;
+	_height = 0;
 
-	private _effectCallback?: (inputTexture: InputTextureNode) => Node;
-	private _outputNode: Node | null = null;
+	// Uniforms for use in shaders
+	readonly widthUniform: UniformNode<number>;
+	readonly heightUniform: UniformNode<number>;
 
-	private UpdatableTextures = new Set<UpdatableTexture>();
-	private FeedbackTextures = new Set<FeedbackTextureNode>();
+	// Static reference for context detection
+	private static _currentPass: TSLPassNode | null = null;
 
-	// Static reference for context detection (similar to TSLScene2D)
-	private static _currentPass: TSLPass | null = null;
+	// Store registered textures that need updates
+	private _updatableTextures = new Set<{
+		updateIfNeeded: () => Promise<void>;
+	}>();
 
-	constructor(options: TSLPassOptions = {}) {
-		this._width = options.width ?? 0;
-		this._height = options.height ?? 0;
+	constructor(
+		inputNode: Node,
+		callback: (inputTexture: InputTextureNode) => Node
+	) {
+		super("vec4");
 
-		this._widthUniform = uniform(this._width || 1);
-		this._heightUniform = uniform(this._height || 1);
+		this._inputNode = inputNode;
+		this._effectCallback = callback;
+
+		// Initialize uniforms
+		this.widthUniform = uniform(1);
+		this.heightUniform = uniform(1);
+
+		// Set to update before each frame (like bloom)
+		this.updateBeforeType = NodeUpdateType.FRAME;
 	}
 
 	/**
 	 * Get the currently active TSLPass (for texture registration).
 	 */
-	static get currentPass(): TSLPass | null {
-		return TSLPass._currentPass;
+	static get currentPass(): TSLPassNode | null {
+		return TSLPassNode._currentPass;
 	}
 
 	/**
-	 * Build the effect with a callback that receives the input texture.
-	 * The callback should return a Node representing the final color output.
-	 *
-	 * @param callback - Function that takes an InputTextureNode and returns the processed output
+	 * Get the current width of the pass.
 	 */
-	build(callback: (inputTexture: InputTextureNode) => Node): this {
-		this._effectCallback = callback;
-		return this;
-	}
-
-	/**
-	 * Apply this pass to the output of a previous pass (e.g., a scene pass).
-	 * Returns a Node that can be used as the outputNode for PostProcessing.
-	 *
-	 * @param inputNode - The input node from a previous pass (e.g., from pass(scene, camera))
-	 * @returns A Node representing the processed output
-	 */
-	apply(inputNode: Node): Node {
-		if (!this._effectCallback) {
-			throw new Error(
-				"[TSLPass] No effect callback defined. Call build() first."
-			);
-		}
-
-		// Set this as the current pass for texture registration
-		TSLPass._currentPass = this;
-
-		try {
-			// Convert the input node to a texture that can be sampled
-			const inputTextureNode = new InputTextureNode(inputNode);
-
-			// Build the effect
-			this._outputNode = this._effectCallback(inputTextureNode);
-
-			return this._outputNode;
-		} finally {
-			TSLPass._currentPass = null;
-		}
-	}
-
-	/**
-	 * Create a standalone effect node that doesn't take input from a previous pass.
-	 * Useful for generating procedural content or overlays.
-	 *
-	 * @param callback - Function that returns the effect output
-	 * @returns A Node representing the effect output
-	 */
-	generate(callback: () => Node): Node {
-		TSLPass._currentPass = this;
-
-		try {
-			this._outputNode = callback();
-			return this._outputNode;
-		} finally {
-			TSLPass._currentPass = null;
-		}
-	}
-
-	/**
-	 * Register an UpdatableTexture for per-frame updates.
-	 */
-	registerUpdatableTexture(texture: UpdatableTexture): void {
-		this.UpdatableTextures.add(texture);
-	}
-
-	/**
-	 * Register a FeedbackTexture for ping-pong buffer management.
-	 */
-	registerFeedbackTexture(feedbackTexture: FeedbackTextureNode): void {
-		this.FeedbackTextures.add(feedbackTexture);
-	}
-
-	/**
-	 * Update dimensions. Call this when the renderer size changes.
-	 */
-	setSize(width: number, height: number): void {
-		this._width = width;
-		this._height = height;
-		this._widthUniform.value = width;
-		this._heightUniform.value = height;
-	}
-
-	// Dimension accessors
-
 	get width(): number {
 		return this._width;
 	}
 
+	/**
+	 * Get the current height of the pass.
+	 */
 	get height(): number {
 		return this._height;
 	}
 
-	get widthUniform(): UniformNode<number> {
-		return this._widthUniform;
+	/**
+	 * Register a texture that needs per-frame updates.
+	 * @internal
+	 */
+	registerUpdatableTexture(texture: {
+		updateIfNeeded: () => Promise<void>;
+	}): void {
+		this._updatableTextures.add(texture);
 	}
 
-	get heightUniform(): UniformNode<number> {
-		return this._heightUniform;
+	/**
+	 * Called automatically before each frame to update size and textures.
+	 * @internal
+	 */
+	updateBefore(frame: NodeFrame): void {
+		const { renderer } = frame;
+
+		if (!renderer) return;
+
+		// Get physical size from renderer
+		const size = renderer.getDrawingBufferSize(new Vector2());
+		const dpr = renderer.getPixelRatio();
+
+		// Store logical dimensions (like TSLScene2D does)
+		this._width = size.x / dpr;
+		this._height = size.y / dpr;
+
+		// Update uniforms with logical dimensions
+		this.widthUniform.value = this._width;
+		this.heightUniform.value = this._height;
+
+		// Update all registered textures
+		if (this._updatableTextures.size > 0) {
+			// Fire and forget - don't await
+			void Promise.all(
+				Array.from(this._updatableTextures, (tex) =>
+					tex.updateIfNeeded()
+				)
+			);
+		}
 	}
 
-	get aspect(): number {
-		return this._width / (this._height || 1);
-	}
+	/**
+	 * Setup the effect's TSL code.
+	 * @internal
+	 */
+	setup(): Node {
+		// Set this as the current pass for texture registration
+		TSLPassNode._currentPass = this;
 
-	get aspectUniform(): Node {
-		return this._widthUniform.div(this._heightUniform);
+		try {
+			// Convert the input node to a texture that can be sampled
+			const inputTextureNode = new InputTextureNode(this._inputNode);
+
+			// Build and return the effect
+			return this._effectCallback(inputTextureNode);
+		} finally {
+			TSLPassNode._currentPass = null;
+		}
 	}
 }
 
@@ -210,13 +169,12 @@ export class InputTextureNode {
 
 		// Try to get the texture node from the input
 		// PassNode has getTextureNode() method
-		const inputNodeAny = this._inputNode as {
+		const inputNode = this._inputNode as {
 			getTextureNode?: () => Node;
-			isPassNode?: boolean;
 		};
 
-		if (inputNodeAny.getTextureNode) {
-			this._textureNode ??= inputNodeAny.getTextureNode();
+		if (inputNode.getTextureNode) {
+			this._textureNode ??= inputNode.getTextureNode();
 			// The texture node can be sampled directly
 			return texture(this._textureNode as never, UV);
 		}
@@ -238,24 +196,28 @@ export class InputTextureNode {
 }
 
 /**
- * Convenience function to create a TSL effect that can be applied to a pass.
- * This is a shorthand for creating a TSLPass and building an effect.
+ * Convenience function to create a TSL effect pass.
+ * This provides a simple, bloom-like API for post-processing effects.
  *
  * @example
  * ```ts
- * const warmGrade = tslEffect((input) => {
+ * const warmGrade = tslPass(scenePassColor, (input) => {
  *   const color = input.sample(uv());
  *   return color.rgb.mul(vec3(1.2, 1.0, 0.8));
  * });
  *
- * postProcessing.outputNode = warmGrade(scenePass);
+ * postProcessing.outputNode = warmGrade;
  * ```
+ *
+ * @param inputNode - The input node from a previous pass
+ * @param callback - Function that receives the input and returns the processed output
+ * @returns A node representing the effect output
  */
-export function tslEffect(
+export function tslPass(
+	inputNode: Node,
 	callback: (inputTexture: InputTextureNode) => Node
-): (inputNode: Node) => Node {
-	const pass = new TSLPass();
-	pass.build(callback);
-
-	return (inputNode: Node) => pass.apply(inputNode);
+): TSLPassNode {
+	return nodeObject(new TSLPassNode(nodeObject(inputNode), callback));
 }
+
+export default TSLPassNode;

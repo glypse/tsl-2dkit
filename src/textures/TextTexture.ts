@@ -2,7 +2,9 @@ import { CanvasTexture, TextureNode } from "three/webgpu";
 import { texture, vec4, vec2, uniform, float, select, uv } from "three/tsl";
 import type { Node, UniformNode } from "three/webgpu";
 import { Color } from "three";
+import { TSLContext2D } from "../core/TSLContext2D";
 import { TSLScene2D } from "../core";
+import { TSLPassNode } from "../core/TSLPass";
 import { UpdatableTexture } from "./UpdatableTexture";
 import { wrapUV } from "../utils";
 
@@ -158,13 +160,33 @@ export class TextTexture extends UpdatableTexture {
 	}
 
 	sample(inputUV?: Node): Node {
-		const canvas = TSLScene2D.currentScene;
+		// Try to register with TSLScene2D, else TSLPassNode
+		let context: TSLContext2D | TSLPassNode | null = null;
+		let isTSLPass = false;
+		try {
+			context = TSLScene2D.currentScene;
+			isTSLPass = false;
+		} catch {
+			context = TSLPassNode.currentPass;
+			isTSLPass = true;
+		}
+		if (context) {
+			context.registerUpdatableTexture(this);
+		}
 
-		// Register for per-frame updates once sampling is requested.
-		canvas.registerUpdatableTexture(this);
+		let rawUV = inputUV ?? uv();
+		// Flip Y in TSLPass context (WebGPU uses Y-down, canvas uses Y-up)
+		if (isTSLPass) {
+			rawUV = vec2(rawUV.x, rawUV.y.mul(-1));
+		}
 
-		const rawUV = inputUV ?? uv();
-		const textUV = this.screenToTextUV(rawUV, canvas);
+		let textUV: Node;
+		// TSLContext2D has widthUniform/heightUniform
+		if (context) {
+			textUV = this.screenToTextUV(rawUV, context);
+		} else {
+			textUV = rawUV;
+		}
 		return this.sampleTexture(textUV);
 	}
 
@@ -327,9 +349,17 @@ export class TextTexture extends UpdatableTexture {
 		);
 	}
 
-	private screenToTextUV(screenUV: Node, canvas: TSLScene2D): Node {
-		const screenPixelX = screenUV.x.mul(canvas.widthUniform);
-		const screenPixelY = screenUV.y.mul(canvas.heightUniform);
+	private screenToTextUV(
+		screenUV: Node,
+		context: {
+			width: number;
+			height: number;
+			widthUniform: UniformNode<number>;
+			heightUniform: UniformNode<number>;
+		}
+	): Node {
+		const screenPixelX = screenUV.x.mul(context.widthUniform);
+		const screenPixelY = screenUV.y.mul(context.heightUniform);
 
 		return vec2(
 			screenPixelX.div(this._widthUniform),

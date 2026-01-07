@@ -3,6 +3,7 @@ import type { Texture } from "three";
 import type { Node } from "three/webgpu";
 import { LinearFilter, NearestFilter } from "three";
 import { TSLScene2D } from "../core";
+import { TSLPassNode } from "../core/TSLPass";
 import { uniform } from "three/tsl";
 
 export type InterpolationMode = "linear" | "nearest";
@@ -42,30 +43,38 @@ export abstract class UpdatableTexture {
 
 	/**
 	 * Width of the texture in pixels.
-	 * Warns if accessed outside of TSLScene2D.build() context.
+	 * Warns if accessed outside of TSL context.
 	 */
 	get width(): number {
 		try {
 			void TSLScene2D.currentScene;
 		} catch {
-			console.warn(
-				`[${this.constructor.name}] Accessing width outside of TSLScene2D.build() context. The value may not be initialized yet.`
-			);
+			try {
+				void TSLPassNode.currentPass;
+			} catch {
+				console.warn(
+					`[${this.constructor.name}] Accessing width outside of TSLScene2D.build() or TSLPassNode context. The value may not be initialized yet.`
+				);
+			}
 		}
 		return this.getWidth();
 	}
 
 	/**
 	 * Height of the texture in pixels.
-	 * Warns if accessed outside of TSLScene2D.build() context.
+	 * Warns if accessed outside of TSL context.
 	 */
 	get height(): number {
 		try {
 			void TSLScene2D.currentScene;
 		} catch {
-			console.warn(
-				`[${this.constructor.name}] Accessing height outside of TSLScene2D.build() context. The value may not be initialized yet.`
-			);
+			try {
+				void TSLPassNode.currentPass;
+			} catch {
+				console.warn(
+					`[${this.constructor.name}] Accessing height outside of TSLScene2D.build() or TSLPassNode context. The value may not be initialized yet.`
+				);
+			}
 		}
 		return this.getHeight();
 	}
@@ -106,15 +115,19 @@ export abstract class UpdatableTexture {
 
 	/**
 	 * Aspect ratio (width / height).
-	 * Warns if accessed outside of TSLScene2D.build() context.
+	 * Warns if accessed outside of TSL context.
 	 */
 	get aspectRatio(): number {
 		try {
 			void TSLScene2D.currentScene;
 		} catch {
-			console.warn(
-				`[${this.constructor.name}] Accessing aspectRatio outside of TSLScene2D.build() context. The value may not be initialized yet.`
-			);
+			try {
+				void TSLPassNode.currentPass;
+			} catch {
+				console.warn(
+					`[${this.constructor.name}] Accessing aspectRatio outside of TSLScene2D.build() or TSLPassNode context. The value may not be initialized yet.`
+				);
+			}
 		}
 		return this.getAspectRatio();
 	}

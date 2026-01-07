@@ -19,7 +19,7 @@ const mediaTexture = new MediaTexture({
 mediaTexture.wrapMode = "edge";
 
 window.addEventListener("resize", () => {
-	scene.resize(window.innerWidth, window.innerHeight);
+	scene.setSize(window.innerWidth, window.innerHeight);
 });
 
 await scene.build(() => {

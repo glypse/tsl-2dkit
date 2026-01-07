@@ -29,7 +29,7 @@ scene.setFixedTime(fixedTime);
 const time = fixedTime.timeUniform;
 
 window.addEventListener("resize", () => {
-	scene.resize(window.innerWidth, window.innerHeight);
+	scene.setSize(window.innerWidth, window.innerHeight);
 });
 
 const seed = uniform(Math.random() * 100);

@@ -30,8 +30,8 @@ let frameCount = 0;
 const frameCounterEl = document.createElement("span");
 
 window.addEventListener("resize", () => {
-	scene.resize(window.innerWidth, window.innerHeight);
-	// resize() automatically calls requestRender() in on-demand mode
+	scene.setSize(window.innerWidth, window.innerHeight);
+	// setSize() automatically calls requestRender() in on-demand mode
 });
 
 await scene.build(() => {

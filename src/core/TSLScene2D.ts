@@ -13,16 +13,14 @@ import {
 	WebGPURenderer,
 	Node,
 	MeshBasicNodeMaterial,
-	CanvasTexture,
-	UniformNode
+	CanvasTexture
 } from "three/webgpu";
-import { Fn, vec3, uniform } from "three/tsl";
+import { Fn, vec3 } from "three/tsl";
 import { smaa } from "three/addons/tsl/display/SMAANode.js";
 import { fxaa } from "three/addons/tsl/display/FXAANode.js";
 import Stats from "three/addons/libs/stats.module.js";
 import { FixedTime } from "../time/fixedTime";
-import type { UpdatableTexture } from "../textures/UpdatableTexture";
-import type { FeedbackTextureNode } from "../textures/FeedbackTexture";
+import { TSLContext2D } from "./TSLContext2D";
 
 type MaterialWithColorNode = MeshBasicNodeMaterial & { colorNode: Node };
 
@@ -53,7 +51,9 @@ export type TSLScene2DParameters = {
 	renderMode?: RenderMode;
 };
 
-export class TSLScene2D {
+const canvasNotInitializedErr = new Error("Canvas not initialized");
+
+export class TSLScene2D extends TSLContext2D {
 	// renderer / scene objects
 	private sceneObj: Scene | null = null;
 	private rendererObj: WebGPURenderer | null = null;
@@ -66,21 +66,13 @@ export class TSLScene2D {
 	// material
 	private material: MaterialWithColorNode;
 
-	// uniforms
-	private _widthUniform: UniformNode<number>;
-	private _heightUniform: UniformNode<number>;
-
 	// misc
 	private stats?: Stats;
-	private _width: number;
-	private _height: number;
 	private antialias: "fxaa" | "smaa" | "none";
 	private _drawCallback?: () => Node;
 	private _animationFrameId: number | null = null;
 	private _nodeGraphBuilt = false;
 	private _currentColorNode: Node | null = null;
-	private UpdatableTextures = new Set<UpdatableTexture>();
-	private FeedbackTextures = new Set<FeedbackTextureNode>();
 
 	// Time control
 	private _fixedTime: FixedTime | null = null;
@@ -109,13 +101,10 @@ export class TSLScene2D {
 		height: number,
 		parameters?: TSLScene2DParameters
 	) {
-		this._width = width;
-		this._height = height;
+		super(width, height);
+
 		this.antialias = parameters?.antialias ?? "none";
 		this._renderMode = parameters?.renderMode ?? "on-demand";
-
-		this._widthUniform = uniform(this._width);
-		this._heightUniform = uniform(this._height);
 
 		const outputNode = Fn(() => vec3(0));
 		this.material = new MeshBasicNodeMaterial({
@@ -355,24 +344,8 @@ export class TSLScene2D {
 		this._animationFrameId = requestAnimationFrame(boundAnimate);
 	}
 
-	registerUpdatableTexture(texture: UpdatableTexture): void {
-		this.UpdatableTextures.add(texture);
-	}
-
-	/**
-	 * Register a FeedbackTexture for tracking purposes.
-	 * Note: FeedbackTextureNode handles ping-pong internally via updateBefore,
-	 * so this is primarily for potential future disposal management.
-	 */
-	registerFeedbackTexture(feedbackTexture: FeedbackTextureNode): void {
-		this.FeedbackTextures.add(feedbackTexture);
-	}
-
 	private async _updateUpdatableTextures(): Promise<void> {
-		if (!this.UpdatableTextures.size) return;
-		await Promise.all(
-			Array.from(this.UpdatableTextures, (tex) => tex.updateIfNeeded())
-		);
+		await this.updateTextures();
 	}
 
 	/**
@@ -390,7 +363,9 @@ export class TSLScene2D {
 		return this._fixedTime;
 	}
 
-	resize(w: number, h: number): void {
+	override setSize(w: number, h: number): void {
+		super.setSize(w, h);
+
 		if (
 			!this.rendererObj ||
 			!this.planeMesh ||
@@ -400,10 +375,7 @@ export class TSLScene2D {
 		) {
 			return;
 		}
-		this._width = w;
-		this._height = h;
-		this._widthUniform.value = w;
-		this._heightUniform.value = h;
+
 		this.rendererObj.setSize(w, h);
 		this.rendererObj.setPixelRatio(window.devicePixelRatio);
 
@@ -430,56 +402,32 @@ export class TSLScene2D {
 	}
 
 	get canvasElement(): HTMLCanvasElement {
-		if (!this.canvasEl) throw new Error("Canvas not initialized");
+		if (!this.canvasEl) throw canvasNotInitializedErr;
 		return this.canvasEl;
 	}
 
 	get texture(): CanvasTexture {
-		if (!this.textureObj) throw new Error("Canvas not initialized");
+		if (!this.textureObj) throw canvasNotInitializedErr;
 		return this.textureObj;
 	}
 
 	get renderer(): WebGPURenderer {
-		if (!this.rendererObj) throw new Error("Canvas not initialized");
+		if (!this.rendererObj) throw canvasNotInitializedErr;
 		return this.rendererObj;
 	}
 
 	get scene(): Scene {
-		if (!this.sceneObj) throw new Error("Canvas not initialized");
+		if (!this.sceneObj) throw canvasNotInitializedErr;
 		return this.sceneObj;
 	}
 
 	get camera(): OrthographicCamera {
-		if (!this.cameraObj) throw new Error("Canvas not initialized");
+		if (!this.cameraObj) throw canvasNotInitializedErr;
 		return this.cameraObj;
 	}
 
 	get mesh(): Mesh {
-		if (!this.planeMesh) throw new Error("Canvas not initialized");
+		if (!this.planeMesh) throw canvasNotInitializedErr;
 		return this.planeMesh;
-	}
-
-	get width(): number {
-		return this._width;
-	}
-
-	get height(): number {
-		return this._height;
-	}
-
-	get widthUniform(): UniformNode<number> {
-		return this._widthUniform;
-	}
-
-	get heightUniform(): UniformNode<number> {
-		return this._heightUniform;
-	}
-
-	get aspect(): number {
-		return this._width / this._height;
-	}
-
-	get aspectUniform(): Node {
-		return this._widthUniform.div(this._heightUniform);
 	}
 }

@@ -42,7 +42,7 @@ const voronoiScale = uniform(8);
 const voronoiStrength = uniform(0.5);
 
 window.addEventListener("resize", () => {
-	scene.resize(window.innerWidth, window.innerHeight);
+	scene.setSize(window.innerWidth, window.innerHeight);
 });
 
 // Start webcam

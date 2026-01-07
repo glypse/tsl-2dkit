@@ -57,6 +57,8 @@ const speed = uniform(1);
 // Initial value, not reactive value
 const waveStrength = uniform(lerp(0, 0.1, mouse.x));
 
+let previousMouseY = 0.5;
+
 await scene.build(() => {
 	const UV = uv();
 
@@ -78,8 +80,11 @@ scene.canvasElement.addEventListener("mousemove", (event) => {
 	const mouse = getRelativeMousePosition(scene.canvasElement, event);
 	waveStrength.value = lerp(0, 0.1, mouse.x);
 
-	textTexture.parameters.weight = lerp(200, 800, mouse.y);
-	textTexture.needsUpdate = true;
+	if (mouse.y !== previousMouseY) {
+		textTexture.parameters.weight = lerp(200, 800, mouse.y);
+		textTexture.needsUpdate = true;
+		previousMouseY = mouse.y;
+	}
 });
 
 document.body.appendChild(scene.canvasElement);

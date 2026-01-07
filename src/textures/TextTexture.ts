@@ -1,17 +1,19 @@
-import { CanvasTexture, TextureNode } from "three/webgpu";
-import { texture, vec4, vec2, uniform, float, select, uv } from "three/tsl";
-import type { Node, UniformNode } from "three/webgpu";
+import { CanvasTexture as ThreeCanvasTexture, TextureNode } from "three/webgpu";
+import { vec4, uniform, select, vec2, texture, uv, float } from "three/tsl";
+import type { Node } from "three/webgpu";
 import { Color } from "three";
 import { TSLContext2D } from "../core/TSLContext2D";
 import { TSLScene2D } from "../core";
 import { TSLPassNode } from "../core/TSLPass";
-import { UpdatableTexture } from "./UpdatableTexture";
+import { CanvasTexture, type CanvasTextureOptions } from "./CanvasTexture";
 import { wrapUV } from "../utils";
 
 type AnchorX = "left" | "center" | "right";
 type AnchorY = "descenders" | "baseline" | "middle" | "ascenders";
 
-export type TextTextureOptions = {
+export type TextTextureOptions = Omit<CanvasTextureOptions, "anchorY"> & {
+	anchorX: AnchorX;
+	anchorY: AnchorY;
 	text: string;
 	color: string;
 	size: number;
@@ -19,10 +21,7 @@ export type TextTextureOptions = {
 	fontFamily?: string;
 	letterSpacing: string;
 	lineHeight: number;
-	anchorX: AnchorX;
-	anchorY: AnchorY;
 	padding: number;
-	debug: boolean;
 };
 
 function parseColor(colorStr: string): { r: number; g: number; b: number } {
@@ -102,20 +101,8 @@ function measureText(parameters: {
 	};
 }
 
-export class TextTexture extends UpdatableTexture {
-	parameters: TextTextureOptions;
-
-	private canvas: HTMLCanvasElement;
+export class TextTexture extends CanvasTexture<TextTextureOptions> {
 	private ctx: CanvasRenderingContext2D;
-
-	private _widthUniform = uniform(0);
-	private _heightUniform = uniform(0);
-	private _aspectUniform = uniform(1);
-	private anchorOffsetXUniform = uniform(0.5);
-	private anchorOffsetYUniform = uniform(0.5);
-	private debugUniform = uniform(0);
-	private debugLineWidthX = uniform(0);
-	private debugLineWidthY = uniform(0);
 
 	private colorUniform = {
 		r: uniform(0),
@@ -128,25 +115,28 @@ export class TextTexture extends UpdatableTexture {
 	private gpuTextureHeight = 0;
 
 	// Cached TextureNode for efficient sampling - allows texture swapping without rebuilding node graph
-	private textureNode: TextureNode | null = null;
+	private textTexture: TextureNode | null = null;
 
 	// Track if first update has completed (for ready state)
 	private firstUpdateComplete = false;
 
 	constructor(parameters?: Partial<TextTextureOptions>) {
 		const canvas = document.createElement("canvas");
-		const canvasTexture = new CanvasTexture(canvas);
-		canvasTexture.generateMipmaps = false;
 
-		super(canvasTexture);
+		super({
+			canvas,
+			anchorX: parameters?.anchorX ?? "center",
+			anchorY: parameters?.anchorY ?? "middle",
+			debug: parameters?.debug ?? false
+		});
 
 		const ctx = canvas.getContext("2d", { willReadFrequently: false });
 		if (!ctx) throw new Error("2d context not supported");
 
-		this.canvas = canvas;
 		this.ctx = ctx;
 
 		this.parameters = {
+			canvas,
 			text: "Lorem ipsum",
 			color: "#000000",
 			size: 16,
@@ -154,15 +144,15 @@ export class TextTexture extends UpdatableTexture {
 			fontFamily: "Arial",
 			letterSpacing: "0",
 			lineHeight: 1.2,
-			anchorX: "center",
-			anchorY: "middle",
+			anchorX: parameters?.anchorX ?? "center",
+			anchorY: parameters?.anchorY ?? "middle",
 			padding: 0,
-			debug: false,
+			debug: parameters?.debug ?? false,
 			...parameters
-		};
+		} as TextTextureOptions;
 	}
 
-	sample(inputUV?: Node): Node {
+	override sample(inputUV?: Node): Node {
 		// Try to register with TSLScene2D, else TSLPassNode
 		let context: TSLContext2D | TSLPassNode | null = null;
 		let isTSLPass = false;
@@ -186,14 +176,19 @@ export class TextTexture extends UpdatableTexture {
 		let textUV: Node;
 		// TSLContext2D has widthUniform/heightUniform
 		if (context) {
-			textUV = this.screenToTextUV(rawUV, context);
+			const screenPixelX = rawUV.x.mul(context.widthUniform);
+			const screenPixelY = rawUV.y.mul(context.heightUniform);
+			textUV = vec2(
+				screenPixelX.div(this.widthUniform),
+				screenPixelY.div(this.heightUniform)
+			);
 		} else {
 			textUV = rawUV;
 		}
-		return this.sampleTexture(textUV);
+		return this.sampleTextureWithColor(textUV);
 	}
 
-	protected async update(): Promise<void> {
+	protected override async update(): Promise<void> {
 		const {
 			text,
 			color,
@@ -204,11 +199,11 @@ export class TextTexture extends UpdatableTexture {
 			lineHeight,
 			anchorX,
 			anchorY,
-			padding,
-			debug
+			padding
 		} = this.parameters;
 
 		if (fontFamily) {
+			// Wait for fonts to load before measuring/rendering
 			await document.fonts.ready;
 		}
 
@@ -238,17 +233,17 @@ export class TextTexture extends UpdatableTexture {
 			this._texture.dispose();
 
 			// Resize the canvas element (this is the source for CanvasTexture)
-			this.canvas.width = newCanvasWidth;
-			this.canvas.height = newCanvasHeight;
+			this.sourceCanvas.width = newCanvasWidth;
+			this.sourceCanvas.height = newCanvasHeight;
 
 			// Create new CanvasTexture with the resized canvas
-			const newTexture = new CanvasTexture(this.canvas);
+			const newTexture = new ThreeCanvasTexture(this.sourceCanvas);
 			newTexture.generateMipmaps = false;
 
 			// Update the TextureNode's value to point to new texture
 			// This allows the node graph to use the new texture without rebuilding
-			if (this.textureNode) {
-				this.textureNode.value = newTexture;
+			if (this.textTexture) {
+				this.textTexture.value = newTexture;
 			}
 
 			this._texture = newTexture;
@@ -279,20 +274,19 @@ export class TextTexture extends UpdatableTexture {
 			this.ctx.fillText(line, drawX, drawY);
 		}
 
+		// Update base CanvasTexture uniforms (_widthUniform, _heightUniform, etc.)
+		// by calling the parent update with updated canvas dimensions
+		await super.update();
+
+		// Override dimension uniforms with logical (unscaled) dimensions
+		// since getWidth/getHeight return unscaled values
 		this._widthUniform.value = canvasWidth;
 		this._heightUniform.value = canvasHeight;
 		this._aspectUniform.value = canvasWidth / canvasHeight;
-		this.debugUniform.value = debug ? 1 : 0;
-		this.debugLineWidthX.value = 1 / canvasWidth;
-		this.debugLineWidthY.value = 1 / canvasHeight;
 
+		// Override specific anchor calculations for text-specific anchor types
 		this.anchorOffsetXUniform.value = this.computeAnchorOffsetX(anchorX);
-		this.anchorOffsetYUniform.value = this.computeAnchorOffsetY(
-			anchorY,
-			canvasHeight,
-			padding,
-			metrics.descent
-		);
+		this.anchorOffsetYUniform.value = this.computeAnchorOffsetY(anchorY);
 
 		const parsedColor = parseColor(color);
 		this.colorUniform.r.value = parsedColor.r;
@@ -306,7 +300,7 @@ export class TextTexture extends UpdatableTexture {
 		}
 	}
 
-	private sampleTexture(inputUV: Node): Node {
+	private sampleTextureWithColor(inputUV: Node): Node {
 		const transformedUV = vec2(
 			inputUV.x.add(this.anchorOffsetXUniform),
 			inputUV.y.add(this.anchorOffsetYUniform)
@@ -319,8 +313,8 @@ export class TextTexture extends UpdatableTexture {
 		);
 
 		// Create or reuse TextureNode with wrapped UVs
-		this.textureNode ??= texture(this.texture, wrappedUV);
-		const sampled = this.textureNode;
+		this.textTexture ??= texture(this.texture, wrappedUV);
+		const sampled = this.textTexture;
 		const alpha = sampled.r.pow(2.2);
 		const textColor = vec4(
 			this.colorUniform.r,
@@ -358,42 +352,22 @@ export class TextTexture extends UpdatableTexture {
 		);
 	}
 
-	private screenToTextUV(
-		screenUV: Node,
-		context: {
-			width: number;
-			height: number;
-			widthUniform: UniformNode<number>;
-			heightUniform: UniformNode<number>;
-		}
-	): Node {
-		const screenPixelX = screenUV.x.mul(context.widthUniform);
-		const screenPixelY = screenUV.y.mul(context.heightUniform);
+	protected override computeAnchorOffsetY(anchorY: string): number {
+		// For text-specific anchor types, we need extra context
+		const canvasHeight = this.sourceCanvas.height / window.devicePixelRatio;
+		const padding = this.parameters.padding;
 
-		return vec2(
-			screenPixelX.div(this._widthUniform),
-			screenPixelY.div(this._heightUniform)
-		);
-	}
+		// Get descent from current text metrics
+		const metrics = measureText({
+			text: this.parameters.text,
+			size: this.parameters.size,
+			weight: this.parameters.weight,
+			fontFamily: this.parameters.fontFamily ?? "Arial",
+			letterSpacing: this.parameters.letterSpacing,
+			lineHeight: this.parameters.lineHeight
+		});
+		const descent = metrics.descent;
 
-	private computeAnchorOffsetX(anchorX: AnchorX): number {
-		switch (anchorX) {
-			case "left":
-				return 0;
-			case "right":
-				return 1;
-			case "center":
-			default:
-				return 0.5;
-		}
-	}
-
-	private computeAnchorOffsetY(
-		anchorY: AnchorY,
-		canvasHeight: number,
-		padding: number,
-		descent: number
-	): number {
 		const totalH = canvasHeight;
 		const extraPixel = 1 / totalH;
 		const paddingRatio = (padding + 1) / totalH;
@@ -412,43 +386,11 @@ export class TextTexture extends UpdatableTexture {
 		}
 	}
 
-	protected getWidth(): number {
+	protected override getWidth(): number {
 		return this.gpuTextureWidth / window.devicePixelRatio;
 	}
 
-	protected getHeight(): number {
+	protected override getHeight(): number {
 		return this.gpuTextureHeight / window.devicePixelRatio;
-	}
-
-	protected getAspectRatio(): number {
-		const h = this.getHeight();
-		return h > 0 ? this.getWidth() / h : 1;
-	}
-
-	/**
-	 * Get a uniform node representing the texture's width in pixels.
-	 * This uniform automatically updates when the text changes.
-	 * Use this in your node graph for reactive width handling.
-	 */
-	get widthUniform(): UniformNode<number> {
-		return this._widthUniform;
-	}
-
-	/**
-	 * Get a uniform node representing the texture's height in pixels.
-	 * This uniform automatically updates when the text changes.
-	 * Use this in your node graph for reactive height handling.
-	 */
-	get heightUniform(): UniformNode<number> {
-		return this._heightUniform;
-	}
-
-	/**
-	 * Get a uniform node representing the texture's aspect ratio (width/height).
-	 * This uniform automatically updates when the text changes.
-	 * Use this in your node graph for reactive aspect ratio handling.
-	 */
-	get aspectUniform(): UniformNode<number> {
-		return this._aspectUniform;
 	}
 }

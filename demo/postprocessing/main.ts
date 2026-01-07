@@ -84,14 +84,21 @@ const postProcessing = new THREE.PostProcessing(renderer);
 const scenePass = pass(scene, camera);
 
 const textTexture = new TextTexture({
-	text: "a",
-	size: Math.min(window.innerWidth, window.innerHeight),
+	text: Math.random().toFixed(4),
+	size: Math.min(window.innerWidth, window.innerHeight) / 3,
 	// Initial value, not reactive value
 	weight: 500,
 	color: "#00ff00",
 	fontFamily: "Fustat",
 	debug: true,
 	padding: 0
+});
+
+await textTexture.waitUntilReady();
+
+window.addEventListener("click", () => {
+	textTexture.parameters.text = Math.random().toFixed(4);
+	textTexture.needsUpdate = true;
 });
 
 // Get the scene pass texture

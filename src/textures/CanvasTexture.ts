@@ -14,11 +14,11 @@ export type CanvasTextureOptions = {
 	/**
 	 * Anchor point for horizontal alignment.
 	 */
-	anchorX: "left" | "center" | "right";
+	anchorX: string;
 	/**
 	 * Anchor point for vertical alignment.
 	 */
-	anchorY: "top" | "center" | "bottom";
+	anchorY: string;
 	/**
 	 * Show debug borders around the texture bounds.
 	 */
@@ -49,23 +49,25 @@ export type CanvasTextureOptions = {
  * canvasTexture.needsUpdate = true;
  * ```
  */
-export class CanvasTexture extends UpdatableTexture {
-	parameters: CanvasTextureOptions;
+export class CanvasTexture<
+	TParameters extends CanvasTextureOptions = CanvasTextureOptions
+> extends UpdatableTexture {
+	parameters: TParameters;
 
-	private _widthUniform = uniform(0);
-	private _heightUniform = uniform(0);
-	private _aspectUniform = uniform(1);
-	private anchorOffsetXUniform = uniform(0.5);
-	private anchorOffsetYUniform = uniform(0.5);
-	private debugUniform = uniform(0);
-	private debugLineWidthX = uniform(0);
-	private debugLineWidthY = uniform(0);
+	protected _widthUniform = uniform(0);
+	protected _heightUniform = uniform(0);
+	protected _aspectUniform = uniform(1);
+	protected anchorOffsetXUniform = uniform(0.5);
+	protected anchorOffsetYUniform = uniform(0.5);
+	protected debugUniform = uniform(0);
+	protected debugLineWidthX = uniform(0);
+	protected debugLineWidthY = uniform(0);
 
-	private sourceCanvas: HTMLCanvasElement | OffscreenCanvas;
+	protected sourceCanvas: HTMLCanvasElement | OffscreenCanvas;
 	private textureNode: TextureNode | null = null;
 
 	constructor(
-		parameters: Partial<CanvasTextureOptions> & {
+		parameters: Partial<TParameters> & {
 			canvas: HTMLCanvasElement | OffscreenCanvas;
 		}
 	) {
@@ -79,10 +81,10 @@ export class CanvasTexture extends UpdatableTexture {
 
 		this.parameters = {
 			canvas: parameters.canvas,
-			anchorX: parameters.anchorX ?? "center",
-			anchorY: parameters.anchorY ?? "center",
+			anchorX: parameters.anchorX ?? ("center" as TParameters["anchorX"]),
+			anchorY: parameters.anchorY ?? ("center" as TParameters["anchorY"]),
 			debug: parameters.debug ?? false
-		};
+		} as TParameters;
 
 		// Initialize uniforms
 		this._widthUniform.value = this.sourceCanvas.width;
@@ -108,7 +110,7 @@ export class CanvasTexture extends UpdatableTexture {
 		return this.sampleTexture(rawUV);
 	}
 
-	protected update(): void {
+	protected update(): void | Promise<void> {
 		const { anchorX, anchorY, debug } = this.parameters;
 
 		const canvasWidth = this.sourceCanvas.width;
@@ -136,7 +138,7 @@ export class CanvasTexture extends UpdatableTexture {
 		this.anchorOffsetYUniform.value = this.computeAnchorOffsetY(anchorY);
 	}
 
-	private sampleTexture(inputUV: Node): Node {
+	protected sampleTexture(inputUV: Node): Node {
 		const transformedUV = vec2(
 			inputUV.x.add(this.anchorOffsetXUniform),
 			inputUV.y.add(this.anchorOffsetYUniform)
@@ -183,7 +185,7 @@ export class CanvasTexture extends UpdatableTexture {
 		);
 	}
 
-	private computeAnchorOffsetX(anchorX: "left" | "center" | "right"): number {
+	protected computeAnchorOffsetX(anchorX: string): number {
 		switch (anchorX) {
 			case "left":
 				return 0;
@@ -195,7 +197,7 @@ export class CanvasTexture extends UpdatableTexture {
 		}
 	}
 
-	private computeAnchorOffsetY(anchorY: "top" | "center" | "bottom"): number {
+	protected computeAnchorOffsetY(anchorY: string): number {
 		switch (anchorY) {
 			case "top":
 				return 1;

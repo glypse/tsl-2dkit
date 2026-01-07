@@ -35,6 +35,8 @@ const textTexture = new TextTexture({
 	debug: false
 });
 
+await textTexture.waitUntilReady();
+
 await scene.build(() => {
 	const screenSpaceSmoothness = float(window.devicePixelRatio)
 		.div(15000)

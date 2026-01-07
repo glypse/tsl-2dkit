@@ -130,6 +130,9 @@ export class TextTexture extends UpdatableTexture {
 	// Cached TextureNode for efficient sampling - allows texture swapping without rebuilding node graph
 	private textureNode: TextureNode | null = null;
 
+	// Track if first update has completed (for ready state)
+	private firstUpdateComplete = false;
+
 	constructor(parameters?: Partial<TextTextureOptions>) {
 		const canvas = document.createElement("canvas");
 		const canvasTexture = new CanvasTexture(canvas);
@@ -295,6 +298,12 @@ export class TextTexture extends UpdatableTexture {
 		this.colorUniform.r.value = parsedColor.r;
 		this.colorUniform.g.value = parsedColor.g;
 		this.colorUniform.b.value = parsedColor.b;
+
+		// Mark as ready after first successful update
+		if (!this.firstUpdateComplete) {
+			this.firstUpdateComplete = true;
+			this.markReady();
+		}
 	}
 
 	private sampleTexture(inputUV: Node): Node {

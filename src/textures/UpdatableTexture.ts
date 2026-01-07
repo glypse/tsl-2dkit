@@ -21,8 +21,17 @@ export abstract class UpdatableTexture {
 
 	protected _texture: Texture;
 
+	private _readyPromise: Promise<void>;
+	private _resolveReady!: () => void;
+	private _isReady = false;
+
 	protected constructor(texture: Texture) {
 		this._texture = texture;
+
+		// Initialize ready promise
+		this._readyPromise = new Promise<void>((resolve) => {
+			this._resolveReady = resolve;
+		});
 	}
 
 	get texture(): Texture {
@@ -169,6 +178,33 @@ export abstract class UpdatableTexture {
 	}
 
 	protected abstract update(): void | Promise<void>;
+
+	/**
+	 * Mark this texture as ready. Subclasses should call this when their
+	 * async initialization is complete (e.g., after media loads or fonts load).
+	 * Textures that are immediately ready can call this in their constructor.
+	 */
+	protected markReady(): void {
+		if (this._isReady) return;
+		this._isReady = true;
+		this._resolveReady();
+	}
+
+	/**
+	 * Check if the texture is fully loaded and ready for rendering.
+	 */
+	get ready(): boolean {
+		return this._isReady;
+	}
+
+	/**
+	 * Wait for the texture to be fully loaded and ready.
+	 * Resolves immediately if already ready.
+	 * @returns A promise that resolves when the texture is ready.
+	 */
+	waitUntilReady(): Promise<void> {
+		return this._readyPromise;
+	}
 
 	/**
 	 * Dispose of the texture resources. Subclasses should override to clean up

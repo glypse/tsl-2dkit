@@ -89,6 +89,9 @@ export class CanvasTexture extends UpdatableTexture {
 		this._heightUniform.value = this.sourceCanvas.height;
 		this._aspectUniform.value =
 			this.sourceCanvas.width / this.sourceCanvas.height || 1;
+
+		// CanvasTexture is immediately ready since it uses a pre-existing canvas
+		this.markReady();
 	}
 
 	/**

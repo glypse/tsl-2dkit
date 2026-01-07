@@ -8,8 +8,6 @@ const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 	antialias: "none"
 });
 
-// TODO: Since this renders on request, we should only render once the mediaTexture is ready
-
 const mediaTexture = new MediaTexture({
 	src: "./test.webp",
 	anchorX: "left",
@@ -17,6 +15,9 @@ const mediaTexture = new MediaTexture({
 	debug: false
 });
 mediaTexture.wrapMode = "edge";
+
+// Wait for media to be ready before building the scene to avoid race condition
+await mediaTexture.waitUntilReady();
 
 window.addEventListener("resize", () => {
 	scene.setSize(window.innerWidth, window.innerHeight);

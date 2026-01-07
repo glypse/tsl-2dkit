@@ -115,6 +115,7 @@ export class MediaTexture extends UpdatableTexture {
 					);
 					this.setupVideoElement(videoElement);
 					this.isLoaded = true;
+					this.markReady();
 				} else {
 					console.debug(
 						"[MediaTexture] Video element not ready, waiting for canplay event"
@@ -126,6 +127,7 @@ export class MediaTexture extends UpdatableTexture {
 								this.setupVideoElement(videoElement);
 								this.isLoaded = true;
 								this.needsUpdate = true;
+								this.markReady();
 							}
 						},
 						{ once: true }
@@ -140,6 +142,7 @@ export class MediaTexture extends UpdatableTexture {
 					);
 					this.setupImageElement(imageElement);
 					this.isLoaded = true;
+					this.markReady();
 				} else {
 					console.debug(
 						"[MediaTexture] Image element not loaded, waiting for load event"
@@ -151,6 +154,7 @@ export class MediaTexture extends UpdatableTexture {
 								this.setupImageElement(imageElement);
 								this.isLoaded = true;
 								this.needsUpdate = true;
+								this.markReady();
 							}
 						},
 						{ once: true }
@@ -158,6 +162,7 @@ export class MediaTexture extends UpdatableTexture {
 				}
 			} else {
 				this.isLoaded = true;
+				this.markReady();
 			}
 		}
 	}
@@ -178,6 +183,7 @@ export class MediaTexture extends UpdatableTexture {
 			this.setupImageElement(img);
 			this.isLoaded = true;
 			this.needsUpdate = true;
+			this.markReady();
 		};
 		img.onerror = (error: unknown) => {
 			console.error("[MediaTexture] Failed to load image:", src, error);
@@ -238,6 +244,7 @@ export class MediaTexture extends UpdatableTexture {
 				this.setupVideoElement(video);
 				this.isLoaded = true;
 				this.needsUpdate = true;
+				this.markReady();
 			}
 
 			if (this.parameters.autoplay) {

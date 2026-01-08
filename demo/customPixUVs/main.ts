@@ -6,11 +6,12 @@ import { lerp } from "three/src/math/MathUtils.js";
 
 /**
  * Gets the mouse position on the element in a 0-1 range.
+ *
  * @param element - The element to get the position relative to.
  * @param event - The mouse event containing the client coordinates.
- * @returns An object containing the relative mouse position.
- *          - `x`: The horizontal position as a fraction of the element width (0 to 1).
- *          - `y`: The vertical position as a fraction of the element height (0 to 1).
+ * @returns An object containing the relative mouse position. - `x`: The
+ *   horizontal position as a fraction of the element width (0 to 1). - `y`: The
+ *   vertical position as a fraction of the element height (0 to 1).
  */
 function getRelativeMousePosition(
 	element: HTMLElement,

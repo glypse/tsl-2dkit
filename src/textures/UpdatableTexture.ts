@@ -39,21 +39,18 @@ export abstract class UpdatableTexture {
 	}
 
 	/**
-	 * Get the width of the texture in pixels.
-	 * Subclasses should implement this to return their actual width.
+	 * Get the width of the texture in pixels. Subclasses should implement this
+	 * to return their actual width.
 	 */
 	protected abstract getWidth(): number;
 
 	/**
-	 * Get the height of the texture in pixels.
-	 * Subclasses should implement this to return their actual height.
+	 * Get the height of the texture in pixels. Subclasses should implement this
+	 * to return their actual height.
 	 */
 	protected abstract getHeight(): number;
 
-	/**
-	 * Width of the texture in pixels.
-	 * Warns if accessed outside of TSL context.
-	 */
+	/** Width of the texture in pixels. Warns if accessed outside of TSL context. */
 	get width(): number {
 		try {
 			void TSLScene2D.currentScene;
@@ -70,8 +67,8 @@ export abstract class UpdatableTexture {
 	}
 
 	/**
-	 * Height of the texture in pixels.
-	 * Warns if accessed outside of TSL context.
+	 * Height of the texture in pixels. Warns if accessed outside of TSL
+	 * context.
 	 */
 	get height(): number {
 		try {
@@ -89,30 +86,30 @@ export abstract class UpdatableTexture {
 	}
 
 	/**
-	 * Get the aspect ratio of the texture.
-	 * Subclasses can override this to provide custom aspect ratio logic.
-	 * Default implementation returns width / height, or 1 if height is 0.
+	 * Get the aspect ratio of the texture. Subclasses can override this to
+	 * provide custom aspect ratio logic. Default implementation returns width /
+	 * height, or 1 if height is 0.
 	 */
 	protected abstract getAspectRatio(): number;
 
 	/**
-	 * Get a uniform node representing the texture's width in pixels.
-	 * This uniform automatically updates when the texture changes.
-	 * Use this in your node graph for reactive width handling.
+	 * Get a uniform node representing the texture's width in pixels. This
+	 * uniform automatically updates when the texture changes. Use this in your
+	 * node graph for reactive width handling.
 	 */
 	abstract get widthUniform(): ReturnType<typeof uniform<number>>;
 
 	/**
-	 * Get a uniform node representing the texture's height in pixels.
-	 * This uniform automatically updates when the texture changes.
-	 * Use this in your node graph for reactive height handling.
+	 * Get a uniform node representing the texture's height in pixels. This
+	 * uniform automatically updates when the texture changes. Use this in your
+	 * node graph for reactive height handling.
 	 */
 	abstract get heightUniform(): ReturnType<typeof uniform<number>>;
 
 	/**
-	 * Get a uniform node representing the texture's aspect ratio (width/height).
-	 * This uniform automatically updates when the texture changes.
-	 * Use this in your node graph for reactive aspect ratio handling.
+	 * Get a uniform node representing the texture's aspect ratio
+	 * (width/height). This uniform automatically updates when the texture
+	 * changes. Use this in your node graph for reactive aspect ratio handling.
 	 */
 	abstract get aspectUniform(): ReturnType<typeof uniform<number>>;
 
@@ -122,10 +119,7 @@ export abstract class UpdatableTexture {
 	 */
 	abstract sample(inputUV?: Node): Node;
 
-	/**
-	 * Aspect ratio (width / height).
-	 * Warns if accessed outside of TSL context.
-	 */
+	/** Aspect ratio (width / height). Warns if accessed outside of TSL context. */
 	get aspectRatio(): number {
 		try {
 			void TSLScene2D.currentScene;
@@ -154,8 +148,8 @@ export abstract class UpdatableTexture {
 	}
 
 	/**
-	 * Apply the current interpolation mode to the texture.
-	 * Should be called whenever the internal texture is replaced.
+	 * Apply the current interpolation mode to the texture. Should be called
+	 * whenever the internal texture is replaced.
 	 */
 	protected applyInterpolation(): void {
 		const filter =
@@ -180,8 +174,8 @@ export abstract class UpdatableTexture {
 	protected abstract update(): void | Promise<void>;
 
 	/**
-	 * Mark this texture as ready. Subclasses should call this when their
-	 * async initialization is complete (e.g., after media loads or fonts load).
+	 * Mark this texture as ready. Subclasses should call this when their async
+	 * initialization is complete (e.g., after media loads or fonts load).
 	 * Textures that are immediately ready can call this in their constructor.
 	 */
 	protected markReady(): void {
@@ -190,16 +184,15 @@ export abstract class UpdatableTexture {
 		this._resolveReady();
 	}
 
-	/**
-	 * Check if the texture is fully loaded and ready for rendering.
-	 */
+	/** Check if the texture is fully loaded and ready for rendering. */
 	get ready(): boolean {
 		return this._isReady;
 	}
 
 	/**
-	 * Wait for the texture to be fully loaded and ready.
-	 * Resolves immediately if already ready.
+	 * Wait for the texture to be fully loaded and ready. Resolves immediately
+	 * if already ready.
+	 *
 	 * @returns A promise that resolves when the texture is ready.
 	 */
 	waitUntilReady(): Promise<void> {

@@ -4,8 +4,8 @@ import tseslint from "typescript-eslint";
 import json from "@eslint/json";
 import markdown from "@eslint/markdown";
 import css from "@eslint/css";
-// TODO: Enable JSDoc linting
-/* import jsdoc from "eslint-plugin-jsdoc"; */
+import tsdoc from "eslint-plugin-tsdoc";
+import jsdoc from "eslint-plugin-jsdoc";
 import { defineConfig } from "eslint/config";
 
 export default defineConfig([
@@ -17,18 +17,31 @@ export default defineConfig([
 		rules: {
 			"func-style": ["warn", "declaration"],
 			"require-atomic-updates": "error",
-			"arrow-body-style": ["warn", "as-needed"]
+			"arrow-body-style": ["warn", "as-needed"],
+			"no-warning-comments": "warn",
+			"max-len": [
+				"warn",
+				{
+					code: 80,
+					ignoreUrls: true,
+					ignoreStrings: true,
+					ignoreTemplateLiterals: true,
+					ignoreRegExpLiterals: true
+				}
+			]
 		},
 		languageOptions: { globals: globals.browser }
 	},
 	{
 		files: ["**/*.{ts,mts,cts}"],
+		plugins: { tsdoc, jsdoc },
 		extends: [
 			...tseslint.configs.strictTypeChecked,
-			...tseslint.configs.stylisticTypeChecked
-			//jsdoc.configs["flat/recommended-typescript-error"]
+			...tseslint.configs.stylisticTypeChecked,
+			jsdoc.configs["flat/recommended-typescript"]
 		],
 		rules: {
+			"tsdoc/syntax": "warn",
 			"@typescript-eslint/consistent-type-definitions": ["warn", "type"],
 			"no-restricted-syntax": [
 				"warn",
@@ -42,8 +55,8 @@ export default defineConfig([
 			"@typescript-eslint/explicit-function-return-type": [
 				"warn",
 				{ allowExpressions: true }
-			]
-			/* "jsdoc/require-description": "warn",
+			],
+			"jsdoc/require-description": "warn",
 			"jsdoc/require-jsdoc": [
 				"warn",
 				{
@@ -55,7 +68,7 @@ export default defineConfig([
 						"TSInterfaceDeclaration"
 					]
 				}
-			] */
+			]
 		},
 		languageOptions: {
 			parser: tseslint.parser,

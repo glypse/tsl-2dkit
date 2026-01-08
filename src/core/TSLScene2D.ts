@@ -34,18 +34,23 @@ export type RenderMode = "on-demand" | "continuous";
 export type TSLScene2DParameters = {
 	/**
 	 * Show FPS stats panel.
+	 *
 	 * @default false
 	 */
 	stats?: boolean;
 	/**
 	 * Anti-aliasing mode.
+	 *
 	 * @default "none"
 	 */
 	antialias?: "fxaa" | "smaa" | "none";
 	/**
 	 * Rendering mode:
-	 * - "on-demand": Only renders when requestRender() is called or when tracked changes occur
+	 *
+	 * - "on-demand": Only renders when requestRender() is called or when tracked
+	 *   changes occur
 	 * - "continuous": Traditional animation loop (requestAnimationFrame)
+	 *
 	 * @default "on-demand"
 	 */
 	renderMode?: RenderMode;
@@ -84,9 +89,7 @@ export class TSLScene2D extends TSLContext2D {
 	// Static reference to current canvas for auto-detection
 	private static _currentScene: TSLScene2D | null = null;
 
-	/**
-	 * Get the currently active canvas (the one being drawn to)
-	 */
+	/** Get the currently active canvas (the one being drawn to) */
 	static get currentScene(): TSLScene2D {
 		if (!TSLScene2D._currentScene) {
 			throw new Error(
@@ -179,9 +182,9 @@ export class TSLScene2D extends TSLContext2D {
 	}
 
 	/**
-	 * Request a render on the next animation frame.
-	 * In on-demand mode, this schedules a single render.
-	 * In continuous mode, this is a no-op (rendering happens automatically).
+	 * Request a render on the next animation frame. In on-demand mode, this
+	 * schedules a single render. In continuous mode, this is a no-op (rendering
+	 * happens automatically).
 	 */
 	requestRender(): void {
 		if (this._renderMode === "continuous") return;
@@ -194,9 +197,7 @@ export class TSLScene2D extends TSLContext2D {
 		});
 	}
 
-	/**
-	 * Render a single frame. Useful for manual frame-by-frame rendering.
-	 */
+	/** Render a single frame. Useful for manual frame-by-frame rendering. */
 	async renderFrame(): Promise<void> {
 		// Update fixed time if enabled
 		if (this._fixedTime) {
@@ -221,8 +222,8 @@ export class TSLScene2D extends TSLContext2D {
 	}
 
 	/**
-	 * Stop the continuous animation loop.
-	 * Only relevant in continuous render mode.
+	 * Stop the continuous animation loop. Only relevant in continuous render
+	 * mode.
 	 */
 	stopAnimationLoop(): void {
 		if (this._animationFrameId !== null) {
@@ -231,9 +232,7 @@ export class TSLScene2D extends TSLContext2D {
 		}
 	}
 
-	/**
-	 * Build the node graph from the build callback.
-	 */
+	/** Build the node graph from the build callback. */
 	private _buildNodeGraph(): void {
 		if (!this._drawCallback) return;
 
@@ -251,9 +250,9 @@ export class TSLScene2D extends TSLContext2D {
 	}
 
 	/**
-	 * Force a rebuild of the node graph on the next frame.
-	 * Use this when you need to change the node graph structure (not just uniform values).
-	 * This will properly dispose all RTT render targets to prevent memory leaks.
+	 * Force a rebuild of the node graph on the next frame. Use this when you
+	 * need to change the node graph structure (not just uniform values). This
+	 * will properly dispose all RTT render targets to prevent memory leaks.
 	 */
 	invalidateNodeGraph(): void {
 		// Dispose old node graph resources before rebuilding
@@ -264,9 +263,7 @@ export class TSLScene2D extends TSLContext2D {
 		this._nodeGraphBuilt = false;
 	}
 
-	/**
-	 * Traverse and dispose all RTTNode render targets in the node graph.
-	 */
+	/** Traverse and dispose all RTTNode render targets in the node graph. */
 	private _disposeNodeGraph(node: Node): void {
 		const disposed = new Set<Node>();
 
@@ -289,8 +286,8 @@ export class TSLScene2D extends TSLContext2D {
 	}
 
 	/**
-	 * Resume the continuous animation loop.
-	 * Only relevant in continuous render mode.
+	 * Resume the continuous animation loop. Only relevant in continuous render
+	 * mode.
 	 */
 	resumeAnimationLoop(): void {
 		if (this._renderMode !== "continuous") {
@@ -306,9 +303,7 @@ export class TSLScene2D extends TSLContext2D {
 		this._startContinuousLoop();
 	}
 
-	/**
-	 * Start the continuous animation loop (internal method).
-	 */
+	/** Start the continuous animation loop (internal method). */
 	private _startContinuousLoop(): void {
 		function animate(this: TSLScene2D): void {
 			void (async () => {
@@ -349,16 +344,14 @@ export class TSLScene2D extends TSLContext2D {
 	}
 
 	/**
-	 * Set the FixedTime instance to use for time control.
-	 * When set, the canvas will update the FixedTime on each frame.
+	 * Set the FixedTime instance to use for time control. When set, the canvas
+	 * will update the FixedTime on each frame.
 	 */
 	setFixedTime(fixedTime: FixedTime | null): void {
 		this._fixedTime = fixedTime;
 	}
 
-	/**
-	 * Get the current FixedTime instance.
-	 */
+	/** Get the current FixedTime instance. */
 	get fixedTime(): FixedTime | null {
 		return this._fixedTime;
 	}
@@ -394,9 +387,7 @@ export class TSLScene2D extends TSLContext2D {
 		this.requestRender();
 	}
 
-	/**
-	 * Get the current render mode.
-	 */
+	/** Get the current render mode. */
 	get renderMode(): RenderMode {
 		return this._renderMode;
 	}

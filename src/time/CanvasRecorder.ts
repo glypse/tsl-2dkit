@@ -11,32 +11,37 @@ import type { FixedTime } from "./fixedTime";
 export type CanvasRecorderOptions = {
 	/**
 	 * Target frames per second for the recording.
+	 *
 	 * @default 60
 	 */
 	fps?: number;
 
 	/**
-	 * Video bitrate in bits per second.
-	 * Higher values = better quality but larger files.
+	 * Video bitrate in bits per second. Higher values = better quality but
+	 * larger files.
+	 *
 	 * @default 25_000_000 (25 Mbps - near lossless for most content)
 	 */
 	videoBitsPerSecond?: number;
 
 	/**
 	 * Output format for the video.
-	 * @default 'mp4'
+	 *
+	 * @default "mp4"
 	 */
 	format?: "mp4" | "webm";
 
 	/**
 	 * Video codec to use.
+	 *
 	 * @default 'avc' for mp4, 'vp9' for webm
 	 */
 	codec?: "avc" | "hevc" | "vp9" | "vp8" | "av1";
 
 	/**
 	 * Filename for the downloaded video (without extension).
-	 * @default 'recording'
+	 *
+	 * @default "recording"
 	 */
 	filename?: string;
 };
@@ -49,6 +54,7 @@ type RecorderState = "inactive" | "recording";
  * regardless of browser throttling or performance issues.
  *
  * @example
+ *
  * ```ts
  * const fixedTime = new FixedTime();
  * canvas.setFixedTime(fixedTime);
@@ -99,23 +105,19 @@ export class CanvasRecorder {
 		};
 	}
 
-	/**
-	 * Get the current state of the recorder.
-	 */
+	/** Get the current state of the recorder. */
 	get state(): RecorderState {
 		return this._state;
 	}
 
-	/**
-	 * Check if recording is in progress.
-	 */
+	/** Check if recording is in progress. */
 	get isRecording(): boolean {
 		return this._state === "recording";
 	}
 
 	/**
-	 * Update recorder options.
-	 * Note: This only affects future recordings, not ongoing ones.
+	 * Update recorder options. Note: This only affects future recordings, not
+	 * ongoing ones.
 	 */
 	setOptions(options: Partial<CanvasRecorderOptions>): void {
 		Object.assign(this.options, options);
@@ -124,14 +126,16 @@ export class CanvasRecorder {
 	/**
 	 * Start recording.
 	 *
-	 * If `duration` is provided, records for that many seconds then automatically
-	 * stops and downloads the video. The returned promise resolves when complete.
+	 * If `duration` is provided, records for that many seconds then
+	 * automatically stops and downloads the video. The returned promise
+	 * resolves when complete.
 	 *
 	 * If `duration` is omitted, recording continues until `stop()` is called.
 	 * In this case, the returned promise resolves immediately after setup.
 	 *
 	 * @param options - Optional recording options
-	 * @returns Promise that resolves with the Blob (for fixed duration) or void (for manual stop)
+	 * @returns Promise that resolves with the Blob (for fixed duration) or void
+	 *   (for manual stop)
 	 */
 	start(options?: {
 		duration?: number;
@@ -157,8 +161,8 @@ export class CanvasRecorder {
 	}
 
 	/**
-	 * Stop recording and download the video.
-	 * Only needed when recording without a fixed duration.
+	 * Stop recording and download the video. Only needed when recording without
+	 * a fixed duration.
 	 *
 	 * @returns Promise that resolves with the recorded Blob
 	 */
@@ -178,9 +182,7 @@ export class CanvasRecorder {
 		throw new Error("CanvasRecorder: Recording promise not available");
 	}
 
-	/**
-	 * Cancel the recording without saving.
-	 */
+	/** Cancel the recording without saving. */
 	cancel(): void {
 		if (this._state === "recording") {
 			this.stopRequested = true;

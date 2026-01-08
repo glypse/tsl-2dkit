@@ -1,8 +1,8 @@
 /**
  * Webcam + Voronoi Demo
  *
- * Demonstrates using CanvasTexture with the WebRTC getUserMedia API
- * to capture webcam video and overlay a voronoi pattern.
+ * Demonstrates using CanvasTexture with the WebRTC getUserMedia API to capture
+ * webcam video and overlay a voronoi pattern.
  */
 
 import "$demo/style.css";

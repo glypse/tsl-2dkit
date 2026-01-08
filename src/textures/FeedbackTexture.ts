@@ -27,13 +27,13 @@ let _rendererState: RendererState;
 
 export type FeedbackTextureOptions = {
 	/**
-	 * Initial width of the feedback buffer.
-	 * If not specified, it will be auto-sized from the renderer.
+	 * Initial width of the feedback buffer. If not specified, it will be
+	 * auto-sized from the renderer.
 	 */
 	width?: number;
 	/**
-	 * Initial height of the feedback buffer.
-	 * If not specified, it will be auto-sized from the renderer.
+	 * Initial height of the feedback buffer. If not specified, it will be
+	 * auto-sized from the renderer.
 	 */
 	height?: number;
 };
@@ -41,20 +41,22 @@ export type FeedbackTextureOptions = {
 /**
  * A ping-pong feedback texture node for creating trail/echo effects.
  *
- * This is a TSL node that maintains two render targets internally and swaps them each frame,
- * allowing you to sample from the previous frame while rendering to the current frame.
+ * This is a TSL node that maintains two render targets internally and swaps
+ * them each frame, allowing you to sample from the previous frame while
+ * rendering to the current frame.
  *
  * Based on Three.js's AfterImageNode pattern but allows custom feedback logic.
  *
  * @example
+ *
  * ```ts
  * // Create the feedback node with a custom compositing function
  * const feedbackNode = feedback(
- *   currentFrameNode, // Your current frame's content
- *   (current, previous) => {
- *     // Custom compositing: mix current with faded previous
- *     return max(current, previous.mul(0.95));
- *   }
+ * 	currentFrameNode, // Your current frame's content
+ * 	(current, previous) => {
+ * 		// Custom compositing: mix current with faded previous
+ * 		return max(current, previous.mul(0.95));
+ * 	}
  * );
  *
  * // Use in your material or post-processing
@@ -68,44 +70,31 @@ class FeedbackTextureNode extends TempNode {
 		return "FeedbackTextureNode";
 	}
 
-	/**
-	 * The texture node that represents the current frame input.
-	 */
+	/** The texture node that represents the current frame input. */
 	textureNode: Node;
 
-	/**
-	 * Function that composites current and previous frames.
-	 */
+	/** Function that composites current and previous frames. */
 	compositeCallback: (current: Node, previous: Node) => Node;
 
-	/**
-	 * The render target used for compositing the effect (current write target).
-	 */
+	/** The render target used for compositing the effect (current write target). */
 	private _compRT: RenderTarget;
 
 	/**
-	 * The render target that represents the previous frame (current read target).
+	 * The render target that represents the previous frame (current read
+	 * target).
 	 */
 	private _oldRT: RenderTarget;
 
-	/**
-	 * The result of the effect as a texture node.
-	 */
+	/** The result of the effect as a texture node. */
 	private _textureNode: TextureNode;
 
-	/**
-	 * Texture node for reading the previous frame.
-	 */
+	/** Texture node for reading the previous frame. */
 	private _textureNodeOld: TextureNode;
 
-	/**
-	 * Material used for compositing.
-	 */
+	/** Material used for compositing. */
 	private _materialComposed: NodeMaterial | null = null;
 
-	/**
-	 * Whether dimensions have been initialized.
-	 */
+	/** Whether dimensions have been initialized. */
 	private _initialized = false;
 
 	constructor(
@@ -140,24 +129,18 @@ class FeedbackTextureNode extends TempNode {
 		this.updateBeforeType = NodeUpdateType.FRAME;
 	}
 
-	/**
-	 * Returns the result of the effect as a texture node.
-	 */
+	/** Returns the result of the effect as a texture node. */
 	getTextureNode(): TextureNode {
 		return this._textureNode;
 	}
 
-	/**
-	 * Sets the size of the feedback buffers.
-	 */
+	/** Sets the size of the feedback buffers. */
 	setSize(width: number, height: number): void {
 		this._compRT.setSize(width, height);
 		this._oldRT.setSize(width, height);
 	}
 
-	/**
-	 * Called once per frame to render the feedback effect.
-	 */
+	/** Called once per frame to render the feedback effect. */
 	override updateBefore(frame: NodeFrame): void {
 		const { renderer } = frame;
 		if (!renderer) return;
@@ -205,9 +188,7 @@ class FeedbackTextureNode extends TempNode {
 		RendererUtils.restoreRendererState(renderer, _rendererState);
 	}
 
-	/**
-	 * Sets up the TSL shader code for the feedback effect.
-	 */
+	/** Sets up the TSL shader code for the feedback effect. */
 	override setup(builder: NodeBuilder): Node {
 		// Cast to TextureNode to access uvNode and sample()
 		const textureNode = this.textureNode as TextureNode;
@@ -244,9 +225,7 @@ class FeedbackTextureNode extends TempNode {
 		return this._textureNode;
 	}
 
-	/**
-	 * Dispose of GPU resources.
-	 */
+	/** Dispose of GPU resources. */
 	dispose(): void {
 		this._compRT.dispose();
 		this._oldRT.dispose();
@@ -254,28 +233,29 @@ class FeedbackTextureNode extends TempNode {
 }
 
 /**
- * Creates a feedback texture node for ping-pong rendering effects like trails, echoes, etc.
- *
- * @param node - The input node (your current frame content). Will be converted to a texture.
- * @param composite - Function that combines current and previous frames.
- *                    Receives (current, previous) and should return the composited result.
- * @param options - Optional configuration.
- * @returns A FeedbackTextureNode that can be used in your shader graph.
+ * Creates a feedback texture node for ping-pong rendering effects like trails,
+ * echoes, etc.
  *
  * @example
+ *
  * ```ts
  * // Simple trail effect with decay
- * const trailEffect = feedback(
- *   myColorNode,
- *   (current, previous) => max(current, previous.mul(0.95))
+ * const trailEffect = feedback(myColorNode, (current, previous) =>
+ * 	max(current, previous.mul(0.95))
  * );
  *
  * // Motion blur style
- * const motionBlur = feedback(
- *   scenePass,
- *   (current, previous) => mix(current, previous, 0.8)
+ * const motionBlur = feedback(scenePass, (current, previous) =>
+ * 	mix(current, previous, 0.8)
  * );
  * ```
+ *
+ * @param node - The input node (your current frame content). Will be converted
+ *   to a texture.
+ * @param composite - Function that combines current and previous frames.
+ *   Receives (current, previous) and should return the composited result.
+ * @param options - Optional configuration.
+ * @returns A FeedbackTextureNode that can be used in your shader graph.
  */
 export function feedback(
 	node: Node,

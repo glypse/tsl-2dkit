@@ -1,10 +1,11 @@
 /**
  * TSLPass Post-Processing Demo
  *
- * Demonstrates how to use TSLPass to integrate tsl-2dkit effects
- * into Three.js's PostProcessing pipeline.
+ * Demonstrates how to use TSLPass to integrate tsl-2dkit effects into
+ * Three.js's PostProcessing pipeline.
  *
  * Pipeline:
+ *
  * 1. Scene pass (renders 3D cubes)
  * 2. TSLPass (applies a color shift effect)
  * 3. Bloom pass (adds glow to bright areas)

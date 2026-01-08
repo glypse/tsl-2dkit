@@ -1,9 +1,8 @@
 /**
  * FeedbackTexture Demo
  *
- * Demonstrates the ping-pong feedback loop feature.
- * The previous frame is sampled and mixed with the current frame
- * to create a trailing/echo effect.
+ * Demonstrates the ping-pong feedback loop feature. The previous frame is
+ * sampled and mixed with the current frame to create a trailing/echo effect.
  */
 
 import "$demo/style.css";

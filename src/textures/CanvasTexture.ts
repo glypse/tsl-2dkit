@@ -7,30 +7,25 @@ import { wrapUV } from "../utils";
 
 export type CanvasTextureOptions = {
 	/**
-	 * The canvas element to use as a texture source.
-	 * Can be an HTMLCanvasElement or OffscreenCanvas.
+	 * The canvas element to use as a texture source. Can be an
+	 * HTMLCanvasElement or OffscreenCanvas.
 	 */
 	canvas: HTMLCanvasElement | OffscreenCanvas;
-	/**
-	 * Anchor point for horizontal alignment.
-	 */
+	/** Anchor point for horizontal alignment. */
 	anchorX: string;
-	/**
-	 * Anchor point for vertical alignment.
-	 */
+	/** Anchor point for vertical alignment. */
 	anchorY: string;
-	/**
-	 * Show debug borders around the texture bounds.
-	 */
+	/** Show debug borders around the texture bounds. */
 	debug: boolean;
 };
 
 /**
- * A texture that uses an external canvas element as its source.
- * This allows you to draw on a canvas using the standard Canvas 2D API
- * and use the result as a texture in tsl-2dkit.
+ * A texture that uses an external canvas element as its source. This allows you
+ * to draw on a canvas using the standard Canvas 2D API and use the result as a
+ * texture in tsl-2dkit.
  *
  * @example
+ *
  * ```ts
  * const canvas = document.createElement("canvas");
  * canvas.width = 512;
@@ -97,8 +92,8 @@ export class CanvasTexture<
 	}
 
 	/**
-	 * Sample this texture using provided UVs.
-	 * Registers with the active scene for per-frame updates.
+	 * Sample this texture using provided UVs. Registers with the active scene
+	 * for per-frame updates.
 	 */
 	sample(inputUV?: Node): Node {
 		const scene = TSLScene2D.currentScene;
@@ -222,29 +217,27 @@ export class CanvasTexture<
 		return h > 0 ? this.getWidth() / h : 1;
 	}
 
-	/**
-	 * Get a uniform node representing the texture's width in pixels.
-	 */
+	/** Get a uniform node representing the texture's width in pixels. */
 	get widthUniform(): UniformNode<number> {
 		return this._widthUniform;
 	}
 
-	/**
-	 * Get a uniform node representing the texture's height in pixels.
-	 */
+	/** Get a uniform node representing the texture's height in pixels. */
 	get heightUniform(): UniformNode<number> {
 		return this._heightUniform;
 	}
 
 	/**
-	 * Get a uniform node representing the texture's aspect ratio (width/height).
+	 * Get a uniform node representing the texture's aspect ratio
+	 * (width/height).
 	 */
 	get aspectUniform(): UniformNode<number> {
 		return this._aspectUniform;
 	}
 
 	/**
-	 * Update the source canvas. Useful if you want to switch to a different canvas.
+	 * Update the source canvas. Useful if you want to switch to a different
+	 * canvas.
 	 */
 	setCanvas(canvas: HTMLCanvasElement | OffscreenCanvas): void {
 		this.sourceCanvas = canvas;

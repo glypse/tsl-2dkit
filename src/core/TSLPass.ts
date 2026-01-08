@@ -4,10 +4,12 @@ import { TempNode, NodeUpdateType } from "three/webgpu";
 import { Vector2 } from "three";
 
 /**
- * A TSL-based post-processing pass that can be integrated with Three.js's PostProcessing system.
- * This allows you to use tsl-2dkit effects as part of a larger post-processing pipeline.
+ * A TSL-based post-processing pass that can be integrated with Three.js's
+ * PostProcessing system. This allows you to use tsl-2dkit effects as part of a
+ * larger post-processing pipeline.
  *
  * @example
+ *
  * ```ts
  * import { PostProcessing } from "three/webgpu";
  * import { pass } from "three/tsl";
@@ -19,8 +21,8 @@ import { Vector2 } from "three";
  *
  * // Simple functional API - like bloom!
  * const colorGraded = tslPass(scenePassColor, (input) => {
- *   const color = input.sample(uv());
- *   return color.rgb.mul(vec3(1.2, 1.0, 0.8)); // Warm color grade
+ * 	const color = input.sample(uv());
+ * 	return color.rgb.mul(vec3(1.2, 1.0, 0.8)); // Warm color grade
  * });
  *
  * postProcessing.outputNode = colorGraded;
@@ -63,29 +65,24 @@ export class TSLPassNode extends TempNode {
 		this.updateBeforeType = NodeUpdateType.FRAME;
 	}
 
-	/**
-	 * Get the currently active TSLPass (for texture registration).
-	 */
+	/** Get the currently active TSLPass (for texture registration). */
 	static get currentPass(): TSLPassNode | null {
 		return TSLPassNode._currentPass;
 	}
 
-	/**
-	 * Get the current width of the pass.
-	 */
+	/** Get the current width of the pass. */
 	get width(): number {
 		return this._width;
 	}
 
-	/**
-	 * Get the current height of the pass.
-	 */
+	/** Get the current height of the pass. */
 	get height(): number {
 		return this._height;
 	}
 
 	/**
 	 * Register a texture that needs per-frame updates.
+	 *
 	 * @internal
 	 */
 	registerUpdatableTexture(texture: {
@@ -96,6 +93,7 @@ export class TSLPassNode extends TempNode {
 
 	/**
 	 * Called automatically before each frame to update size and textures.
+	 *
 	 * @internal
 	 */
 	updateBefore(frame: NodeFrame): void {
@@ -128,6 +126,7 @@ export class TSLPassNode extends TempNode {
 
 	/**
 	 * Setup the effect's TSL code.
+	 *
 	 * @internal
 	 */
 	setup(): Node {
@@ -147,8 +146,8 @@ export class TSLPassNode extends TempNode {
 }
 
 /**
- * A wrapper that allows sampling from the input texture of a pass.
- * This provides a consistent interface for accessing the previous pass's output.
+ * A wrapper that allows sampling from the input texture of a pass. This
+ * provides a consistent interface for accessing the previous pass's output.
  */
 export class InputTextureNode {
 	private _inputNode: Node;
@@ -187,8 +186,8 @@ export class InputTextureNode {
 	}
 
 	/**
-	 * Get the raw input node without sampling.
-	 * Useful for passes that output something other than a texture.
+	 * Get the raw input node without sampling. Useful for passes that output
+	 * something other than a texture.
 	 */
 	get raw(): Node {
 		return this._inputNode;
@@ -196,21 +195,23 @@ export class InputTextureNode {
 }
 
 /**
- * Convenience function to create a TSL effect pass.
- * This provides a simple, bloom-like API for post-processing effects.
+ * Convenience function to create a TSL effect pass. This provides a simple,
+ * bloom-like API for post-processing effects.
  *
  * @example
+ *
  * ```ts
  * const warmGrade = tslPass(scenePassColor, (input) => {
- *   const color = input.sample(uv());
- *   return color.rgb.mul(vec3(1.2, 1.0, 0.8));
+ * 	const color = input.sample(uv());
+ * 	return color.rgb.mul(vec3(1.2, 1.0, 0.8));
  * });
  *
  * postProcessing.outputNode = warmGrade;
  * ```
  *
  * @param inputNode - The input node from a previous pass
- * @param callback - Function that receives the input and returns the processed output
+ * @param callback - Function that receives the input and returns the processed
+ *   output
  * @returns A node representing the effect output
  */
 export function tslPass(

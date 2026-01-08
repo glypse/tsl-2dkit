@@ -537,26 +537,26 @@ export class MediaTexture extends UpdatableTexture {
 	}
 
 	/**
-	 * Get a uniform node representing the texture's width in pixels.
-	 * This uniform automatically updates when the media loads.
-	 * Use this in your node graph for reactive width handling.
+	 * Get a uniform node representing the texture's width in pixels. This
+	 * uniform automatically updates when the media loads. Use this in your node
+	 * graph for reactive width handling.
 	 */
 	get widthUniform(): UniformNode<number> {
 		return this._widthUniform;
 	}
 
 	/**
-	 * Get a uniform node representing the texture's height in pixels.
-	 * This uniform automatically updates when the media loads.
-	 * Use this in your node graph for reactive height handling.
+	 * Get a uniform node representing the texture's height in pixels. This
+	 * uniform automatically updates when the media loads. Use this in your node
+	 * graph for reactive height handling.
 	 */
 	get heightUniform(): UniformNode<number> {
 		return this._heightUniform;
 	}
 
 	/**
-	 * Get a uniform node representing the texture's aspect ratio (width/height).
-	 * This uniform automatically updates when the media loads.
+	 * Get a uniform node representing the texture's aspect ratio
+	 * (width/height). This uniform automatically updates when the media loads.
 	 * Use this in your node graph for reactive aspect ratio handling.
 	 */
 	get aspectUniform(): UniformNode<number> {

@@ -3,6 +3,7 @@ import { Node } from "three/webgpu";
 
 /**
  * Converts OKLch color space to linear RGB.
+ *
  * @param l - Lightness component, expected range [0, 1]
  * @param c - Chroma component, expected range [0, ∞) but typically [0, 0.5]
  * @param h - Hue component in degrees, expected range [0, 360]

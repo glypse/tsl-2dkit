@@ -1,9 +1,9 @@
 /**
  * On-Demand Rendering Demo
  *
- * Demonstrates the new on-demand rendering mode where
- * frames are only rendered when explicitly requested.
- * In this demo, rendering happens only on mouse/touch movement.
+ * Demonstrates the new on-demand rendering mode where frames are only rendered
+ * when explicitly requested. In this demo, rendering happens only on
+ * mouse/touch movement.
  */
 
 import "$demo/style.css";

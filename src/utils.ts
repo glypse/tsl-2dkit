@@ -4,12 +4,17 @@ import { TSLScene2D } from "./core";
 
 /**
  * Aspect-correct UV coordinates. Has two modes:
- * - "sampling": For sampling external textures (MediaTexture, images, etc.) - expands UV range
- * - "generation": For generated content (voronoi, noise, etc.) - compresses UV coordinates
+ *
+ * - "sampling": For sampling external textures (MediaTexture, images, etc.) -
+ *   expands UV range
+ * - "generation": For generated content (voronoi, noise, etc.) - compresses UV
+ *   coordinates
  *
  * @param fit - How to fit the content: "cover", "contain", or "stretch"
- * @param aspectRatio - Target aspect ratio (width/height). If omitted, uses canvas aspect ratio
- * @param mode - "sampling" for external textures (default), "generation" for generated content
+ * @param aspectRatio - Target aspect ratio (width/height). If omitted, uses
+ *   canvas aspect ratio
+ * @param mode - "sampling" for external textures (default), "generation" for
+ *   generated content
  */
 export function aspectCorrectedUV(
 	fit: "cover" | "contain" | "stretch" = "cover",
@@ -100,12 +105,15 @@ export type WrapMode = "clamp" | "repeat" | "mirror" | "edge";
 
 /**
  * Apply texture wrapping to UV coordinates
+ *
  * @param uv - Input UV coordinates
  * @param mode - Wrapping mode:
+ *
  *   - "clamp": UVs outside 0-1 are out of bounds (default)
  *   - "repeat": Tiles the texture infinitely
  *   - "mirror": Tiles with alternating mirroring
  *   - "edge": Clamps to 0-1 range, stretching edge pixels
+ *
  * @returns Object with wrapped UV and inBounds flag
  */
 export function wrapUV(uv: Node, mode: WrapMode): { uv: Node; inBounds: Node } {

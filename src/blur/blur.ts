@@ -105,8 +105,8 @@ const horizontalGaussianBlurPass = createGaussianBlurPass("x");
 const verticalGaussianBlurPass = createGaussianBlurPass("y");
 
 /**
- * Applies a separable box blur where the blur radius is controlled per-pixel
- * by a blur amount map.
+ * Applies a separable box blur where the blur radius is controlled per-pixel by
+ * a blur amount map.
  *
  * @param value - The input node to blur
  * @param blurAmountMap - A Node that determines the blur radius at each pixel
@@ -124,8 +124,8 @@ export function boxBlur(value: Node, blurAmountMap: Node): Node {
 }
 
 /**
- * Applies a separable Gaussian blur where the blur radius is controlled per-pixel
- * by a blur amount map.
+ * Applies a separable Gaussian blur where the blur radius is controlled
+ * per-pixel by a blur amount map.
  *
  * @param value - The input node to blur
  * @param blurAmountMap - A Node that determines the blur radius at each pixel

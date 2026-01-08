@@ -4,9 +4,9 @@ import type { UpdatableTexture } from "../textures/UpdatableTexture";
 import type { FeedbackTextureNode } from "../textures/FeedbackTexture";
 
 /**
- * Abstract base class for 2D TSL rendering contexts.
- * Both TSLScene2D and TSLPass extend this to share common functionality
- * like dimension management and texture registration.
+ * Abstract base class for 2D TSL rendering contexts. Both TSLScene2D and
+ * TSLPass extend this to share common functionality like dimension management
+ * and texture registration.
  */
 export abstract class TSLContext2D {
 	protected _width: number;
@@ -26,23 +26,17 @@ export abstract class TSLContext2D {
 		this._heightUniform = uniform(this._height || 1);
 	}
 
-	/**
-	 * Register an UpdatableTexture for per-frame updates.
-	 */
+	/** Register an UpdatableTexture for per-frame updates. */
 	registerUpdatableTexture(texture: UpdatableTexture): void {
 		this.UpdatableTextures.add(texture);
 	}
 
-	/**
-	 * Register a FeedbackTexture for tracking purposes.
-	 */
+	/** Register a FeedbackTexture for tracking purposes. */
 	registerFeedbackTexture(feedbackTexture: FeedbackTextureNode): void {
 		this.FeedbackTextures.add(feedbackTexture);
 	}
 
-	/**
-	 * Update dimensions.
-	 */
+	/** Update dimensions. */
 	setSize(width: number, height: number): void {
 		this._width = width;
 		this._height = height;
@@ -50,9 +44,7 @@ export abstract class TSLContext2D {
 		this._heightUniform.value = height;
 	}
 
-	/**
-	 * Update all registered UpdatableTextures.
-	 */
+	/** Update all registered UpdatableTextures. */
 	async updateTextures(): Promise<void> {
 		if (!this.UpdatableTextures.size) return;
 		await Promise.all(

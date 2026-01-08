@@ -8,9 +8,8 @@
 
 import "$demo/style.css";
 
-import { TSLScene2D, feedback } from "$lib";
+import { TSLScene2D, aspectCorrectedUV, feedback } from "$lib";
 import {
-	uv,
 	vec2,
 	vec3,
 	vec4,
@@ -42,7 +41,7 @@ window.addEventListener("resize", () => {
 });
 
 await scene.build(() => {
-	const UV = uv();
+	const UV = aspectCorrectedUV("cover", scene.aspectUniform, "generation");
 
 	// Create a moving circle that follows the mouse
 	const circleCenter = vec2(mouseX, mouseY);

@@ -29,6 +29,8 @@ export function colorLookup(
 	}
 }
 
+// TODO: Remove/update gradient() to only give a Node instead of a texture.
+// This also means removing culori as a dependency
 /**
  * Generates a texture containing a smooth gradient between specified color
  * stops. Supports multiple color interpolation modes via the Culori library.

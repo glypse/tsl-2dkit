@@ -1,18 +1,24 @@
-import { CanvasTexture as ThreeCanvasTexture, TextureNode } from "three/webgpu";
 import { vec4, uniform, select, vec2, texture, uv, float } from "three/tsl";
-import type { Node } from "three/webgpu";
-import { Color } from "three";
-import { TSLContext2D } from "../core/TSLContext2D";
+import {
+	type Node,
+	CanvasTexture as ThreeCanvasTexture,
+	type TextureNode,
+	Color
+} from "three/webgpu";
 import { TSLScene2D } from "../core";
-import { TSLPassNode } from "../core/TSLPass";
 import { CanvasTexture, type CanvasTextureOptions } from "./CanvasTexture";
+import { type TSLContext2D } from "../core/TSLContext2D";
+import { TSLPassNode } from "../core/TSLPass";
 import { wrapUV } from "../utils";
 
 type AnchorX = "left" | "center" | "right";
 type AnchorY = "descenders" | "baseline" | "middle" | "ascenders";
 
+/** Configuration options for TextTexture initialization. */
 export type TextTextureOptions = Omit<CanvasTextureOptions, "anchorY"> & {
+	/** @defaultValue "center" */
 	anchorX: AnchorX;
+	/** @defaultValue "middle" */
 	anchorY: AnchorY;
 	text: string;
 	color: string;
@@ -101,6 +107,11 @@ function measureText(parameters: {
 	};
 }
 
+/**
+ * A texture that renders text using the Canvas 2D API. Supports dynamic text
+ * updates, custom fonts, and precise text positioning with various anchor
+ * points.
+ */
 export class TextTexture extends CanvasTexture<TextTextureOptions> {
 	private ctx: CanvasRenderingContext2D;
 
@@ -120,6 +131,11 @@ export class TextTexture extends CanvasTexture<TextTextureOptions> {
 	// Track if first update has completed (for ready state)
 	private firstUpdateComplete = false;
 
+	/**
+	 * Creates a new TextTexture with the specified options.
+	 *
+	 * @param parameters - Optional configuration for text rendering
+	 */
 	constructor(parameters?: Partial<TextTextureOptions>) {
 		const canvas = document.createElement("canvas");
 
@@ -152,6 +168,14 @@ export class TextTexture extends CanvasTexture<TextTextureOptions> {
 		} as TextTextureOptions;
 	}
 
+	/**
+	 * Sample this texture using provided UVs. Registers with the active scene
+	 * or pass for per-frame updates.
+	 *
+	 * @param inputUV - Optional UV coordinates to sample at (defaults to
+	 *   standard UVs)
+	 * @returns A node containing the sampled color value
+	 */
 	override sample(inputUV?: Node): Node {
 		// Try to register with TSLScene2D, else TSLPassNode
 		let context: TSLContext2D | TSLPassNode | null = null;

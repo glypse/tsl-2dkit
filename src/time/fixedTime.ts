@@ -26,17 +26,29 @@ export class FixedTime {
 		.setGroup(renderGroup)
 		.onRenderUpdate(() => this._deltaTime);
 
-	/** Get the current elapsed time in seconds. */
+	/**
+	 * Get the current elapsed time in seconds.
+	 *
+	 * @returns The current time value
+	 */
 	get time(): number {
 		return this._time;
 	}
 
-	/** Get the current delta time in seconds. */
+	/**
+	 * Get the current delta time in seconds.
+	 *
+	 * @returns The delta time since last update
+	 */
 	get deltaTime(): number {
 		return this._deltaTime;
 	}
 
-	/** Get the target FPS for fixed-step mode. */
+	/**
+	 * Get the target FPS for fixed-step mode.
+	 *
+	 * @returns The target frames per second
+	 */
 	get targetFps(): number {
 		return this._targetFps;
 	}
@@ -46,12 +58,20 @@ export class FixedTime {
 		this._targetFps = fps;
 	}
 
-	/** Check if time is in fixed-step mode. */
+	/**
+	 * Check if time is in fixed-step mode.
+	 *
+	 * @returns True if in fixed-step mode, false otherwise
+	 */
 	get isFixedMode(): boolean {
 		return this._fixedMode;
 	}
 
-	/** Check if time is paused. */
+	/**
+	 * Check if time is paused.
+	 *
+	 * @returns True if time is paused, false otherwise
+	 */
 	get isPaused(): boolean {
 		return this._paused;
 	}
@@ -60,8 +80,13 @@ export class FixedTime {
 	 * Enable fixed-step mode where each frame advances by exactly 1/targetFps
 	 * seconds. This is useful for recordings to ensure consistent frame
 	 * timing.
+	 *
+	 * @param targetFps - Target frames per second for fixed stepping
 	 */
-	enableFixedMode(targetFps = 60): void {
+	enableFixedMode(
+		/** @defaultValue 60 */
+		targetFps = 60
+	): void {
 		this._targetFps = targetFps;
 		this._fixedMode = true;
 		this._lastRealTime = null;
@@ -92,7 +117,11 @@ export class FixedTime {
 		this._lastRealTime = null;
 	}
 
-	/** Set time to a specific value. */
+	/**
+	 * Set time to a specific value.
+	 *
+	 * @param time - The new time value in seconds
+	 */
 	setTime(time: number): void {
 		this._time = time;
 	}

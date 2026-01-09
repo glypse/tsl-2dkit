@@ -1,8 +1,8 @@
 import "$demo/style.css";
 
-import { TSLScene2D, TextTexture } from "$lib";
-import { uniform, floor, time, sin, color, mix, uv, vec2 } from "three/tsl";
 import { lerp } from "three/src/math/MathUtils.js";
+import { uniform, floor, time, sin, color, mix, uv, vec2 } from "three/tsl";
+import { TSLScene2D, TextTexture } from "$lib";
 
 /**
  * Gets the mouse position on the element in a 0-1 range.

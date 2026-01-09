@@ -7,8 +7,8 @@
 
 import "$demo/style.css";
 
-import { TSLScene2D, CanvasTexture as TSLCanvasTexture, voronoi } from "$lib";
 import { uv, vec2, vec3, mix, time, uniform, float } from "three/tsl";
+import { TSLScene2D, CanvasTexture as TSLCanvasTexture, voronoi } from "$lib";
 
 // Create a canvas to draw the webcam feed
 const videoCanvas = document.createElement("canvas");

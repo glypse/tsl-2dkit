@@ -1,7 +1,7 @@
 import "$demo/style.css";
 
-import { TSLScene2D, aspectCorrectedUV, TextTexture, voronoi } from "$lib";
 import { vec2, vec3, float, time, color, mix, uniform, uv } from "three/tsl";
+import { TSLScene2D, aspectCorrectedUV, TextTexture, voronoi } from "$lib";
 
 const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 	stats: true,

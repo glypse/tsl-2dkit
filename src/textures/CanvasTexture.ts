@@ -1,19 +1,32 @@
-import { CanvasTexture as ThreeCanvasTexture, TextureNode } from "three/webgpu";
 import { texture, vec4, vec2, uniform, select, uv, float } from "three/tsl";
-import type { Node, UniformNode } from "three/webgpu";
+import {
+	CanvasTexture as ThreeCanvasTexture,
+	type TextureNode,
+	type Node,
+	type UniformNode
+} from "three/webgpu";
 import { TSLScene2D } from "../core";
 import { UpdatableTexture } from "./UpdatableTexture";
 import { wrapUV } from "../utils";
 
+/** Configuration options for CanvasTexture initialization. */
 export type CanvasTextureOptions = {
 	/**
 	 * The canvas element to use as a texture source. Can be an
 	 * HTMLCanvasElement or OffscreenCanvas.
 	 */
 	canvas: HTMLCanvasElement | OffscreenCanvas;
-	/** Anchor point for horizontal alignment. */
+	/**
+	 * Anchor point for horizontal alignment.
+	 *
+	 * @defaultValue "center
+	 */
 	anchorX: string;
-	/** Anchor point for vertical alignment. */
+	/**
+	 * Anchor point for vertical alignment.
+	 *
+	 * @defaultValue "center
+	 */
 	anchorY: string;
 	/** Show debug borders around the texture bounds. */
 	debug: boolean;
@@ -61,6 +74,11 @@ export class CanvasTexture<
 	protected sourceCanvas: HTMLCanvasElement | OffscreenCanvas;
 	private textureNode: TextureNode | null = null;
 
+	/**
+	 * Creates a new CanvasTexture from an existing canvas element.
+	 *
+	 * @param parameters - Configuration options including the canvas source
+	 */
 	constructor(
 		parameters: Partial<TParameters> & {
 			canvas: HTMLCanvasElement | OffscreenCanvas;
@@ -94,6 +112,10 @@ export class CanvasTexture<
 	/**
 	 * Sample this texture using provided UVs. Registers with the active scene
 	 * for per-frame updates.
+	 *
+	 * @param inputUV - Optional UV coordinates to sample at (defaults to
+	 *   standard UVs)
+	 * @returns A node containing the sampled color value
 	 */
 	sample(inputUV?: Node): Node {
 		const scene = TSLScene2D.currentScene;
@@ -217,12 +239,20 @@ export class CanvasTexture<
 		return h > 0 ? this.getWidth() / h : 1;
 	}
 
-	/** Get a uniform node representing the texture's width in pixels. */
+	/**
+	 * Get a uniform node representing the texture's width in pixels.
+	 *
+	 * @returns A uniform node containing the width value
+	 */
 	get widthUniform(): UniformNode<number> {
 		return this._widthUniform;
 	}
 
-	/** Get a uniform node representing the texture's height in pixels. */
+	/**
+	 * Get a uniform node representing the texture's height in pixels.
+	 *
+	 * @returns A uniform node containing the height value
+	 */
 	get heightUniform(): UniformNode<number> {
 		return this._heightUniform;
 	}
@@ -230,6 +260,8 @@ export class CanvasTexture<
 	/**
 	 * Get a uniform node representing the texture's aspect ratio
 	 * (width/height).
+	 *
+	 * @returns A uniform node containing the aspect ratio
 	 */
 	get aspectUniform(): UniformNode<number> {
 		return this._aspectUniform;
@@ -238,6 +270,8 @@ export class CanvasTexture<
 	/**
 	 * Update the source canvas. Useful if you want to switch to a different
 	 * canvas.
+	 *
+	 * @param canvas - The new canvas element to use as the texture source
 	 */
 	setCanvas(canvas: HTMLCanvasElement | OffscreenCanvas): void {
 		this.sourceCanvas = canvas;

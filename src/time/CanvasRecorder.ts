@@ -8,11 +8,12 @@ import {
 import type { TSLScene2D } from "../core";
 import type { FixedTime } from "./fixedTime";
 
+/** Configuration options for CanvasRecorder. */
 export type CanvasRecorderOptions = {
 	/**
 	 * Target frames per second for the recording.
 	 *
-	 * @default 60
+	 * @defaultValue 60
 	 */
 	fps?: number;
 
@@ -20,28 +21,28 @@ export type CanvasRecorderOptions = {
 	 * Video bitrate in bits per second. Higher values = better quality but
 	 * larger files.
 	 *
-	 * @default 25_000_000 (25 Mbps - near lossless for most content)
+	 * @defaultValue 25_000_000 (25 Mbps - near lossless for most content)
 	 */
 	videoBitsPerSecond?: number;
 
 	/**
 	 * Output format for the video.
 	 *
-	 * @default "mp4"
+	 * @defaultValue "mp4"
 	 */
 	format?: "mp4" | "webm";
 
 	/**
 	 * Video codec to use.
 	 *
-	 * @default 'avc' for mp4, 'vp9' for webm
+	 * @defaultValue "avc" for mp4, "vp9" for webm
 	 */
 	codec?: "avc" | "hevc" | "vp9" | "vp8" | "av1";
 
 	/**
 	 * Filename for the downloaded video (without extension).
 	 *
-	 * @default "recording"
+	 * @defaultValue "recording"
 	 */
 	filename?: string;
 };
@@ -89,7 +90,15 @@ export class CanvasRecorder {
 	private recordingPromise: Promise<Blob> | null = null;
 	private recordingResolve: ((blob: Blob) => void) | null = null;
 
+	/**
+	 * Creates a new CanvasRecorder instance.
+	 *
+	 * @param canvas2d - The TSLScene2D instance to record
+	 * @param fixedTime - The FixedTime instance controlling the animation
+	 * @param options - Optional configuration for the recorder
+	 */
 	constructor(
+		// TODO: Use TSLContext2D instead of TSLScene2D
 		canvas2d: TSLScene2D,
 		fixedTime: FixedTime,
 		options: CanvasRecorderOptions = {}
@@ -105,12 +114,20 @@ export class CanvasRecorder {
 		};
 	}
 
-	/** Get the current state of the recorder. */
+	/**
+	 * Get the current state of the recorder.
+	 *
+	 * @returns The current recorder state
+	 */
 	get state(): RecorderState {
 		return this._state;
 	}
 
-	/** Check if recording is in progress. */
+	/**
+	 * Check if recording is in progress.
+	 *
+	 * @returns True if currently recording, false otherwise
+	 */
 	get isRecording(): boolean {
 		return this._state === "recording";
 	}
@@ -118,6 +135,8 @@ export class CanvasRecorder {
 	/**
 	 * Update recorder options. Note: This only affects future recordings, not
 	 * ongoing ones.
+	 *
+	 * @param options - Partial options to update
 	 */
 	setOptions(options: Partial<CanvasRecorderOptions>): void {
 		Object.assign(this.options, options);

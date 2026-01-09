@@ -7,7 +7,6 @@
 
 import "$demo/style.css";
 
-import { TSLScene2D, aspectCorrectedUV, feedback } from "$lib";
 import {
 	vec2,
 	vec3,
@@ -21,7 +20,8 @@ import {
 	smoothstep,
 	max
 } from "three/tsl";
-import { Node } from "three/webgpu";
+import { type Node } from "three/webgpu";
+import { TSLScene2D, aspectCorrectedUV, feedback } from "$lib";
 
 const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 	stats: true,
@@ -40,6 +40,7 @@ window.addEventListener("resize", () => {
 });
 
 await scene.build(() => {
+	// TODO: adjust mouse position depending on aspect-corrected UVs
 	const UV = aspectCorrectedUV("cover", scene.aspectUniform, "generation");
 
 	// Create a moving circle that follows the mouse

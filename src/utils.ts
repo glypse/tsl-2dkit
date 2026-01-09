@@ -1,5 +1,5 @@
 import { float, uv, vec2 } from "three/tsl";
-import { Node } from "three/webgpu";
+import { type Node } from "three/webgpu";
 import { TSLScene2D } from "./core";
 
 /**
@@ -15,16 +15,20 @@ import { TSLScene2D } from "./core";
  *   canvas aspect ratio
  * @param mode - "sampling" for external textures (default), "generation" for
  *   generated content
+ * @returns Aspect-corrected UV coordinates as a Node
  */
 export function aspectCorrectedUV(
+	/** @defaultValue "cover" */
 	fit: "cover" | "contain" | "stretch" = "cover",
 	aspectRatio?: Node,
+	/** @defaultValue "sampling" */
 	mode: "sampling" | "generation" = "sampling"
 ): Node {
 	const UV = uv();
 
 	if (fit === "stretch") return UV;
 
+	// TODO: use TSLContext2D instead of TSLScene2D
 	const canvas = TSLScene2D.currentScene;
 
 	// Use provided aspect ratio, or fall back to canvas aspect ratio
@@ -101,6 +105,7 @@ export function aspectCorrectedUV(
 	return correctedUV.add(vec2(0.5, 0.5));
 }
 
+/** Texture wrapping mode for UV coordinates outside the 0-1 range. */
 export type WrapMode = "clamp" | "repeat" | "mirror" | "edge";
 
 /**

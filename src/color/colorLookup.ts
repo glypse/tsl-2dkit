@@ -1,9 +1,21 @@
-import { clamp, texture, vec2, type ProxiedObject } from "three/tsl";
-import { Texture } from "three";
-import { Node } from "three/webgpu";
 import { interpolate, converter, type Mode } from "culori";
 import type { ShaderNodeFn } from "three/src/nodes/TSL.js";
+import { clamp, texture, vec2, type ProxiedObject } from "three/tsl";
+import { type Node, Texture } from "three/webgpu";
 
+/**
+ * Samples a color from a gradient using a normalized value. Takes a value
+ * (typically between 0 and 1) and looks up the corresponding color from either
+ * a texture or a shader function. The value is automatically clamped to the 0-1
+ * range before sampling.
+ *
+ * When using a Texture, it samples horizontally at the vertical center (0.5).
+ * When using a shader function, it passes the value as parameter `t`.
+ *
+ * @param value - The normalized lookup value (will be clamped to 0-1)
+ * @param gradient - Either a Texture or a shader function that returns a color
+ * @returns A color node sampled from the gradient
+ */
 export function colorLookup(
 	value: Node,
 	gradient: ShaderNodeFn<[ProxiedObject<{ t: Node }>]> | Texture
@@ -17,18 +29,49 @@ export function colorLookup(
 	}
 }
 
+/**
+ * Generates a texture containing a smooth gradient between specified color
+ * stops. Supports multiple color interpolation modes via the Culori library.
+ * For standard RGB gradients, uses native canvas gradients. For other color
+ * spaces (HSL, Lab, etc.), performs per-pixel interpolation.
+ *
+ * The resulting texture can be used with {@link colorLookup} or sampled directly
+ * in shaders.
+ *
+ * @param stops - Array of color stops with position (0-1) and color (CSS
+ *   string)
+ * @param parameters - Optional configuration for gradient generation
+ * @returns A Three.js Texture containing the rendered gradient
+ */
 export function gradient(
-	stops: { position: number; color: string }[],
-	parameters: { width?: number; height?: number; mode?: Mode } = {
-		width: 256,
-		height: 1,
-		mode: "rgb"
-	}
+	stops: {
+		/** Position of the stop, range [0, 1] */
+		position: number;
+		/** Color of the stop, CSS string */
+		color: string;
+	}[],
+	parameters: {
+		/**
+		 * Width of the gradient texture in pixels
+		 *
+		 * @defaultValue 256
+		 */
+		width?: number;
+		/**
+		 * Height of the gradient texture in pixels
+		 *
+		 * @defaultValue 1
+		 */
+		height?: number;
+		/**
+		 * Color interpolation mode from Culori
+		 *
+		 * @defaultValue "rgb"
+		 */
+		mode?: Mode;
+	} = {}
 ): Texture {
-	const width = parameters.width ?? 256;
-	const height = parameters.height ?? 1;
-	const mode = parameters.mode ?? "rgb";
-
+	const { width = 256, height = 1, mode = "rgb" } = parameters;
 	const canvas = document.createElement("canvas");
 	canvas.width = width;
 	canvas.height = height;

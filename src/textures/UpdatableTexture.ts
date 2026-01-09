@@ -1,11 +1,15 @@
-import type { WrapMode } from "$lib/utils";
-import type { Texture } from "three";
-import type { Node } from "three/webgpu";
-import { LinearFilter, NearestFilter } from "three";
+import { type uniform } from "three/tsl";
+import {
+	type Texture,
+	LinearFilter,
+	NearestFilter,
+	type Node
+} from "three/webgpu";
 import { TSLScene2D } from "../core";
 import { TSLPassNode } from "../core/TSLPass";
-import { uniform } from "three/tsl";
+import type { WrapMode } from "$lib/utils";
 
+/** Texture interpolation mode for minification and magnification filtering. */
 export type InterpolationMode = "linear" | "nearest";
 
 /**
@@ -34,6 +38,11 @@ export abstract class UpdatableTexture {
 		});
 	}
 
+	/**
+	 * Get the underlying Three.js texture.
+	 *
+	 * @returns The texture instance
+	 */
 	get texture(): Texture {
 		return this._texture;
 	}
@@ -50,7 +59,11 @@ export abstract class UpdatableTexture {
 	 */
 	protected abstract getHeight(): number;
 
-	/** Width of the texture in pixels. Warns if accessed outside of TSL context. */
+	/**
+	 * Width of the texture in pixels. Warns if accessed outside of TSL context.
+	 *
+	 * @returns The width in pixels
+	 */
 	get width(): number {
 		try {
 			void TSLScene2D.currentScene;
@@ -69,6 +82,8 @@ export abstract class UpdatableTexture {
 	/**
 	 * Height of the texture in pixels. Warns if accessed outside of TSL
 	 * context.
+	 *
+	 * @returns The height in pixels
 	 */
 	get height(): number {
 		try {
@@ -119,7 +134,11 @@ export abstract class UpdatableTexture {
 	 */
 	abstract sample(inputUV?: Node): Node;
 
-	/** Aspect ratio (width / height). Warns if accessed outside of TSL context. */
+	/**
+	 * Aspect ratio (width / height). Warns if accessed outside of TSL context.
+	 *
+	 * @returns The aspect ratio
+	 */
 	get aspectRatio(): number {
 		try {
 			void TSLScene2D.currentScene;
@@ -135,10 +154,16 @@ export abstract class UpdatableTexture {
 		return this.getAspectRatio();
 	}
 
+	/**
+	 * Get the current interpolation mode.
+	 *
+	 * @returns The current interpolation mode ("linear" or "nearest")
+	 */
 	get interpolation(): InterpolationMode {
 		return this._interpolationMode;
 	}
 
+	/** Set the interpolation mode for texture sampling. */
 	set interpolation(mode: InterpolationMode) {
 		this._interpolationMode = mode;
 		const filter = mode === "nearest" ? NearestFilter : LinearFilter;
@@ -184,7 +209,11 @@ export abstract class UpdatableTexture {
 		this._resolveReady();
 	}
 
-	/** Check if the texture is fully loaded and ready for rendering. */
+	/**
+	 * Check if the texture is fully loaded and ready for rendering.
+	 *
+	 * @returns True if the texture is ready, false otherwise
+	 */
 	get ready(): boolean {
 		return this._isReady;
 	}

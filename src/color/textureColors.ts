@@ -1,5 +1,5 @@
 import { vec3, cos, sin, pow, PI } from "three/tsl";
-import { Node } from "three/webgpu";
+import { type Node } from "three/webgpu";
 
 /**
  * Converts OKLch color space to linear RGB.

@@ -1,5 +1,7 @@
 import "$demo/style.css";
 
+import { float, Fn, mx_noise_float, remap, uniform, vec3 } from "three/tsl";
+import { type Node } from "three/webgpu";
 import {
 	boxBlur,
 	TSLScene2D,
@@ -10,8 +12,6 @@ import {
 	oklchToRgb,
 	UniformSlider
 } from "$lib";
-import { float, Fn, mx_noise_float, remap, uniform, vec3 } from "three/tsl";
-import { Node } from "three/webgpu";
 
 // Create FixedTime for controllable time (needed for fixed-framerate recording)
 const fixedTime = new FixedTime();

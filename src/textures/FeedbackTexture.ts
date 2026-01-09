@@ -1,21 +1,19 @@
+import { nodeObject, Fn, uv, texture, convertToTexture } from "three/tsl";
 import {
 	RenderTarget,
 	Vector2,
 	HalfFloatType,
-	type TextureDataType
-} from "three";
-import {
+	type TextureDataType,
 	QuadMesh,
 	NodeMaterial,
 	RendererUtils,
 	TempNode,
 	NodeUpdateType,
-	Node,
-	NodeFrame,
-	NodeBuilder,
-	TextureNode
+	type Node,
+	type NodeFrame,
+	type NodeBuilder,
+	type TextureNode
 } from "three/webgpu";
-import { nodeObject, Fn, uv, texture, convertToTexture } from "three/tsl";
 
 // Type for the renderer state returned by RendererUtils.resetRendererState
 type RendererState = ReturnType<(typeof RendererUtils)["resetRendererState"]>;
@@ -25,6 +23,7 @@ const _quadMesh = new QuadMesh();
 
 let _rendererState: RendererState;
 
+/** Configuration options for FeedbackTexture initialization. */
 export type FeedbackTextureOptions = {
 	/**
 	 * Initial width of the feedback buffer. If not specified, it will be
@@ -66,6 +65,11 @@ export type FeedbackTextureOptions = {
 class FeedbackTextureNode extends TempNode {
 	readonly isFeedbackTextureNode = true;
 
+	/**
+	 * Get the type identifier for this node class.
+	 *
+	 * @returns The string type identifier
+	 */
 	static override get type(): string {
 		return "FeedbackTextureNode";
 	}
@@ -97,6 +101,15 @@ class FeedbackTextureNode extends TempNode {
 	/** Whether dimensions have been initialized. */
 	private _initialized = false;
 
+	/**
+	 * Creates a new FeedbackTextureNode.
+	 *
+	 * @param textureNode - The input texture node representing the current
+	 *   frame
+	 * @param compositeCallback - Function that combines current and previous
+	 *   frames
+	 * @param options - Optional configuration for buffer dimensions
+	 */
 	constructor(
 		textureNode: Node,
 		compositeCallback: (current: Node, previous: Node) => Node,
@@ -129,18 +142,31 @@ class FeedbackTextureNode extends TempNode {
 		this.updateBeforeType = NodeUpdateType.FRAME;
 	}
 
-	/** Returns the result of the effect as a texture node. */
+	/**
+	 * Returns the result of the effect as a texture node.
+	 *
+	 * @returns The texture node containing the composited feedback result
+	 */
 	getTextureNode(): TextureNode {
 		return this._textureNode;
 	}
 
-	/** Sets the size of the feedback buffers. */
+	/**
+	 * Sets the size of the feedback buffers.
+	 *
+	 * @param width - New width in pixels
+	 * @param height - New height in pixels
+	 */
 	setSize(width: number, height: number): void {
 		this._compRT.setSize(width, height);
 		this._oldRT.setSize(width, height);
 	}
 
-	/** Called once per frame to render the feedback effect. */
+	/**
+	 * Called once per frame to render the feedback effect.
+	 *
+	 * @param frame - The node frame containing renderer information
+	 */
 	override updateBefore(frame: NodeFrame): void {
 		const { renderer } = frame;
 		if (!renderer) return;
@@ -188,7 +214,12 @@ class FeedbackTextureNode extends TempNode {
 		RendererUtils.restoreRendererState(renderer, _rendererState);
 	}
 
-	/** Sets up the TSL shader code for the feedback effect. */
+	/**
+	 * Sets up the TSL shader code for the feedback effect.
+	 *
+	 * @param builder - The node builder for shader compilation
+	 * @returns The texture node representing the feedback output
+	 */
 	override setup(builder: NodeBuilder): Node {
 		// Cast to TextureNode to access uvNode and sample()
 		const textureNode = this.textureNode as TextureNode;

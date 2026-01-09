@@ -18,7 +18,7 @@ import {
 	max,
 	struct
 } from "three/tsl";
-import { Node } from "three/webgpu";
+import { type Node } from "three/webgpu";
 
 function hash(p: Node): Node {
 	const p3 = fract(p.mul(vec3(0.1031, 0.103, 0.0973)));
@@ -186,13 +186,29 @@ const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node]) => {
 	]
 });
 
+/**
+ * Generates a Voronoi noise pattern with configurable features and parameters.
+ * Voronoi noise creates cellular patterns based on distance to random seed
+ * points. Supports various feature outputs including closest point (F1), second
+ * closest (F2), edge detection, and smooth variations.
+ *
+ * @param position - The 3D position to sample the Voronoi noise at
+ * @param parameters - Optional configuration for the Voronoi pattern
+ * @returns A VoronoiResult node containing distance, color, and position
+ *   information
+ */
 export function voronoi(
 	position: Node,
 	parameters: {
+		/** @defaultValue float(2) */
 		exponent?: Node;
+		/** @defaultValue "f1" */
 		featureOutput?: "f1" | "f2" | "edge" | "smoothF1" | "edgeProjected";
+		/** @defaultValue float(1) */
 		randomness?: Node;
+		/** @defaultValue float(0) */
 		smoothness?: Node;
+		/** @defaultValue vec3(0, 0, 1) */
 		sliceNormal?: Node;
 	} = {}
 ): Node {

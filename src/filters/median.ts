@@ -13,7 +13,7 @@ import {
 	min,
 	max
 } from "three/tsl";
-import { Node } from "three/webgpu";
+import { type Node } from "three/webgpu";
 
 const ITERATIONS = 6;
 
@@ -84,6 +84,16 @@ const medianFn = Fn(
 	]
 });
 
+/**
+ * Applies a median filter to the input value using an iterative binary search
+ * algorithm. The median filter is useful for noise reduction while preserving
+ * edges. Uses a square kernel of the specified size.
+ *
+ * @param value - The input node or texture to filter
+ * @param size - The kernel size (will be adjusted to nearest odd number if
+ *   even)
+ * @returns A node containing the median-filtered result
+ */
 export function median(value: Node, size: Node): Node {
 	const textureValue = convertToTexture(value);
 	return medianFn(textureValue, size);

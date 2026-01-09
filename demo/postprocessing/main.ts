@@ -13,11 +13,11 @@
 
 import "$demo/style.css";
 
-import * as THREE from "three/webgpu";
-import { pass, vec3, uv, sin, time, mix } from "three/tsl";
-import { bloom } from "three/addons/tsl/display/BloomNode.js";
-import { TextTexture, tslPass } from "$lib";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { bloom } from "three/addons/tsl/display/BloomNode.js";
+import { pass, vec3, uv, sin, time, mix } from "three/tsl";
+import * as THREE from "three/webgpu";
+import { TextTexture, tslPass } from "$lib";
 
 // Setup renderer
 const renderer = new THREE.WebGPURenderer({ antialias: true });

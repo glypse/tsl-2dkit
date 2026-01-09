@@ -1,7 +1,7 @@
 import "$demo/style.css";
 
-import { TSLScene2D, MediaTexture, aspectCorrectedUV } from "$lib";
 import { mix, color } from "three/tsl";
+import { TSLScene2D, MediaTexture, aspectCorrectedUV } from "$lib";
 
 const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 	stats: true,

@@ -1,26 +1,24 @@
+import Stats from "three/addons/libs/stats.module.js";
+import { fxaa } from "three/addons/tsl/display/FXAANode.js";
+import { smaa } from "three/addons/tsl/display/SMAANode.js";
+import { Fn, vec3 } from "three/tsl";
 import {
 	Scene,
-	RenderTarget,
+	type RenderTarget,
 	OrthographicCamera,
 	Mesh,
 	PlaneGeometry,
 	SRGBColorSpace,
 	Color,
 	NoColorSpace,
-	LinearFilter
-} from "three";
-import {
+	LinearFilter,
 	WebGPURenderer,
-	Node,
+	type Node,
 	MeshBasicNodeMaterial,
 	CanvasTexture
 } from "three/webgpu";
-import { Fn, vec3 } from "three/tsl";
-import { smaa } from "three/addons/tsl/display/SMAANode.js";
-import { fxaa } from "three/addons/tsl/display/FXAANode.js";
-import Stats from "three/addons/libs/stats.module.js";
-import { FixedTime } from "../time/fixedTime";
 import { TSLContext2D } from "./TSLContext2D";
+import { type FixedTime } from "../time/fixedTime";
 
 type MaterialWithColorNode = MeshBasicNodeMaterial & { colorNode: Node };
 
@@ -29,35 +27,25 @@ type RTTNodeLike = Node & {
 	renderTarget?: RenderTarget;
 };
 
-export type RenderMode = "on-demand" | "continuous";
+const noTSLScene2DErr = new Error(
+	"No active TSLScene2D found. Make sure you're calling this within a TSLScene2D.build() callback."
+);
 
-export type TSLScene2DParameters = {
-	/**
-	 * Show FPS stats panel.
-	 *
-	 * @default false
-	 */
-	stats?: boolean;
-	/**
-	 * Anti-aliasing mode.
-	 *
-	 * @default "none"
-	 */
-	antialias?: "fxaa" | "smaa" | "none";
-	/**
-	 * Rendering mode:
-	 *
-	 * - "on-demand": Only renders when requestRender() is called or when tracked
-	 *   changes occur
-	 * - "continuous": Traditional animation loop (requestAnimationFrame)
-	 *
-	 * @default "on-demand"
-	 */
-	renderMode?: RenderMode;
-};
+/**
+ * Rendering mode for TSLScene2D.
+ *
+ * - "on-demand": Only renders when requestRender() is called
+ * - "continuous": Traditional animation loop using requestAnimationFrame
+ */
+export type RenderMode = "on-demand" | "continuous";
 
 const canvasNotInitializedErr = new Error("Canvas not initialized");
 
+/**
+ * A 2D scene handler that simplifies creating shader-based 2D graphics with
+ * Three.js. Manages the renderer, camera, and render loop, allowing you to
+ * focus on writing TSL shader code.
+ */
 export class TSLScene2D extends TSLContext2D {
 	// renderer / scene objects
 	private sceneObj: Scene | null = null;
@@ -89,20 +77,53 @@ export class TSLScene2D extends TSLContext2D {
 	// Static reference to current canvas for auto-detection
 	private static _currentScene: TSLScene2D | null = null;
 
-	/** Get the currently active canvas (the one being drawn to) */
+	/**
+	 * Get the currently active canvas (the one being drawn to).
+	 *
+	 * @returns The current TSLScene2D instance
+	 * @throws Error if no active TSLScene2D is found
+	 */
 	static get currentScene(): TSLScene2D {
 		if (!TSLScene2D._currentScene) {
-			throw new Error(
-				"No active TSLScene2D found. Make sure you're calling this within a TSLScene2D.build() callback."
-			);
+			throw noTSLScene2DErr;
 		}
 		return TSLScene2D._currentScene;
 	}
 
+	/**
+	 * Creates a new TSLScene2D instance.
+	 *
+	 * @param width - Initial width of the canvas in pixels
+	 * @param height - Initial height of the canvas in pixels
+	 * @param parameters - Optional configuration parameters
+	 */
 	constructor(
 		width: number,
 		height: number,
-		parameters?: TSLScene2DParameters
+		parameters?: {
+			/**
+			 * Show FPS stats panel.
+			 *
+			 * @defaultValue false
+			 */
+			stats?: boolean;
+			/**
+			 * Anti-aliasing mode.
+			 *
+			 * @defaultValue "none"
+			 */
+			antialias?: "fxaa" | "smaa" | "none";
+			/**
+			 * Rendering mode:
+			 *
+			 * - "on-demand": Only renders when requestRender() is called or when
+			 *   tracked changes occur
+			 * - "continuous": Traditional animation loop (requestAnimationFrame)
+			 *
+			 * @defaultValue "on-demand"
+			 */
+			renderMode?: RenderMode;
+		}
 	) {
 		super(width, height);
 
@@ -120,6 +141,13 @@ export class TSLScene2D extends TSLContext2D {
 		}
 	}
 
+	/**
+	 * Build the shader scene by providing a callback that returns a TSL node.
+	 * This callback defines what gets rendered to the canvas.
+	 *
+	 * @param callback - Function that returns a TSL node representing the scene
+	 *   output
+	 */
 	async build(callback: () => Node): Promise<void> {
 		// Set this as the current canvas for auto-detection
 		TSLScene2D._currentScene = this;
@@ -263,7 +291,11 @@ export class TSLScene2D extends TSLContext2D {
 		this._nodeGraphBuilt = false;
 	}
 
-	/** Traverse and dispose all RTTNode render targets in the node graph. */
+	/**
+	 * Traverse and dispose all RTTNode render targets in the node graph.
+	 *
+	 * @param node - The root node to start traversing from
+	 */
 	private _disposeNodeGraph(node: Node): void {
 		const disposed = new Set<Node>();
 
@@ -346,16 +378,28 @@ export class TSLScene2D extends TSLContext2D {
 	/**
 	 * Set the FixedTime instance to use for time control. When set, the canvas
 	 * will update the FixedTime on each frame.
+	 *
+	 * @param fixedTime - The FixedTime instance to use, or null to disable
 	 */
 	setFixedTime(fixedTime: FixedTime | null): void {
 		this._fixedTime = fixedTime;
 	}
 
-	/** Get the current FixedTime instance. */
+	/**
+	 * Get the current FixedTime instance.
+	 *
+	 * @returns The current FixedTime instance, or null if not set
+	 */
 	get fixedTime(): FixedTime | null {
 		return this._fixedTime;
 	}
 
+	/**
+	 * Update the size of the canvas and adjust camera/renderer accordingly.
+	 *
+	 * @param w - New width in pixels
+	 * @param h - New height in pixels
+	 */
 	override setSize(w: number, h: number): void {
 		super.setSize(w, h);
 
@@ -387,36 +431,76 @@ export class TSLScene2D extends TSLContext2D {
 		this.requestRender();
 	}
 
-	/** Get the current render mode. */
+	/**
+	 * Get the current render mode.
+	 *
+	 * @returns The current rendering mode
+	 */
 	get renderMode(): RenderMode {
 		return this._renderMode;
 	}
 
+	/**
+	 * Get the canvas element.
+	 *
+	 * @returns The HTML canvas element
+	 * @throws Error - If canvas is not initialized
+	 */
 	get canvasElement(): HTMLCanvasElement {
 		if (!this.canvasEl) throw canvasNotInitializedErr;
 		return this.canvasEl;
 	}
 
+	/**
+	 * Get the canvas texture.
+	 *
+	 * @returns The CanvasTexture wrapping the renderer's canvas
+	 * @throws Error - If texture is not initialized
+	 */
 	get texture(): CanvasTexture {
 		if (!this.textureObj) throw canvasNotInitializedErr;
 		return this.textureObj;
 	}
 
+	/**
+	 * Get the WebGPU renderer.
+	 *
+	 * @returns The WebGPURenderer instance
+	 * @throws Error - If renderer is not initialized
+	 */
 	get renderer(): WebGPURenderer {
 		if (!this.rendererObj) throw canvasNotInitializedErr;
 		return this.rendererObj;
 	}
 
+	/**
+	 * Get the Three.js scene.
+	 *
+	 * @returns The Scene instance
+	 * @throws Error - If scene is not initialized
+	 */
 	get scene(): Scene {
 		if (!this.sceneObj) throw canvasNotInitializedErr;
 		return this.sceneObj;
 	}
 
+	/**
+	 * Get the orthographic camera.
+	 *
+	 * @returns The OrthographicCamera instance
+	 * @throws Error - If camera is not initialized
+	 */
 	get camera(): OrthographicCamera {
 		if (!this.cameraObj) throw canvasNotInitializedErr;
 		return this.cameraObj;
 	}
 
+	/**
+	 * Get the plane mesh that displays the shader output.
+	 *
+	 * @returns The Mesh instance
+	 * @throws Error - If mesh is not initialized
+	 */
 	get mesh(): Mesh {
 		if (!this.planeMesh) throw canvasNotInitializedErr;
 		return this.planeMesh;

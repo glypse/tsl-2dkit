@@ -8,8 +8,8 @@
 
 import "$demo/style.css";
 
-import { TSLScene2D, voronoi, aspectCorrectedUV } from "$lib";
 import { vec2, vec3, uniform, float, mix, smoothstep } from "three/tsl";
+import { TSLScene2D, voronoi, aspectCorrectedUV } from "$lib";
 
 // Scene with on-demand rendering (default mode)
 const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {

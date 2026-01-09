@@ -15,7 +15,7 @@ import {
 	int,
 	min
 } from "three/tsl";
-import { Node, TextureNode } from "three/webgpu";
+import { type Node, type TextureNode } from "three/webgpu";
 
 const dilateFn = Fn(([tex, radius, isRound]: [TextureNode, Node, Node]) => {
 	const texSize = textureSize(tex);
@@ -41,9 +41,22 @@ const dilateFn = Fn(([tex, radius, isRound]: [TextureNode, Node, Node]) => {
 	return maxVal;
 });
 
+/**
+ * Applies a morphological dilation operation to the input texture. Dilation
+ * expands bright regions by taking the maximum value within the kernel radius.
+ * Can use either a square or circular kernel.
+ *
+ * @param tex - The input node or texture to dilate
+ * @param parameters - Configuration for the dilation operation
+ * @returns A node containing the dilated result
+ */
 export function dilate(
 	tex: Node,
-	parameters: { radius: Node; isRound?: Node }
+	parameters: {
+		radius: Node;
+		/** @defaultValue bool(false) */
+		isRound?: Node;
+	}
 ): Node {
 	const realTex = convertToTexture(tex);
 	const radius = parameters.radius;
@@ -75,9 +88,22 @@ const erodeFn = Fn(([tex, radius, isRound]: [TextureNode, Node, Node]) => {
 	return minVal;
 });
 
+/**
+ * Applies a morphological erosion operation to the input texture. Erosion
+ * shrinks bright regions by taking the minimum value within the kernel radius.
+ * Can use either a square or circular kernel.
+ *
+ * @param tex - The input node or texture to erode
+ * @param parameters - Configuration for the erosion operation
+ * @returns A node containing the eroded result
+ */
 export function erode(
 	tex: Node,
-	parameters: { radius: Node; isRound?: Node }
+	parameters: {
+		radius: Node;
+		/** @defaultValue bool(false) */
+		isRound?: Node;
+	}
 ): Node {
 	const realTex = convertToTexture(tex);
 	const radius = parameters.radius;

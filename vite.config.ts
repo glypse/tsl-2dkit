@@ -1,9 +1,8 @@
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vite";
-
 import basicSsl from "@vitejs/plugin-basic-ssl";
 import { threeMinifier } from "@yushijinhun/three-minifier-rollup";
+import { defineConfig } from "vite";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 

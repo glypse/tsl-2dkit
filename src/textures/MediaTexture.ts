@@ -1,11 +1,18 @@
-import { Texture, TextureNode, VideoTexture } from "three/webgpu";
 import { texture, vec4, vec2, uniform, select, uv, float } from "three/tsl";
-import type { Node, UniformNode } from "three/webgpu";
-import { LinearFilter, SRGBColorSpace } from "three";
+import {
+	type Node,
+	type UniformNode,
+	Texture,
+	type TextureNode,
+	VideoTexture,
+	LinearFilter,
+	SRGBColorSpace
+} from "three/webgpu";
 import { TSLScene2D } from "../core";
 import { UpdatableTexture } from "./UpdatableTexture";
 import { wrapUV } from "../utils";
 
+/** Configuration options for MediaTexture initialization. */
 export type MediaTextureOptions = {
 	src: string | HTMLImageElement | HTMLVideoElement;
 	anchorX: "left" | "center" | "right";
@@ -16,6 +23,11 @@ export type MediaTextureOptions = {
 	muted: boolean;
 };
 
+/**
+ * A texture that displays images or videos. Supports loading from URLs or
+ * existing HTMLImageElement/HTMLVideoElement instances. Videos can be
+ * controlled with play/pause/seek methods.
+ */
 export class MediaTexture extends UpdatableTexture {
 	parameters: MediaTextureOptions;
 
@@ -34,6 +46,11 @@ export class MediaTexture extends UpdatableTexture {
 	private isVideo = false;
 	private requestVideoFrameCallbackId = 0;
 
+	/**
+	 * Creates a new MediaTexture from an image or video source.
+	 *
+	 * @param parameters - Configuration options including the media source
+	 */
 	constructor(
 		parameters: Partial<MediaTextureOptions> & {
 			src: string | HTMLImageElement | HTMLVideoElement;
@@ -306,6 +323,14 @@ export class MediaTexture extends UpdatableTexture {
 		);
 	}
 
+	/**
+	 * Sample this texture using provided UVs. Registers with the active scene
+	 * for per-frame updates.
+	 *
+	 * @param inputUV - Optional UV coordinates to sample at (defaults to
+	 *   standard UVs)
+	 * @returns A node containing the sampled color value
+	 */
 	sample(inputUV?: Node): Node {
 		const canvas = TSLScene2D.currentScene;
 
@@ -433,6 +458,10 @@ export class MediaTexture extends UpdatableTexture {
 		}
 	}
 
+	/**
+	 * Dispose of GPU resources and clean up media element event listeners.
+	 * Pauses video playback if active.
+	 */
 	dispose(): void {
 		console.debug("[MediaTexture] Disposing");
 
@@ -458,6 +487,12 @@ export class MediaTexture extends UpdatableTexture {
 	}
 
 	// Video control methods
+	/**
+	 * Start video playback. Only works if the media source is a video.
+	 *
+	 * @returns A promise that resolves when playback starts, or void if not a
+	 *   video
+	 */
 	play(): Promise<void> | void {
 		if (this.isVideo && this.mediaElement instanceof HTMLVideoElement) {
 			console.debug("[MediaTexture] Playing video");
@@ -466,6 +501,7 @@ export class MediaTexture extends UpdatableTexture {
 		console.warn("[MediaTexture] play() called on non-video media");
 	}
 
+	/** Pause video playback. Only works if the media source is a video. */
 	pause(): void {
 		if (this.isVideo && this.mediaElement instanceof HTMLVideoElement) {
 			console.debug("[MediaTexture] Pausing video");
@@ -475,6 +511,11 @@ export class MediaTexture extends UpdatableTexture {
 		}
 	}
 
+	/**
+	 * Get the current playback time in seconds.
+	 *
+	 * @returns Current time in seconds, or 0 if not a video
+	 */
 	get currentTime(): number {
 		if (this.isVideo && this.mediaElement instanceof HTMLVideoElement) {
 			return this.mediaElement.currentTime;
@@ -482,6 +523,10 @@ export class MediaTexture extends UpdatableTexture {
 		return 0;
 	}
 
+	/**
+	 * Set the current playback time in seconds. Only works if the media source
+	 * is a video.
+	 */
 	set currentTime(time: number) {
 		if (this.isVideo && this.mediaElement instanceof HTMLVideoElement) {
 			console.debug("[MediaTexture] Setting current time to:", time);
@@ -493,6 +538,11 @@ export class MediaTexture extends UpdatableTexture {
 		}
 	}
 
+	/**
+	 * Get the total duration of the video in seconds.
+	 *
+	 * @returns Duration in seconds, or 0 if not a video
+	 */
 	get duration(): number {
 		if (this.isVideo && this.mediaElement instanceof HTMLVideoElement) {
 			return this.mediaElement.duration;
@@ -500,6 +550,11 @@ export class MediaTexture extends UpdatableTexture {
 		return 0;
 	}
 
+	/**
+	 * Check if the video is currently paused.
+	 *
+	 * @returns True if paused or not a video, false if playing
+	 */
 	get paused(): boolean {
 		if (this.isVideo && this.mediaElement instanceof HTMLVideoElement) {
 			return this.mediaElement.paused;
@@ -540,6 +595,8 @@ export class MediaTexture extends UpdatableTexture {
 	 * Get a uniform node representing the texture's width in pixels. This
 	 * uniform automatically updates when the media loads. Use this in your node
 	 * graph for reactive width handling.
+	 *
+	 * @returns A uniform node containing the width value
 	 */
 	get widthUniform(): UniformNode<number> {
 		return this._widthUniform;
@@ -549,6 +606,8 @@ export class MediaTexture extends UpdatableTexture {
 	 * Get a uniform node representing the texture's height in pixels. This
 	 * uniform automatically updates when the media loads. Use this in your node
 	 * graph for reactive height handling.
+	 *
+	 * @returns A uniform node containing the height value
 	 */
 	get heightUniform(): UniformNode<number> {
 		return this._heightUniform;
@@ -558,6 +617,8 @@ export class MediaTexture extends UpdatableTexture {
 	 * Get a uniform node representing the texture's aspect ratio
 	 * (width/height). This uniform automatically updates when the media loads.
 	 * Use this in your node graph for reactive aspect ratio handling.
+	 *
+	 * @returns A uniform node containing the aspect ratio
 	 */
 	get aspectUniform(): UniformNode<number> {
 		return this._aspectUniform;

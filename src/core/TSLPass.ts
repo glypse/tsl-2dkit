@@ -1,7 +1,12 @@
 import { texture, uv, convertToTexture, nodeObject, uniform } from "three/tsl";
-import type { Node, NodeFrame, UniformNode } from "three/webgpu";
-import { TempNode, NodeUpdateType } from "three/webgpu";
-import { Vector2 } from "three";
+import {
+	Vector2,
+	type Node,
+	type NodeFrame,
+	type UniformNode,
+	TempNode,
+	NodeUpdateType
+} from "three/webgpu";
 
 /**
  * A TSL-based post-processing pass that can be integrated with Three.js's
@@ -19,7 +24,6 @@ import { Vector2 } from "three";
  * const scenePass = pass(scene, camera);
  * const scenePassColor = scenePass.getTextureNode("output");
  *
- * // Simple functional API - like bloom!
  * const colorGraded = tslPass(scenePassColor, (input) => {
  * 	const color = input.sample(uv());
  * 	return color.rgb.mul(vec3(1.2, 1.0, 0.8)); // Warm color grade
@@ -48,6 +52,14 @@ export class TSLPassNode extends TempNode {
 		updateIfNeeded: () => Promise<void>;
 	}>();
 
+	/**
+	 * Creates a new TSL-based post-processing pass.
+	 *
+	 * @param inputNode - The input node from a previous rendering pass or
+	 *   effect
+	 * @param callback - Function that receives the input texture and returns
+	 *   the processed output node
+	 */
 	constructor(
 		inputNode: Node,
 		callback: (inputTexture: InputTextureNode) => Node
@@ -65,17 +77,32 @@ export class TSLPassNode extends TempNode {
 		this.updateBeforeType = NodeUpdateType.FRAME;
 	}
 
-	/** Get the currently active TSLPass (for texture registration). */
+	/**
+	 * Get the currently active TSLPass (for texture registration).
+	 *
+	 * @returns The current TSLPassNode instance if one is being set up, null
+	 *   otherwise
+	 */
 	static get currentPass(): TSLPassNode | null {
 		return TSLPassNode._currentPass;
 	}
 
-	/** Get the current width of the pass. */
+	/**
+	 * Get the current width of the pass.
+	 *
+	 * @returns The logical width of the pass in pixels (accounting for device
+	 *   pixel ratio)
+	 */
 	get width(): number {
 		return this._width;
 	}
 
-	/** Get the current height of the pass. */
+	/**
+	 * Get the current height of the pass.
+	 *
+	 * @returns The logical height of the pass in pixels (accounting for device
+	 *   pixel ratio)
+	 */
 	get height(): number {
 		return this._height;
 	}
@@ -83,6 +110,7 @@ export class TSLPassNode extends TempNode {
 	/**
 	 * Register a texture that needs per-frame updates.
 	 *
+	 * @param texture - The texture object with an updateIfNeeded method
 	 * @internal
 	 */
 	registerUpdatableTexture(texture: {
@@ -94,6 +122,7 @@ export class TSLPassNode extends TempNode {
 	/**
 	 * Called automatically before each frame to update size and textures.
 	 *
+	 * @param frame - The node frame containing renderer information
 	 * @internal
 	 */
 	updateBefore(frame: NodeFrame): void {
@@ -127,6 +156,7 @@ export class TSLPassNode extends TempNode {
 	/**
 	 * Setup the effect's TSL code.
 	 *
+	 * @returns The TSL node representing the effect's output
 	 * @internal
 	 */
 	setup(): Node {
@@ -153,6 +183,11 @@ export class InputTextureNode {
 	private _inputNode: Node;
 	private _textureNode: Node | null = null;
 
+	/**
+	 * Creates a new InputTextureNode wrapper.
+	 *
+	 * @param inputNode - The input node to wrap
+	 */
 	constructor(inputNode: Node) {
 		this._inputNode = inputNode;
 	}
@@ -163,7 +198,10 @@ export class InputTextureNode {
 	 * @param inputUV - UV coordinates to sample at. Defaults to standard UVs.
 	 * @returns A Node representing the sampled color (vec4)
 	 */
-	sample(inputUV?: Node): Node {
+	sample(
+		/** @defaultValue uv() */
+		inputUV?: Node
+	): Node {
 		const UV = inputUV ?? uv();
 
 		// Try to get the texture node from the input
@@ -188,6 +226,8 @@ export class InputTextureNode {
 	/**
 	 * Get the raw input node without sampling. Useful for passes that output
 	 * something other than a texture.
+	 *
+	 * @returns The unwrapped input node
 	 */
 	get raw(): Node {
 		return this._inputNode;

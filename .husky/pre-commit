@@ -1,5 +1,5 @@
 echo "Checking code style with Prettier..."
-pnpm prettier --check . || exit 1
+pnpm prettier --write . && git add -u || exit 1
 
 echo "Checking TypeScript types..."
 pnpm tsc --noEmit || exit 1

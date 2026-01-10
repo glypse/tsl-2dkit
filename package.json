@@ -1,6 +1,6 @@
 {
 	"name": "tsl-2dkit",
-	"version": "0.0.0-development",
+	"version": "0.1.0",
 	"type": "module",
 	"description": "TSL-based library for 2D shaders",
 	"author": "tsl-2dkit contributors",

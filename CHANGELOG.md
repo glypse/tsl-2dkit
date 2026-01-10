@@ -1,3 +1,7 @@
+## 0.1.0 (2026-01-10)
+
+- feat: initial release ([b364bc6](https://github.com/glypse/tsl-2dkit/commit/b364bc6))
+
 # Changelog
 
 All notable changes to this project will be documented in this file.

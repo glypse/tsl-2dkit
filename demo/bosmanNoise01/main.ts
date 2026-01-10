@@ -1,34 +1,35 @@
 import "$demo/style.css";
 
+import { float, Fn, mx_noise_float, remap, uniform, vec3 } from "three/tsl";
+import { type Node } from "three/webgpu";
 import {
 	boxBlur,
-	Canvas2D,
+	TSLScene2D,
 	CanvasRecorder,
 	colorLookup,
 	FixedTime,
-	getAspectCorrectedUV,
+	aspectCorrectedUV,
 	oklchToRgb,
 	UniformSlider
 } from "$lib";
-import { float, Fn, mx_noise_float, remap, uniform, vec3 } from "three/tsl";
-import { Node } from "three/webgpu";
 
 // Create FixedTime for controllable time (needed for fixed-framerate recording)
 const fixedTime = new FixedTime();
 
-const canvas = new Canvas2D(window.innerWidth, window.innerHeight, {
+const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 	stats: true,
-	antialias: "none"
+	antialias: "none",
+	renderMode: "continuous" // Uses time-based animation
 });
 
 // Connect fixedTime to canvas for automatic updates
-canvas.setFixedTime(fixedTime);
+scene.setFixedTime(fixedTime);
 
 // Use fixedTime.timeUniform instead of `time` from three/tsl
 const time = fixedTime.timeUniform;
 
 window.addEventListener("resize", () => {
-	canvas.resize(window.innerWidth, window.innerHeight);
+	scene.setSize(window.innerWidth, window.innerHeight);
 });
 
 const seed = uniform(Math.random() * 100);
@@ -127,7 +128,7 @@ new UniformSlider(controls, "Max Blur:", maxBlur, {
 	max: 100
 });
 
-await canvas.draw(() => {
+await scene.build(() => {
 	const gradientFn = Fn(({ t }: { t: Node }) => {
 		/* const noiseLightness = mx_noise_float(
 			vec3(
@@ -156,7 +157,7 @@ await canvas.draw(() => {
 		);
 	});
 
-	const UV = getAspectCorrectedUV();
+	const UV = aspectCorrectedUV();
 
 	// range is -1 to 1
 	const dispNoise = mx_noise_float(
@@ -219,7 +220,7 @@ await canvas.draw(() => {
 	return colorLookup(blurred.r, gradientFn);
 });
 
-document.body.appendChild(canvas.canvasElement);
+document.body.appendChild(scene.canvasElement);
 
 const fullscreenButton = document.getElementById(
 	"fullscreen-button"
@@ -233,7 +234,7 @@ fullscreenButton.addEventListener("click", () => {
 	}
 });
 
-const recorder = new CanvasRecorder(canvas, fixedTime, {
+const recorder = new CanvasRecorder(scene, fixedTime, {
 	fps: 60,
 	format: "webm",
 	filename: "bosman-noise-recording"

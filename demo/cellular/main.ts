@@ -1,21 +1,22 @@
 import "$demo/style.css";
 
-import { Canvas2D, getAspectCorrectedUV, text, voronoi } from "$lib";
-import { vec2, vec3, float, time, color, mix, uniform } from "three/tsl";
+import { vec2, vec3, float, time, color, mix, uniform, uv } from "three/tsl";
+import { TSLScene2D, aspectCorrectedUV, TextTexture, voronoi } from "$lib";
 
-const canvas = new Canvas2D(window.innerWidth, window.innerHeight, {
+const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 	stats: true,
-	antialias: "none"
+	antialias: "none",
+	renderMode: "continuous" // Uses time-based animation
 });
 
 window.addEventListener("resize", () => {
-	canvas.resize(window.innerWidth, window.innerHeight);
+	scene.setSize(window.innerWidth, window.innerHeight);
 });
 
-let seed = uniform(Math.random() * 10000);
+const seed = uniform(Math.random() * 10000);
 
 window.addEventListener("click", () => {
-	seed = uniform(Math.random() * 10000);
+	seed.value = Math.random() * 10000;
 });
 
 const voronoiScale = uniform(4);
@@ -23,12 +24,25 @@ const voronoiSpeed = uniform(0.4);
 const voronoiCutoff = uniform(0.009);
 const displaceStrength = uniform(0.05);
 
-await canvas.draw(() => {
+const textTexture = new TextTexture({
+	text: "Cellular",
+	color: "#d1cfbb",
+	fontFamily: "Fustat",
+	size: 150,
+	weight: 700,
+	letterSpacing: "-0.05em",
+	lineHeight: 0.8,
+	debug: false
+});
+
+await textTexture.waitUntilReady();
+
+await scene.build(() => {
 	const screenSpaceSmoothness = float(window.devicePixelRatio)
 		.div(15000)
 		.mul(voronoiScale);
 
-	const UV = getAspectCorrectedUV();
+	const UV = aspectCorrectedUV("contain", scene.aspectUniform, "generation");
 
 	const voronoiPos = vec3(
 		UV.x.mul(voronoiScale),
@@ -75,22 +89,11 @@ await canvas.draw(() => {
 			voronoiCutoff.add(screenSpaceSmoothness)
 		);
 
-	const textSample = text(
-		{
-			string: "Cellular",
-			color: "#d1cfbb",
-			fontFamily: "Fustat",
-			size: 150,
-			weight: 700,
-			letterSpacing: "-0.05em",
-			lineHeight: 0.8,
-			debug: false
-		},
-		(textUV) => {
-			return textUV
-				.add(vec2(0.5, 0.5))
-				.add(vec2(0, voronoiF1Color.mul(displaceStrength).x));
-		}
+	const textSample = textTexture.sample(
+		// uv().add(vec2(0.5, 0.5)).add(vec2(wave, 0))
+		uv()
+			.sub(vec2(0.5, 0.5))
+			.add(vec2(0, voronoiF1Color.mul(displaceStrength).x))
 	);
 
 	// Blend text with background color using alpha
@@ -108,4 +111,4 @@ await canvas.draw(() => {
 	return voronoiTextAndCrosses;
 });
 
-document.body.appendChild(canvas.canvasElement);
+document.body.appendChild(scene.canvasElement);

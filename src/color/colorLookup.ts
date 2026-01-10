@@ -1,87 +1,156 @@
-import { clamp, texture, vec2, type ProxiedObject } from "three/tsl";
-import { Texture } from "three";
-import { Node } from "three/webgpu";
-import { interpolate, converter, type Mode } from "culori";
 import type { ShaderNodeFn } from "three/src/nodes/TSL.js";
+import { clamp, Fn, mix, vec3, float, type ProxiedObject } from "three/tsl";
+import { type Node, Color } from "three/webgpu";
+import { oklchToRgb, rgbToOklch } from "./textureColors.js";
 
+/**
+ * Samples a color from a gradient using a normalized value. Takes a value
+ * (typically between 0 and 1) and looks up the corresponding color from a
+ * shader function. The value is automatically clamped to the 0-1 range before
+ * sampling.
+ *
+ * @param value - The normalized lookup value (will be clamped to 0-1)
+ * @param gradient - A shader function that takes `t` and returns a color
+ * @returns A color node sampled from the gradient
+ */
 export function colorLookup(
 	value: Node,
-	gradient: ShaderNodeFn<[ProxiedObject<{ t: Node }>]> | Texture
+	gradient: ShaderNodeFn<[ProxiedObject<{ t: Node }>]>
 ): Node {
 	const clampedValue = clamp(value, 0, 1);
-	if (gradient instanceof Texture) {
-		const sampleUV = vec2(clampedValue, 0.5);
-		return texture(gradient, sampleUV);
-	} else {
-		return gradient({ t: clampedValue });
-	}
+	return gradient({ t: clampedValue });
 }
 
+/**
+ * Creates a procedural gradient shader function that smoothly interpolates
+ * between specified color stops. The gradient can interpolate in RGB or OKLCH
+ * color space for perceptually uniform results.
+ *
+ * The resulting shader function is designed to be used with {@link colorLookup}
+ * or called directly with a normalized `t` parameter.
+ *
+ * @example
+ *
+ * ```ts
+ * const grad = gradient(
+ * 	[
+ * 		{ position: 0, color: "#ff0000" },
+ * 		{ position: 0.5, color: "#00ff00" },
+ * 		{ position: 1, color: "#0000ff" }
+ * 	],
+ * 	"oklch"
+ * );
+ * const color = colorLookup(someValue, grad);
+ * ```
+ *
+ * @param stops - Array of color stops with position (0-1) and color (CSS
+ *   string)
+ * @param mode - Color interpolation mode
+ * @returns A shader function that takes `t` and returns an interpolated color
+ */
 export function gradient(
-	stops: { position: number; color: string }[],
-	opts: { width?: number; height?: number; mode?: Mode } = {
-		width: 256,
-		height: 1,
-		mode: "rgb"
-	}
-): Texture {
-	const width = opts.width ?? 256;
-	const height = opts.height ?? 1;
-	const mode = opts.mode ?? "rgb";
+	stops: {
+		/** Position of the stop, range [0, 1] */
+		position: number;
+		/** Color of the stop, CSS string */
+		color: string;
+	}[],
+	/** @defaultValue "rgb" */
+	mode: "rgb" | "oklch" = "rgb"
+): ShaderNodeFn<[ProxiedObject<{ t: Node }>]> {
+	// Sort stops by position
+	const sortedStops = [...stops].sort((a, b) => a.position - b.position);
 
-	const canvas = document.createElement("canvas");
-	canvas.width = width;
-	canvas.height = height;
-	const ctx = canvas.getContext("2d");
-	if (!ctx) throw new Error("2d context not supported");
+	// Convert colors to Three.js Color objects
+	const colorStops = sortedStops.map((stop) => ({
+		position: stop.position,
+		color: new Color(stop.color)
+	}));
 
-	if (mode === "rgb") {
-		const grad = ctx.createLinearGradient(0, 0, width, 0);
-		for (const stop of stops) {
-			grad.addColorStop(stop.position, stop.color);
+	return Fn(({ t }: { t: Node }) => {
+		// Handle edge cases
+		if (colorStops.length === 0) {
+			return vec3(0, 0, 0);
 		}
-		ctx.fillStyle = grad;
-		ctx.fillRect(0, 0, width, height);
-	} else {
-		const convertRgb = converter("rgb");
-		const sortedStops = stops.sort((a, b) => {
-			return a.position - b.position;
-		});
-		for (let x = 0; x < width; x++) {
-			const t = x / (width - 1);
-			let color;
-			if (t <= sortedStops[0].position) {
-				color = interpolate([sortedStops[0].color], mode)(0);
-			} else if (t >= sortedStops[sortedStops.length - 1].position) {
-				color = interpolate(
-					[sortedStops[sortedStops.length - 1].color],
-					mode
-				)(0);
+		if (colorStops.length === 1) {
+			const c = colorStops[0].color;
+			return vec3(c.r, c.g, c.b);
+		}
+
+		// Find the two stops to interpolate between
+		let result: Node = vec3(0, 0, 0);
+
+		for (let i = 0; i < colorStops.length - 1; i++) {
+			const stop1 = colorStops[i];
+			const stop2 = colorStops[i + 1];
+
+			const inRange = t
+				.greaterThanEqual(stop1.position)
+				.and(t.lessThanEqual(stop2.position));
+
+			const localT = t
+				.sub(stop1.position)
+				.div(stop2.position - stop1.position)
+				.clamp(0, 1);
+
+			let interpolatedColor: Node;
+
+			if (mode === "oklch") {
+				// Convert both colors to OKLCH
+				const c1 = stop1.color;
+				const c2 = stop2.color;
+
+				const oklch1 = rgbToOklch(
+					float(c1.r),
+					float(c1.g),
+					float(c1.b)
+				);
+				const oklch2 = rgbToOklch(
+					float(c2.r),
+					float(c2.g),
+					float(c2.b)
+				);
+
+				// Interpolate in OKLCH space
+				const l = mix(oklch1.x, oklch2.x, localT);
+				const c = mix(oklch1.y, oklch2.y, localT);
+				const h = mix(oklch1.z, oklch2.z, localT);
+
+				// Convert back to RGB
+				interpolatedColor = oklchToRgb(l, c, h);
 			} else {
-				for (let i = 0; i < sortedStops.length - 1; i++) {
-					if (
-						t >= sortedStops[i].position &&
-						t <= sortedStops[i + 1].position
-					) {
-						const localT =
-							(t - sortedStops[i].position) /
-							(sortedStops[i + 1].position -
-								sortedStops[i].position);
-						const interp = interpolate(
-							[sortedStops[i].color, sortedStops[i + 1].color],
-							mode
-						);
-						color = interp(localT);
-						break;
-					}
-				}
+				// RGB interpolation
+				const c1 = stop1.color;
+				const c2 = stop2.color;
+
+				const rgb1 = vec3(c1.r, c1.g, c1.b);
+				const rgb2 = vec3(c2.r, c2.g, c2.b);
+
+				interpolatedColor = mix(rgb1, rgb2, localT);
 			}
-			const rgb = convertRgb(color) ?? { r: 0, g: 0, b: 0 };
-			ctx.fillStyle = `rgb(${Math.round(rgb.r * 255).toString()}, ${Math.round(rgb.g * 255).toString()}, ${Math.round(rgb.b * 255).toString()})`;
-			ctx.fillRect(x, 0, 1, height);
+
+			// Use conditional to select this segment if in range
+			result = inRange.select(interpolatedColor, result);
 		}
-	}
-	const texture = new Texture(canvas);
-	texture.needsUpdate = true;
-	return texture;
+
+		// Handle before first stop
+		const beforeFirst = t.lessThan(colorStops[0].position);
+		const firstColor = colorStops[0].color;
+		result = beforeFirst.select(
+			vec3(firstColor.r, firstColor.g, firstColor.b),
+			result
+		);
+
+		// Handle after last stop
+		const afterLast = t.greaterThan(
+			colorStops[colorStops.length - 1].position
+		);
+		const lastColor = colorStops[colorStops.length - 1].color;
+		result = afterLast.select(
+			vec3(lastColor.r, lastColor.g, lastColor.b),
+			result
+		);
+
+		return result;
+	});
 }

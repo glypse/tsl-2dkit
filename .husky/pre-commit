@@ -1,0 +1,10 @@
+echo "Checking code style with Prettier..."
+pnpm prettier --check . || exit 1
+
+echo "Checking TypeScript types..."
+pnpm tsc --noEmit || exit 1
+
+echo "Checking code quality with ESLint..."
+pnpm eslint . || exit 1
+
+echo "✅ All pre-commit checks passed!"

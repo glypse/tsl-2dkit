@@ -25,6 +25,5 @@
 			"$lib": ["./src"],
 			"$lib/*": ["./src/*"]
 		}
-	},
-	"include": ["src", "demo"]
+	}
 }

@@ -1,62 +1,159 @@
 import { float, uv, vec2 } from "three/tsl";
-import { Node } from "three/webgpu";
-import { Canvas2D } from "./core";
+import { type Node } from "three/webgpu";
+import { TSLScene2D } from "./core";
 
-export function getAspectCorrectedUV(
-	fit: "cover" | "contain" | "stretch" = "cover"
+/**
+ * Aspect-correct UV coordinates. Has two modes:
+ *
+ * - "sampling": For sampling external textures (MediaTexture, images, etc.) -
+ *   expands UV range
+ * - "generation": For generated content (voronoi, noise, etc.) - compresses UV
+ *   coordinates
+ *
+ * @param fit - How to fit the content: "cover", "contain", or "stretch"
+ * @param aspectRatio - Target aspect ratio (width/height). If omitted, uses
+ *   canvas aspect ratio
+ * @param mode - "sampling" for external textures (default), "generation" for
+ *   generated content
+ * @returns Aspect-corrected UV coordinates as a Node
+ */
+export function aspectCorrectedUV(
+	/** @defaultValue "cover" */
+	fit: "cover" | "contain" | "stretch" = "cover",
+	aspectRatio?: Node,
+	/** @defaultValue "sampling" */
+	mode: "sampling" | "generation" = "sampling"
 ): Node {
 	const UV = uv();
-	const canvas = Canvas2D.currentCanvas;
-	const canvasSize = vec2(canvas.widthUniform, canvas.heightUniform);
 
-	if (fit == "stretch") {
-		return UV;
-	}
+	if (fit === "stretch") return UV;
 
-	const aspectRatio = canvasSize.x.div(canvasSize.y);
+	// TODO: use TSLContext2D instead of TSLScene2D
+	const canvas = TSLScene2D.currentScene;
+
+	// Use provided aspect ratio, or fall back to canvas aspect ratio
+	const canvasAspectRatio = canvas.aspectUniform;
+	const targetAspectRatio = aspectRatio ?? canvasAspectRatio;
 
 	// Center the UVs around (0.5, 0.5)
 	const centeredUV = UV.sub(vec2(0.5, 0.5));
 
 	let scaleX: Node;
 	let scaleY: Node;
+	let operation: (coord: Node, scale: Node) => Node;
 
-	if (fit == "cover") {
-		scaleX = aspectRatio.lessThan(1).select(aspectRatio, float(1));
-		scaleY = aspectRatio
-			.greaterThan(1)
-			.select(float(1).div(aspectRatio), float(1));
-	} else {
-		scaleX = aspectRatio.greaterThan(1).select(aspectRatio, float(1));
-		scaleY = aspectRatio
-			.lessThan(1)
-			.select(float(1).div(aspectRatio), float(1));
+	switch (mode) {
+		case "sampling": {
+			let xCondition: Node;
+			let yCondition: Node;
+
+			switch (fit) {
+				case "cover":
+					xCondition = canvasAspectRatio.lessThan(targetAspectRatio);
+					yCondition =
+						canvasAspectRatio.greaterThan(targetAspectRatio);
+					break;
+				case "contain":
+					xCondition =
+						canvasAspectRatio.greaterThan(targetAspectRatio);
+					yCondition = canvasAspectRatio.lessThan(targetAspectRatio);
+					break;
+			}
+
+			scaleX = xCondition.select(
+				targetAspectRatio.div(canvasAspectRatio),
+				float(1)
+			);
+			scaleY = yCondition.select(
+				canvasAspectRatio.div(targetAspectRatio),
+				float(1)
+			);
+			operation = (coord: Node, scale: Node) => coord.div(scale);
+			break;
+		}
+		case "generation": {
+			let xCondition: Node;
+			let yCondition: Node;
+
+			switch (fit) {
+				case "cover":
+					xCondition = targetAspectRatio.lessThan(1);
+					yCondition = targetAspectRatio.greaterThan(1);
+					break;
+				case "contain":
+					xCondition = targetAspectRatio.greaterThan(1);
+					yCondition = targetAspectRatio.lessThan(1);
+					break;
+			}
+
+			scaleX = xCondition.select(targetAspectRatio, float(1));
+			scaleY = yCondition.select(
+				float(1).div(targetAspectRatio),
+				float(1)
+			);
+			operation = (coord: Node, scale: Node) => coord.mul(scale);
+			break;
+		}
 	}
 
+	// Sampling divides, generation multiplies
 	const correctedUV = vec2(
-		centeredUV.x.mul(scaleX),
-		centeredUV.y.mul(scaleY)
-	).add(vec2(0.5, 0.5));
+		operation(centeredUV.x, scaleX),
+		operation(centeredUV.y, scaleY)
+	);
 
-	return correctedUV;
+	return correctedUV.add(vec2(0.5, 0.5));
 }
 
-/**
- * Convert UV coordinates (0-1) to screen space pixel coordinates
- * @param uv - UV coordinates as vec2(x, y) where (0,0) is bottom-left
- * @param screenSize - Screen size as vec2(width, height) in pixels
- * @returns Pixel coordinates as vec2(x, y)
- */
-export function uvToScreenSpace(uv: Node, screenSize: Node): Node {
-	return vec2(uv.x.mul(screenSize.x), uv.y.mul(screenSize.y));
-}
+/** Texture wrapping mode for UV coordinates outside the 0-1 range. */
+export type WrapMode = "clamp" | "repeat" | "mirror" | "edge";
 
 /**
- * Convert screen space pixel coordinates to UV coordinates (0-1)
- * @param pixelPos - Pixel coordinates as vec2(x, y)
- * @param screenSize - Screen size as vec2(width, height) in pixels
- * @returns UV coordinates as vec2(x, y) where (0,0) is bottom-left
+ * Apply texture wrapping to UV coordinates
+ *
+ * @param uv - Input UV coordinates
+ * @param mode - Wrapping mode:
+ *
+ *   - "clamp": UVs outside 0-1 are out of bounds (default)
+ *   - "repeat": Tiles the texture infinitely
+ *   - "mirror": Tiles with alternating mirroring
+ *   - "edge": Clamps to 0-1 range, stretching edge pixels
+ *
+ * @returns Object with wrapped UV and inBounds flag
  */
-export function screenSpaceToUV(pixelPos: Node, screenSize: Node): Node {
-	return vec2(pixelPos.x.div(screenSize.x), pixelPos.y.div(screenSize.y));
+export function wrapUV(uv: Node, mode: WrapMode): { uv: Node; inBounds: Node } {
+	const x = uv.x;
+	const y = uv.y;
+
+	switch (mode) {
+		case "clamp": {
+			// Original behavior - check bounds
+			const inBoundsX = x.greaterThanEqual(0).and(x.lessThanEqual(1));
+			const inBoundsY = y.greaterThanEqual(0).and(y.lessThanEqual(1));
+			const inBounds = inBoundsX.and(inBoundsY);
+			return { uv: vec2(x, y), inBounds };
+		}
+		case "repeat": {
+			// Tile infinitely: fract(uv)
+			const wrappedX = x.fract();
+			const wrappedY = y.fract();
+			return { uv: vec2(wrappedX, wrappedY), inBounds: float(1) };
+		}
+		case "mirror": {
+			// Mirrored repeat: 1 - abs((uv % 2) - 1)
+			const wrappedX = float(1).sub(
+				x.mul(0.5).fract().mul(2).sub(1).abs()
+			);
+			const wrappedY = float(1).sub(
+				y.mul(0.5).fract().mul(2).sub(1).abs()
+			);
+			return { uv: vec2(wrappedX, wrappedY), inBounds: float(1) };
+		}
+		case "edge": {
+			// edge: clamp(uv, 0, 1)
+			const clampedX = x.clamp(0, 1);
+			const clampedY = y.clamp(0, 1);
+			return { uv: vec2(clampedX, clampedY), inBounds: float(1) };
+		}
+	}
 }

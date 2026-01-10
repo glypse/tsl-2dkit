@@ -5,38 +5,44 @@ import {
 	WebMOutputFormat,
 	CanvasSource
 } from "mediabunny";
-import type { Canvas2D } from "../core/scene";
+import type { TSLScene2D } from "../core";
 import type { FixedTime } from "./fixedTime";
 
+/** Configuration options for CanvasRecorder. */
 export type CanvasRecorderOptions = {
 	/**
 	 * Target frames per second for the recording.
-	 * @default 60
+	 *
+	 * @defaultValue 60
 	 */
 	fps?: number;
 
 	/**
-	 * Video bitrate in bits per second.
-	 * Higher values = better quality but larger files.
-	 * @default 25_000_000 (25 Mbps - near lossless for most content)
+	 * Video bitrate in bits per second. Higher values = better quality but
+	 * larger files.
+	 *
+	 * @defaultValue 25_000_000 (25 Mbps - near lossless for most content)
 	 */
 	videoBitsPerSecond?: number;
 
 	/**
 	 * Output format for the video.
-	 * @default 'mp4'
+	 *
+	 * @defaultValue "mp4"
 	 */
 	format?: "mp4" | "webm";
 
 	/**
 	 * Video codec to use.
-	 * @default 'avc' for mp4, 'vp9' for webm
+	 *
+	 * @defaultValue "avc" for mp4, "vp9" for webm
 	 */
 	codec?: "avc" | "hevc" | "vp9" | "vp8" | "av1";
 
 	/**
 	 * Filename for the downloaded video (without extension).
-	 * @default 'recording'
+	 *
+	 * @defaultValue "recording"
 	 */
 	filename?: string;
 };
@@ -49,12 +55,13 @@ type RecorderState = "inactive" | "recording";
  * regardless of browser throttling or performance issues.
  *
  * @example
+ *
  * ```ts
  * const fixedTime = new FixedTime();
  * canvas.setFixedTime(fixedTime);
  *
  * // Use fixedTime.timeUniform in your shaders
- * await canvas.draw(() => someShader(fixedTime.timeUniform));
+ * await TSLScene2D.build(() => someShader(fixedTime.timeUniform));
  *
  * const recorder = new CanvasRecorder(canvas, fixedTime);
  *
@@ -68,7 +75,7 @@ type RecorderState = "inactive" | "recording";
  * ```
  */
 export class CanvasRecorder {
-	private canvas2d: Canvas2D;
+	private canvas2d: TSLScene2D;
 	private fixedTime: FixedTime;
 	private _state: RecorderState = "inactive";
 	private options: Required<Omit<CanvasRecorderOptions, "codec">> & {
@@ -83,8 +90,16 @@ export class CanvasRecorder {
 	private recordingPromise: Promise<Blob> | null = null;
 	private recordingResolve: ((blob: Blob) => void) | null = null;
 
+	/**
+	 * Creates a new CanvasRecorder instance.
+	 *
+	 * @param canvas2d - The TSLScene2D instance to record
+	 * @param fixedTime - The FixedTime instance controlling the animation
+	 * @param options - Optional configuration for the recorder
+	 */
 	constructor(
-		canvas2d: Canvas2D,
+		// TODO: Use TSLContext2D instead of TSLScene2D
+		canvas2d: TSLScene2D,
 		fixedTime: FixedTime,
 		options: CanvasRecorderOptions = {}
 	) {
@@ -101,6 +116,8 @@ export class CanvasRecorder {
 
 	/**
 	 * Get the current state of the recorder.
+	 *
+	 * @returns The current recorder state
 	 */
 	get state(): RecorderState {
 		return this._state;
@@ -108,14 +125,18 @@ export class CanvasRecorder {
 
 	/**
 	 * Check if recording is in progress.
+	 *
+	 * @returns True if currently recording, false otherwise
 	 */
 	get isRecording(): boolean {
 		return this._state === "recording";
 	}
 
 	/**
-	 * Update recorder options.
-	 * Note: This only affects future recordings, not ongoing ones.
+	 * Update recorder options. Note: This only affects future recordings, not
+	 * ongoing ones.
+	 *
+	 * @param options - Partial options to update
 	 */
 	setOptions(options: Partial<CanvasRecorderOptions>): void {
 		Object.assign(this.options, options);
@@ -124,14 +145,16 @@ export class CanvasRecorder {
 	/**
 	 * Start recording.
 	 *
-	 * If `duration` is provided, records for that many seconds then automatically
-	 * stops and downloads the video. The returned promise resolves when complete.
+	 * If `duration` is provided, records for that many seconds then
+	 * automatically stops and downloads the video. The returned promise
+	 * resolves when complete.
 	 *
 	 * If `duration` is omitted, recording continues until `stop()` is called.
 	 * In this case, the returned promise resolves immediately after setup.
 	 *
 	 * @param options - Optional recording options
-	 * @returns Promise that resolves with the Blob (for fixed duration) or void (for manual stop)
+	 * @returns Promise that resolves with the Blob (for fixed duration) or void
+	 *   (for manual stop)
 	 */
 	start(options?: {
 		duration?: number;
@@ -157,8 +180,8 @@ export class CanvasRecorder {
 	}
 
 	/**
-	 * Stop recording and download the video.
-	 * Only needed when recording without a fixed duration.
+	 * Stop recording and download the video. Only needed when recording without
+	 * a fixed duration.
 	 *
 	 * @returns Promise that resolves with the recorded Blob
 	 */
@@ -178,9 +201,7 @@ export class CanvasRecorder {
 		throw new Error("CanvasRecorder: Recording promise not available");
 	}
 
-	/**
-	 * Cancel the recording without saving.
-	 */
+	/** Cancel the recording without saving. */
 	cancel(): void {
 		if (this._state === "recording") {
 			this.stopRequested = true;
@@ -247,7 +268,7 @@ export class CanvasRecorder {
 		});
 
 		// Start the recording loop
-		const recordLoop = async () => {
+		const recordLoop = async (): Promise<Blob> => {
 			try {
 				while (!this.stopRequested) {
 					// Check if we've reached the target duration
@@ -262,7 +283,7 @@ export class CanvasRecorder {
 					this.fixedTime.setTime(this.frameCount * frameDuration);
 
 					// Render the frame
-					this.canvas2d.renderFrame();
+					await this.canvas2d.renderFrame();
 
 					// Add the frame to the video with exact timestamp
 					const timestamp = this.frameCount * frameDuration;

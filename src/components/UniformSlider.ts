@@ -1,14 +1,34 @@
-import { uniform } from "three/tsl";
+import { type uniform } from "three/tsl";
 
+/**
+ * A UI component that creates a slider control for manipulating a Three.js
+ * uniform value. Creates an HTML range input with a label that automatically
+ * updates the uniform value when the slider is moved.
+ */
 export class UniformSlider {
 	private input: HTMLInputElement;
 	private label: HTMLLabelElement;
 
+	/**
+	 * Creates a new UniformSlider and appends it to the specified container.
+	 *
+	 * @param container - The HTML element to append the slider controls to
+	 * @param labelText - The text label to display next to the slider
+	 * @param uniformNode - The Three.js uniform node to control with this
+	 *   slider
+	 * @param options - Configuration options for the slider range and behavior
+	 */
 	constructor(
 		container: HTMLElement,
 		labelText: string,
 		uniformNode: ReturnType<typeof uniform>,
-		options: { min: number; max: number; step?: number; value?: number }
+		options: {
+			min: number;
+			max: number;
+			/** @defaultValue 0.001 */
+			step?: number;
+			value?: number;
+		}
 	) {
 		this.label = document.createElement("label");
 		this.label.textContent = labelText + " ";

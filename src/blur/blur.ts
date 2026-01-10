@@ -1,3 +1,4 @@
+import type { ShaderNodeFn } from "three/src/nodes/TSL.js";
 import {
 	Fn,
 	vec2,
@@ -10,13 +11,14 @@ import {
 	int,
 	floor,
 	max,
-	nodeObject,
 	convertToTexture,
 	exp
 } from "three/tsl";
 import type { Node, TextureNode } from "three/webgpu";
 
-function createBoxBlurPass(axis: "x" | "y") {
+function createBoxBlurPass(
+	axis: "x" | "y"
+): ShaderNodeFn<[Node | number, Node | number]> {
 	return Fn(([textureNode, blurAmountMap]: [TextureNode, Node]) => {
 		const baseUV = (textureNode.uvNode ?? uv()).toVar();
 		const pixelSize = vec2(1).div(textureSize(textureNode)).toVar();
@@ -52,7 +54,9 @@ function createBoxBlurPass(axis: "x" | "y") {
 	});
 }
 
-function createGaussianBlurPass(axis: "x" | "y") {
+function createGaussianBlurPass(
+	axis: "x" | "y"
+): ShaderNodeFn<[Node | number, Node | number]> {
 	return Fn(([textureNode, blurAmountMap]: [TextureNode, Node]) => {
 		const baseUV = (textureNode.uvNode ?? uv()).toVar();
 		const pixelSize = vec2(1).div(textureSize(textureNode)).toVar();
@@ -101,15 +105,15 @@ const horizontalGaussianBlurPass = createGaussianBlurPass("x");
 const verticalGaussianBlurPass = createGaussianBlurPass("y");
 
 /**
- * Applies a separable box blur where the blur radius is controlled per-pixel
- * by a blur amount map.
+ * Applies a separable box blur where the blur radius is controlled per-pixel by
+ * a blur amount map.
  *
  * @param value - The input node to blur
  * @param blurAmountMap - A Node that determines the blur radius at each pixel
  * @returns The blurred result as a Node
  */
-export function boxBlur(value: Node, blurAmountMap: Node) {
-	const blurAmountNode = nodeObject(blurAmountMap);
+export function boxBlur(value: Node, blurAmountMap: Node): Node {
+	const blurAmountNode = blurAmountMap;
 	const sourceTexture = convertToTexture(value);
 	const horizontalBlurred = horizontalBoxBlurPass(
 		sourceTexture,
@@ -120,15 +124,15 @@ export function boxBlur(value: Node, blurAmountMap: Node) {
 }
 
 /**
- * Applies a separable Gaussian blur where the blur radius is controlled per-pixel
- * by a blur amount map.
+ * Applies a separable Gaussian blur where the blur radius is controlled
+ * per-pixel by a blur amount map.
  *
  * @param value - The input node to blur
  * @param blurAmountMap - A Node that determines the blur radius at each pixel
  * @returns The blurred result as a Node
  */
-export function gaussianBlur(value: Node, blurAmountMap: Node) {
-	const blurAmountNode = nodeObject(blurAmountMap);
+export function gaussianBlur(value: Node, blurAmountMap: Node): Node {
+	const blurAmountNode = blurAmountMap;
 	const sourceTexture = convertToTexture(value);
 	const horizontalBlurred = horizontalGaussianBlurPass(
 		sourceTexture,

@@ -2,6 +2,43 @@ import "$demo/style.css";
 
 import { TSLScene2D, aspectCorrectedUV, colorLookup, gradient } from "$lib";
 
+// Create controls div
+const controls = document.createElement("div");
+controls.id = "controls";
+document.body.appendChild(controls);
+
+// Create control section for mode select
+const controlSection = document.createElement("div");
+controlSection.className = "control-section";
+controls.appendChild(controlSection);
+
+const modeLabel = document.createElement("label");
+modeLabel.textContent = "Interpolation Mode: ";
+controlSection.appendChild(modeLabel);
+
+const modeSelect = document.createElement("select");
+modeSelect.id = "mode-select";
+const rgbOption = document.createElement("option");
+rgbOption.value = "rgb";
+rgbOption.textContent = "RGB";
+modeSelect.appendChild(rgbOption);
+const oklchOption = document.createElement("option");
+oklchOption.value = "oklch";
+oklchOption.textContent = "OKLCH";
+modeSelect.appendChild(oklchOption);
+modeLabel.appendChild(modeSelect);
+
+// Create stops container
+const stopsContainer = document.createElement("div");
+stopsContainer.id = "stops-container";
+controls.appendChild(stopsContainer);
+
+// Create add stop button
+const addStopButton = document.createElement("button");
+addStopButton.id = "add-stop";
+addStopButton.textContent = "+ Add Stop";
+controls.appendChild(addStopButton);
+
 // Initialize scene
 const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 	renderMode: "on-demand"
@@ -45,11 +82,6 @@ function buildShaderScene(): void {
 }
 
 // UI Management
-const stopsContainer = document.getElementById(
-	"stops-container"
-) as HTMLDivElement;
-const modeSelect = document.getElementById("mode-select") as HTMLSelectElement;
-const addStopButton = document.getElementById("add-stop") as HTMLButtonElement;
 
 function createStopUI(stop: ColorStop, index: number): HTMLDivElement {
 	const stopDiv = document.createElement("div");

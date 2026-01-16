@@ -13,6 +13,27 @@ import {
 	UniformSlider
 } from "$lib";
 
+// Create controls div
+const controls = document.createElement("div");
+controls.id = "controls";
+document.body.appendChild(controls);
+
+// Create buttons
+const fullscreenButton = document.createElement("button");
+fullscreenButton.id = "fullscreen-button";
+fullscreenButton.textContent = "Fullscreen";
+controls.appendChild(fullscreenButton);
+
+const recordButton = document.createElement("button");
+recordButton.id = "record-button";
+recordButton.textContent = "🔴 Record";
+controls.appendChild(recordButton);
+
+const recordFixedButton = document.createElement("button");
+recordFixedButton.id = "record-fixed-button";
+recordFixedButton.textContent = "🎬 Record 5s @ 60fps";
+controls.appendChild(recordFixedButton);
+
 // Create FixedTime for controllable time (needed for fixed-framerate recording)
 const fixedTime = new FixedTime();
 
@@ -51,9 +72,6 @@ const noiseOverlaySpeed = uniform(0.3);
 const noiseOverlayStrength = uniform(1);
 const baseNoiseStrength = uniform(0.1);
 const maxBlur = uniform(60);
-
-// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-const controls = document.getElementById("controls")!;
 
 new UniformSlider(controls, "Seed:", seed, { min: 0, max: 100 });
 /* new UniformSlider(controls, "Lightness variance:", lightnessVariance, {
@@ -222,10 +240,6 @@ await scene.build(() => {
 
 document.body.appendChild(scene.canvasElement);
 
-const fullscreenButton = document.getElementById(
-	"fullscreen-button"
-) as HTMLButtonElement;
-
 fullscreenButton.addEventListener("click", () => {
 	if (document.fullscreenElement) {
 		void document.exitFullscreen();
@@ -240,10 +254,6 @@ const recorder = new CanvasRecorder(scene, fixedTime, {
 	filename: "bosman-noise-recording"
 });
 
-const recordButton = document.getElementById(
-	"record-button"
-) as HTMLButtonElement;
-
 recordButton.addEventListener("click", () => {
 	if (recorder.isRecording) {
 		void recorder.stop();
@@ -253,10 +263,6 @@ recordButton.addEventListener("click", () => {
 		recordButton.textContent = "⏹ Stop";
 	}
 });
-
-const recordFixedButton = document.getElementById(
-	"record-fixed-button"
-) as HTMLButtonElement;
 
 recordFixedButton.addEventListener("click", () => {
 	recordFixedButton.disabled = true;

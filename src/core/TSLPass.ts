@@ -9,7 +9,7 @@ import {
 } from "three/webgpu";
 // Type import needed for documentation linking
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { type UpdatableTexture } from "$lib/textures";
+import { type UpdatableTexture } from "../textures";
 
 /**
  * A TSL-based post-processing pass that can be integrated with Three.js's

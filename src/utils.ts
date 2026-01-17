@@ -28,7 +28,6 @@ export function aspectCorrectedUV(
 
 	if (fit === "stretch") return UV;
 
-	// TODO: use TSLContext2D instead of TSLScene2D
 	const canvas = TSLScene2D.currentScene;
 
 	// Use provided aspect ratio, or fall back to canvas aspect ratio

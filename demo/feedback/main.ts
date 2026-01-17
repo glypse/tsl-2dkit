@@ -40,7 +40,6 @@ window.addEventListener("resize", () => {
 });
 
 await scene.build(() => {
-	// TODO: adjust mouse position depending on aspect-corrected UVs
 	const UV = aspectCorrectedUV("cover", scene.aspectUniform, "generation");
 
 	// Create a moving circle that follows the mouse

@@ -72,7 +72,6 @@ function buildShaderScene(): void {
 		const isLandscape = window.innerWidth > window.innerHeight;
 		const t = isLandscape ? UV.x : UV.y;
 
-		// TODO: OKLch interpolation is broken, investigate
 		// Create gradient function
 		const gradFn = gradient(gradientStops, interpolationMode);
 

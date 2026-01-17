@@ -98,7 +98,6 @@ export class CanvasRecorder {
 	 * @param options - Optional configuration for the recorder
 	 */
 	constructor(
-		// TODO: Use TSLContext2D instead of TSLScene2D
 		canvas2d: TSLScene2D,
 		fixedTime: FixedTime,
 		options: CanvasRecorderOptions = {}

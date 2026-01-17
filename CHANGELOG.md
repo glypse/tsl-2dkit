@@ -1,3 +1,19 @@
+## <small>0.1.1 (2026-01-17)</small>
+
+- Merge pull request #12 from glypse/better-docs ([7f329fc](https://github.com/glypse/tsl-2dkit/commit/7f329fc)), closes [#12](https://github.com/glypse/tsl-2dkit/issues/12)
+- Merge pull request #7 from glypse/finish-setup-commitlint ([64aac36](https://github.com/glypse/tsl-2dkit/commit/64aac36)), closes [#7](https://github.com/glypse/tsl-2dkit/issues/7)
+- Merge pull request #9 from glypse/centralised-demos ([8a54db5](https://github.com/glypse/tsl-2dkit/commit/8a54db5)), closes [#9](https://github.com/glypse/tsl-2dkit/issues/9)
+- docs: make bosmanNoise01 live in TS only ([aca418b](https://github.com/glypse/tsl-2dkit/commit/aca418b))
+- docs: make gradientMap live in TS only ([595503c](https://github.com/glypse/tsl-2dkit/commit/595503c))
+- docs: remove prettier-plugin-jsdoc ([060e97f](https://github.com/glypse/tsl-2dkit/commit/060e97f))
+- docs(README): fix typos and improve phrasing ([44a7b92](https://github.com/glypse/tsl-2dkit/commit/44a7b92))
+- style: fix `UpdatableTexture` reference in `TSLPass.ts` ([5ac466e](https://github.com/glypse/tsl-2dkit/commit/5ac466e))
+- style: improve API documentation ([86d9fd9](https://github.com/glypse/tsl-2dkit/commit/86d9fd9))
+- style: remove internal `TODO` messages ([0782208](https://github.com/glypse/tsl-2dkit/commit/0782208))
+- ci: add commit-msg git hook ([b58d1a8](https://github.com/glypse/tsl-2dkit/commit/b58d1a8))
+- ci: use OIDC trusted publishing instead of NPM_TOKEN ([bf204d3](https://github.com/glypse/tsl-2dkit/commit/bf204d3))
+- ci(no-release): explicitly prevent ci/chore/test/build commits from releasing ([cba6658](https://github.com/glypse/tsl-2dkit/commit/cba6658))
+
 ## 0.1.0 (2026-01-10)
 
 - feat: initial release ([b364bc6](https://github.com/glypse/tsl-2dkit/commit/b364bc6))

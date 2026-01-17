@@ -48,13 +48,15 @@ const dilateFn = Fn(([tex, radius, isRound]: [TextureNode, Node, Node]) => {
  *
  * @param tex - The input node or texture to dilate
  * @param parameters - Configuration for the dilation operation
+ * @param parameters.radius - Radius of the dilation
+ * @param parameters.isRound - Set the dilate to round or square
+ * @default bool(false)
  * @returns A node containing the dilated result
  */
 export function dilate(
 	tex: Node,
 	parameters: {
 		radius: Node;
-		/** @defaultValue bool(false) */
 		isRound?: Node;
 	}
 ): Node {
@@ -95,13 +97,15 @@ const erodeFn = Fn(([tex, radius, isRound]: [TextureNode, Node, Node]) => {
  *
  * @param tex - The input node or texture to erode
  * @param parameters - Configuration for the erosion operation
+ * @param parameters.radius - Radius of the erosion
+ * @param parameters.isRound - Set the erode to round or square
+ * @default bool(false)
  * @returns A node containing the eroded result
  */
 export function erode(
 	tex: Node,
 	parameters: {
 		radius: Node;
-		/** @defaultValue bool(false) */
 		isRound?: Node;
 	}
 ): Node {

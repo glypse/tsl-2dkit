@@ -11,24 +11,23 @@ import { TSLScene2D } from "./core";
  *   coordinates
  *
  * @param fit - How to fit the content: "cover", "contain", or "stretch"
+ * @default "cover"
  * @param aspectRatio - Target aspect ratio (width/height). If omitted, uses
  *   canvas aspect ratio
  * @param mode - "sampling" for external textures (default), "generation" for
  *   generated content
+ * @default "sampling"
  * @returns Aspect-corrected UV coordinates as a Node
  */
 export function aspectCorrectedUV(
-	/** @defaultValue "cover" */
 	fit: "cover" | "contain" | "stretch" = "cover",
 	aspectRatio?: Node,
-	/** @defaultValue "sampling" */
 	mode: "sampling" | "generation" = "sampling"
 ): Node {
 	const UV = uv();
 
 	if (fit === "stretch") return UV;
 
-	// TODO: use TSLContext2D instead of TSLScene2D
 	const canvas = TSLScene2D.currentScene;
 
 	// Use provided aspect ratio, or fall back to canvas aspect ratio

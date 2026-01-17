@@ -194,21 +194,27 @@ const voronoiFn = Fn((inputs: [Node, Node, Node, Node, Node, Node]) => {
  *
  * @param position - The 3D position to sample the Voronoi noise at
  * @param parameters - Optional configuration for the Voronoi pattern
+ * @param parameters.exponent - Exponent of the Minkowski distance metric
+ * @default float(2)
+ * @param parameters.featureOutput - The Voronoi feature that the node will compute
+ * @default "f1"
+ * @param parameters.randomness - The randomness of the noise
+ * @default float(1)
+ * @param parameters.smoothness - The smoothness of the noise
+ * @default float(0)
+ * @param parameters.sliceNormal - On which normal to slice the texture to when
+ *   using "edgeProjected" featureOutput
+ * @default vec3(0, 0, 1)
  * @returns A VoronoiResult node containing distance, color, and position
  *   information
  */
 export function voronoi(
 	position: Node,
 	parameters: {
-		/** @defaultValue float(2) */
 		exponent?: Node;
-		/** @defaultValue "f1" */
 		featureOutput?: "f1" | "f2" | "edge" | "smoothF1" | "edgeProjected";
-		/** @defaultValue float(1) */
 		randomness?: Node;
-		/** @defaultValue float(0) */
 		smoothness?: Node;
-		/** @defaultValue vec3(0, 0, 1) */
 		sliceNormal?: Node;
 	} = {}
 ): Node {

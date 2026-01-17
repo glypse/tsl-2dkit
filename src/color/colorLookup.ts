@@ -43,19 +43,18 @@ export function colorLookup(
  * const color = colorLookup(someValue, grad);
  * ```
  *
- * @param stops - Array of color stops with position (0-1) and color (CSS
- *   string)
+ * @param stops - Array of color stops
+ * @param stops.position - Position of the stop, range [0, 1]
+ * @param stops.color - Color of the stop, CSS string
  * @param mode - Color interpolation mode
+ * @default "rgb"
  * @returns A shader function that takes `t` and returns an interpolated color
  */
 export function gradient(
 	stops: {
-		/** Position of the stop, range [0, 1] */
 		position: number;
-		/** Color of the stop, CSS string */
 		color: string;
 	}[],
-	/** @defaultValue "rgb" */
 	mode: "rgb" | "oklch" = "rgb"
 ): ShaderNodeFn<[ProxiedObject<{ t: Node }>]> {
 	// Sort stops by position

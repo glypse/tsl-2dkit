@@ -19,13 +19,13 @@ export type CanvasTextureOptions = {
 	/**
 	 * Anchor point for horizontal alignment.
 	 *
-	 * @defaultValue "center
+	 * @default "center
 	 */
 	anchorX: string;
 	/**
 	 * Anchor point for vertical alignment.
 	 *
-	 * @defaultValue "center
+	 * @default "center
 	 */
 	anchorY: string;
 	/** Show debug borders around the texture bounds. */

@@ -13,7 +13,7 @@ export type CanvasRecorderOptions = {
 	/**
 	 * Target frames per second for the recording.
 	 *
-	 * @defaultValue 60
+	 * @default 60
 	 */
 	fps?: number;
 
@@ -21,28 +21,28 @@ export type CanvasRecorderOptions = {
 	 * Video bitrate in bits per second. Higher values = better quality but
 	 * larger files.
 	 *
-	 * @defaultValue 25_000_000 (25 Mbps - near lossless for most content)
+	 * @default 25_000_000 (25 Mbps - near lossless for most content)
 	 */
 	videoBitsPerSecond?: number;
 
 	/**
 	 * Output format for the video.
 	 *
-	 * @defaultValue "mp4"
+	 * @default "mp4"
 	 */
 	format?: "mp4" | "webm";
 
 	/**
 	 * Video codec to use.
 	 *
-	 * @defaultValue "avc" for mp4, "vp9" for webm
+	 * @default "avc" for mp4, "vp9" for webm
 	 */
 	codec?: "avc" | "hevc" | "vp9" | "vp8" | "av1";
 
 	/**
 	 * Filename for the downloaded video (without extension).
 	 *
-	 * @defaultValue "recording"
+	 * @default "recording"
 	 */
 	filename?: string;
 };
@@ -98,7 +98,6 @@ export class CanvasRecorder {
 	 * @param options - Optional configuration for the recorder
 	 */
 	constructor(
-		// TODO: Use TSLContext2D instead of TSLScene2D
 		canvas2d: TSLScene2D,
 		fixedTime: FixedTime,
 		options: CanvasRecorderOptions = {}
@@ -153,6 +152,8 @@ export class CanvasRecorder {
 	 * In this case, the returned promise resolves immediately after setup.
 	 *
 	 * @param options - Optional recording options
+	 * @param options.duration - Duration of the recording in seconds
+	 * @param options.filename - {@link CanvasRecorderOptions.filename}
 	 * @returns Promise that resolves with the Blob (for fixed duration) or void
 	 *   (for manual stop)
 	 */

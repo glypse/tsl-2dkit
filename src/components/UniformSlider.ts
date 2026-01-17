@@ -17,6 +17,11 @@ export class UniformSlider {
 	 * @param uniformNode - The Three.js uniform node to control with this
 	 *   slider
 	 * @param options - Configuration options for the slider range and behavior
+	 * @param options.max - Maximum slider value
+	 * @param options.min - Minimum slider value
+	 * @param options.step - Step size of the slider
+	 * @default 0.001
+	 * @param options.value - Default slider value
 	 */
 	constructor(
 		container: HTMLElement,
@@ -25,7 +30,6 @@ export class UniformSlider {
 		options: {
 			min: number;
 			max: number;
-			/** @defaultValue 0.001 */
 			step?: number;
 			value?: number;
 		}

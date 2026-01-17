@@ -5,7 +5,6 @@ import markdown from "@eslint/markdown";
 import { defineConfig } from "eslint/config";
 import importPlugin from "eslint-plugin-import";
 import jsdoc from "eslint-plugin-jsdoc";
-import tsdoc from "eslint-plugin-tsdoc";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 import preferThreeWebGPU from "./eslint-rules/prefer-three-webgpu.cjs";
@@ -63,14 +62,13 @@ export default defineConfig([
 	},
 	{
 		files: ["**/*.{ts,mts,cts}"],
-		plugins: { tsdoc, jsdoc },
+		plugins: { jsdoc },
 		extends: [
 			...tseslint.configs.strictTypeChecked,
 			...tseslint.configs.stylisticTypeChecked,
 			jsdoc.configs["flat/recommended-typescript"]
 		],
 		rules: {
-			"tsdoc/syntax": "warn",
 			"@typescript-eslint/consistent-type-definitions": ["warn", "type"],
 			"@typescript-eslint/consistent-type-imports": [
 				"warn",
@@ -111,21 +109,10 @@ export default defineConfig([
 				"any",
 				{ startLines: 1, applyToEndTag: false }
 			],
-			"jsdoc/require-param": [
-				"warn",
-				{
-					// TODO: find a way to enforce documentation of object properties
-					checkDestructured: false
-				}
-			],
-			"jsdoc/check-param-names": [
-				"warn",
-				{
-					checkDestructured: false
-				}
-			],
-			// tsdoc/syntax already validates tag names
-			"jsdoc/check-tag-names": "off",
+			"jsdoc/no-defaults": "off",
+			"jsdoc/require-param": ["warn"],
+			"jsdoc/check-param-names": ["warn"],
+			"jsdoc/check-tag-names": "warn",
 			// Annoying to deal with tsdoc and overkill for this project
 			// If as a user of this library you would like error types,
 			// please open an issue

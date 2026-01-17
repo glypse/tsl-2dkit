@@ -11,14 +11,14 @@ import { type TSLContext2D } from "../core/TSLContext2D";
 import { TSLPassNode } from "../core/TSLPass";
 import { wrapUV } from "../utils";
 
+/** @default "center" */
 type AnchorX = "left" | "center" | "right";
+/** @default "middle" */
 type AnchorY = "descenders" | "baseline" | "middle" | "ascenders";
 
 /** Configuration options for TextTexture initialization. */
 export type TextTextureOptions = Omit<CanvasTextureOptions, "anchorY"> & {
-	/** @defaultValue "center" */
 	anchorX: AnchorX;
-	/** @defaultValue "middle" */
 	anchorY: AnchorY;
 	text: string;
 	color: string;

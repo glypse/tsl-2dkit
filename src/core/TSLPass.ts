@@ -7,6 +7,9 @@ import {
 	TempNode,
 	NodeUpdateType
 } from "three/webgpu";
+// Type import needed for documentation linking
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { type UpdatableTexture } from "$lib/textures";
 
 /**
  * A TSL-based post-processing pass that can be integrated with Three.js's
@@ -111,6 +114,7 @@ export class TSLPassNode extends TempNode {
 	 * Register a texture that needs per-frame updates.
 	 *
 	 * @param texture - The texture object with an updateIfNeeded method
+	 * @param texture.updateIfNeeded - {@link UpdatableTexture.updateIfNeeded}
 	 * @internal
 	 */
 	registerUpdatableTexture(texture: {
@@ -196,12 +200,10 @@ export class InputTextureNode {
 	 * Sample the input texture at the given UV coordinates.
 	 *
 	 * @param inputUV - UV coordinates to sample at. Defaults to standard UVs.
+	 * @default uv()
 	 * @returns A Node representing the sampled color (vec4)
 	 */
-	sample(
-		/** @defaultValue uv() */
-		inputUV?: Node
-	): Node {
+	sample(inputUV?: Node): Node {
 		const UV = inputUV ?? uv();
 
 		// Try to get the texture node from the input

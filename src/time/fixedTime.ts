@@ -82,11 +82,9 @@ export class FixedTime {
 	 * timing.
 	 *
 	 * @param targetFps - Target frames per second for fixed stepping
+	 * @default 60
 	 */
-	enableFixedMode(
-		/** @defaultValue 60 */
-		targetFps = 60
-	): void {
+	enableFixedMode(targetFps = 60): void {
 		this._targetFps = targetFps;
 		this._fixedMode = true;
 		this._lastRealTime = null;

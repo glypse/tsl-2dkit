@@ -96,32 +96,22 @@ export class TSLScene2D extends TSLContext2D {
 	 * @param width - Initial width of the canvas in pixels
 	 * @param height - Initial height of the canvas in pixels
 	 * @param parameters - Optional configuration parameters
+	 * @param parameters.stats - Show FPS stats panel
+	 * @default false
+	 * @param parameters.antialias - Anti-aliasing mode
+	 * @default "none"
+	 * @param parameters.renderMode - Rendering mode:
+	 * - "on-demand": Only renders when requestRender() is called or when
+	 *   tracked changes occur
+	 * - "continuous": Traditional animation loop (requestAnimationFrame)
+	 * @default "on-demand"
 	 */
 	constructor(
 		width: number,
 		height: number,
 		parameters?: {
-			/**
-			 * Show FPS stats panel.
-			 *
-			 * @defaultValue false
-			 */
 			stats?: boolean;
-			/**
-			 * Anti-aliasing mode.
-			 *
-			 * @defaultValue "none"
-			 */
 			antialias?: "fxaa" | "smaa" | "none";
-			/**
-			 * Rendering mode:
-			 *
-			 * - "on-demand": Only renders when requestRender() is called or when
-			 *   tracked changes occur
-			 * - "continuous": Traditional animation loop (requestAnimationFrame)
-			 *
-			 * @defaultValue "on-demand"
-			 */
 			renderMode?: RenderMode;
 		}
 	) {

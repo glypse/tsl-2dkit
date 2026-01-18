@@ -113,8 +113,8 @@ export class CanvasTexture<
 	 * Sample this texture using provided UVs. Registers with the active scene
 	 * for per-frame updates.
 	 *
-	 * @param inputUV - Optional UV coordinates to sample at (defaults to
-	 *   standard UVs)
+	 * @param inputUV - Optional UV coordinates to sample at
+	 * @default uv()
 	 * @returns A node containing the sampled color value
 	 */
 	sample(inputUV?: Node): Node {

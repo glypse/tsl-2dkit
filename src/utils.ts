@@ -10,12 +10,10 @@ import { TSLScene2D } from "./core";
  * - "generation": For generated content (voronoi, noise, etc.) - compresses UV
  *   coordinates
  *
- * @param fit - How to fit the content: "cover", "contain", or "stretch"
+ * @param fit - How to fit the content
  * @default "cover"
- * @param aspectRatio - Target aspect ratio (width/height). If omitted, uses
- *   canvas aspect ratio
- * @param mode - "sampling" for external textures (default), "generation" for
- *   generated content
+ * @param aspectRatio - Target aspect ratio (width/height). If omitted, uses canvas aspect ratio
+ * @param mode - "sampling" for external textures, "generation" for generated content
  * @default "sampling"
  * @returns Aspect-corrected UV coordinates as a Node
  */

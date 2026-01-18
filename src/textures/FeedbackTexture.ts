@@ -38,13 +38,11 @@ export type FeedbackTextureOptions = {
 };
 
 /**
- * A ping-pong feedback texture node for creating trail/echo effects.
+ * A ping-pong feedback texture node for creating recursive effects.
  *
  * This is a TSL node that maintains two render targets internally and swaps
  * them each frame, allowing you to sample from the previous frame while
  * rendering to the current frame.
- *
- * Based on Three.js's AfterImageNode pattern but allows custom feedback logic.
  *
  * @example
  *
@@ -62,7 +60,7 @@ export type FeedbackTextureOptions = {
  * material.colorNode = feedbackNode;
  * ```
  */
-class FeedbackTextureNode extends TempNode {
+export class FeedbackTextureNode extends TempNode {
 	readonly isFeedbackTextureNode = true;
 
 	/**
@@ -264,7 +262,7 @@ class FeedbackTextureNode extends TempNode {
 }
 
 /**
- * Creates a feedback texture node for ping-pong rendering effects like trails,
+ * Creates a feedback texture node for recursive rendering effects like trails,
  * echoes, etc.
  *
  * @example
@@ -296,9 +294,3 @@ export function feedback(
 	const textureNode = convertToTexture(node);
 	return nodeObject(new FeedbackTextureNode(textureNode, composite, options));
 }
-
-// Also export the class for advanced usage
-export { FeedbackTextureNode };
-
-// Default export for convenience
-export default FeedbackTextureNode;

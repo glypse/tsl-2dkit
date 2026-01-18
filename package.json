@@ -51,7 +51,8 @@
 		"format": "prettier --write .",
 		"prepare": "husky",
 		"release": "semantic-release",
-		"release:dry": "semantic-release --dry-run"
+		"release:dry": "semantic-release --dry-run",
+		"docs": "typedoc"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "^20.3.1",
@@ -61,7 +62,6 @@
 		"@eslint/js": "^9.39.2",
 		"@eslint/json": "^0.14.0",
 		"@eslint/markdown": "^7.5.1",
-		"@microsoft/tsdoc": "^0.16.0",
 		"@semantic-release/changelog": "^6.0.3",
 		"@semantic-release/commit-analyzer": "^13.0.1",
 		"@semantic-release/git": "^10.0.1",
@@ -80,6 +80,8 @@
 		"jiti": "^2.6.1",
 		"prettier": "^3.7.4",
 		"semantic-release": "^25.0.2",
+		"typedoc": "^0.28.16",
+		"typedoc-plugin-markdown": "^4.9.0",
 		"typescript": "~5.9.3",
 		"typescript-eslint": "^8.52.0",
 		"vite": "npm:rolldown-vite@7.3.0"

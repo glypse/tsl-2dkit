@@ -10,7 +10,7 @@ import tseslint from "typescript-eslint";
 import preferThreeWebGPU from "./eslint-rules/prefer-three-webgpu.cjs";
 
 export default defineConfig([
-	{ ignores: ["dist/**"] },
+	{ ignores: ["dist/**", "docs/**"] },
 	{
 		files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
 		plugins: {
@@ -58,7 +58,14 @@ export default defineConfig([
 				}
 			]
 		},
-		languageOptions: { globals: globals.browser }
+		languageOptions: { globals: globals.browser },
+		settings: {
+			jsdoc: {
+				structuredTags: {
+					remarks: {}
+				}
+			}
+		}
 	},
 	{
 		files: ["**/*.{ts,mts,cts}"],
@@ -113,7 +120,6 @@ export default defineConfig([
 			"jsdoc/require-param": ["warn"],
 			"jsdoc/check-param-names": ["warn"],
 			"jsdoc/check-tag-names": "warn",
-			// Annoying to deal with tsdoc and overkill for this project
 			// If as a user of this library you would like error types,
 			// please open an issue
 			"jsdoc/require-throws-type": "off"

@@ -47,7 +47,10 @@ export type CanvasRecorderOptions = {
 	filename?: string;
 };
 
-type RecorderState = "inactive" | "recording";
+/**
+ * State of the recording
+ */
+export type RecorderState = "inactive" | "recording";
 
 /**
  * Records a canvas element to a video file with guaranteed fixed framerate.

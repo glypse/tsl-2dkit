@@ -1,0 +1,23 @@
+{
+	"entryPoints": ["src"],
+	"out": "docs",
+	"plugin": ["typedoc-plugin-markdown"],
+	"expandParameters": true,
+	"excludeExternals": true,
+	"excludeInternal": true,
+	"excludeNotDocumented": true,
+	"excludePrivate": true,
+	"excludeProtected": true,
+	"cleanOutputDir": true,
+	"externalSymbolLinkMappings": {
+		"@types/three": {
+			"Node.onUpdate": "https://threejs.org/docs/#Node.onUpdate",
+			"Node.updateReference": "https://threejs.org/docs/#Node.updateReference",
+			"Node.updateBefore": "https://threejs.org/docs/#Node.updateBefore",
+			"Node.build": "https://threejs.org/docs/#Node.build"
+		},
+		"three/webgpu": {
+			"TempNode": "https://threejs.org/docs/#TempNode"
+		}
+	}
+}

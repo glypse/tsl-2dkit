@@ -12,9 +12,9 @@ import { TSLPassNode } from "../core/TSLPass";
 import { wrapUV } from "../utils";
 
 /** @default "center" */
-type AnchorX = "left" | "center" | "right";
+export type AnchorX = "left" | "center" | "right";
 /** @default "middle" */
-type AnchorY = "descenders" | "baseline" | "middle" | "ascenders";
+export type AnchorY = "descenders" | "baseline" | "middle" | "ascenders";
 
 /** Configuration options for TextTexture initialization. */
 export type TextTextureOptions = Omit<CanvasTextureOptions, "anchorY"> & {

@@ -8,7 +8,7 @@ import { type TSLScene2D, type TSLPassNode } from "./";
 /**
  * Abstract base class for 2D TSL rendering contexts.
  *
- * @description
+ * @remarks
  * This class provides shared functionality for managing dimensions, uniforms,
  * and texture registration in 2D TSL contexts. Both {@link TSLScene2D} and
  * {@link TSLPassNode} extend this class to inherit common capabilities like
@@ -32,7 +32,7 @@ export abstract class TSLContext2D {
 	/**
 	 * Internal width value in pixels.
 	 *
-	 * @description
+	 * @remarks
 	 * This value is kept in sync with `_widthUniform` to ensure both CPU and
 	 * GPU have consistent dimension information.
 	 */
@@ -41,7 +41,7 @@ export abstract class TSLContext2D {
 	/**
 	 * Internal height value in pixels.
 	 *
-	 * @description
+	 * @remarks
 	 * This value is kept in sync with `_heightUniform` to ensure both CPU and
 	 * GPU have consistent dimension information.
 	 */
@@ -56,7 +56,7 @@ export abstract class TSLContext2D {
 	/**
 	 * Set of all registered updatable textures.
 	 *
-	 * @description
+	 * @remarks
 	 * These textures will be automatically updated each frame via
 	 * {@link updateTextures}.
 	 */
@@ -65,7 +65,7 @@ export abstract class TSLContext2D {
 	/**
 	 * Set of all registered feedback texture nodes.
 	 *
-	 * @description
+	 * @remarks
 	 * Feedback textures are tracked separately for specialized handling in
 	 * post-processing pipelines.
 	 */
@@ -74,7 +74,7 @@ export abstract class TSLContext2D {
 	/**
 	 * Creates a new TSL 2D context with the specified dimensions.
 	 *
-	 * @description
+	 * @remarks
 	 * Initializes internal dimension values and creates corresponding uniform
 	 * nodes. A fallback value of 1 is used if width or height is 0 to prevent
 	 * division by zero in aspect ratio calculations.
@@ -92,7 +92,7 @@ export abstract class TSLContext2D {
 	/**
 	 * Registers an updatable texture for automatic per-frame updates.
 	 *
-	 * @description
+	 * @remarks
 	 * Once registered, the texture's {@link UpdatableTexture.updateIfNeeded}
 	 * method will be called automatically during each frame's
 	 * {@link updateTextures} cycle.
@@ -105,7 +105,7 @@ export abstract class TSLContext2D {
 	/**
 	 * Registers a feedback texture node for tracking purposes.
 	 *
-	 * @description
+	 * @remarks
 	 * Feedback textures require special handling in the rendering pipeline and
 	 * are tracked separately from standard updatable textures.
 	 * @param feedbackTexture - The feedback texture node to register
@@ -117,7 +117,7 @@ export abstract class TSLContext2D {
 	/**
 	 * Updates the context dimensions.
 	 *
-	 * @description
+	 * @remarks
 	 * This method updates both the internal dimension values and their
 	 * corresponding uniform nodes, ensuring the changes are immediately
 	 * reflected in shader code.
@@ -137,7 +137,7 @@ export abstract class TSLContext2D {
 	/**
 	 * Updates all registered {@link UpdatableTexture}.
 	 *
-	 * @description
+	 * @remarks
 	 * This method iterates through all registered {@link UpdatableTexture}
 	 * instances and calls their `updateIfNeeded` method. Updates are performed
 	 * in parallel using `Promise.all` for optimal performance.
@@ -174,7 +174,7 @@ export abstract class TSLContext2D {
 	/**
 	 * Gets the width uniform node for shader access.
 	 *
-	 * @description
+	 * @remarks
 	 * Use this uniform in shader code to access the current width value. The
 	 * uniform automatically updates when {@link setSize} is called.
 	 * @returns The width uniform node
@@ -186,7 +186,7 @@ export abstract class TSLContext2D {
 	/**
 	 * Gets the height uniform node for shader access.
 	 *
-	 * @description
+	 * @remarks
 	 * Use this uniform in shader code to access the current height value. The
 	 * uniform automatically updates when {@link setSize} is called.
 	 * @returns The height uniform node
@@ -198,7 +198,7 @@ export abstract class TSLContext2D {
 	/**
 	 * Gets the current aspect ratio (width divided by height).
 	 *
-	 * @description
+	 * @remarks
 	 * This computed property returns a numeric aspect ratio value. A fallback
 	 * of 1 is used for height to prevent division by zero when height is 0.
 	 *
@@ -212,7 +212,7 @@ export abstract class TSLContext2D {
 	/**
 	 * Gets a computed aspect ratio uniform node for shader access.
 	 *
-	 * @description
+	 * @remarks
 	 * This returns a TSL node that dynamically computes the aspect ratio by
 	 * dividing width by height uniforms. Unlike {@link aspect}, this computation
 	 * happens in shader code and updates automatically when dimensions change.

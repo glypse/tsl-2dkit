@@ -7,7 +7,7 @@ import {
 } from "three/webgpu";
 import { TSLScene2D } from "../core";
 import { TSLPassNode } from "../core/TSLPass";
-import type { WrapMode } from "$lib/utils";
+import { type WrapMode } from "../utils";
 
 /** Texture interpolation mode for minification and magnification filtering. */
 export type InterpolationMode = "linear" | "nearest";

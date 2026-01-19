@@ -369,4 +369,42 @@ export class CanvasRecorder {
 			URL.revokeObjectURL(url);
 		}, 1000);
 	}
+
+	/**
+	 * Dispose of all resources held by the recorder. This stops any ongoing
+	 * recording and cleans up mediabunny resources to prevent memory leaks.
+	 */
+	dispose(): void {
+		// Stop any ongoing recording
+		if (this._state === "recording") {
+			this.cancel();
+		}
+
+		// Dispose mediabunny resources
+		if (this.output) {
+			// Check if Output has a dispose method
+			if (
+				"dispose" in this.output &&
+				typeof this.output.dispose === "function"
+			) {
+				(this.output.dispose as () => void)();
+			}
+			this.output = null;
+		}
+
+		if (this.videoSource) {
+			// Check if CanvasSource has a dispose method
+			if (
+				"dispose" in this.videoSource &&
+				typeof this.videoSource.dispose === "function"
+			) {
+				(this.videoSource.dispose as () => void)();
+			}
+			this.videoSource = null;
+		}
+
+		// Clear all references
+		this.recordingPromise = null;
+		this.recordingResolve = null;
+	}
 }

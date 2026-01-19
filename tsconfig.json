@@ -20,12 +20,14 @@
 		"noUnusedParameters": true,
 		"erasableSyntaxOnly": true,
 		"noFallthroughCasesInSwitch": true,
-		"noUncheckedSideEffectImports": true,
-		"paths": {
-			"$lib": ["./src"],
-			"$lib/*": ["./src/*"]
-		}
+		"noUncheckedSideEffectImports": true
 	},
-
-	"exclude": ["docs"]
+	"include": [
+		"src/**/*",
+		"eslint-rules/**/*",
+		"vite.config.ts",
+		"eslint.config.ts",
+		"prettier.config.ts",
+		"commitlint.config.ts"
+	]
 }

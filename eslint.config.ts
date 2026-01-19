@@ -1,20 +1,32 @@
+import { fileURLToPath } from "node:url";
+import { includeIgnoreFile } from "@eslint/compat";
 import css from "@eslint/css";
-import js from "@eslint/js";
+import jseslint from "@eslint/js";
 import json from "@eslint/json";
 import markdown from "@eslint/markdown";
 import { defineConfig } from "eslint/config";
+import prettier from "eslint-config-prettier";
 import importPlugin from "eslint-plugin-import";
 import jsdoc from "eslint-plugin-jsdoc";
+import sveslint from "eslint-plugin-svelte";
 import globals from "globals";
 import tseslint from "typescript-eslint";
-import preferThreeWebGPU from "./eslint-rules/prefer-three-webgpu.cjs";
+import preferThreeWebGPU from "./eslint-rules/prefer-three-webgpu.ts";
 
-export default defineConfig([
-	{ ignores: ["dist/**", "docs/**"] },
+const gitignorePath = fileURLToPath(new URL("./.gitignore", import.meta.url));
+
+export default defineConfig(
+	includeIgnoreFile(gitignorePath),
 	{
-		files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
+		files: ["**/*.{js,mjs,cjs,ts,mts,cts,svelte,svelte.ts,svelte.js}"],
+		extends: [
+			jseslint.configs.recommended,
+			...tseslint.configs.strictTypeChecked,
+			...tseslint.configs.stylisticTypeChecked,
+			jsdoc.configs["flat/recommended-typescript"]
+		],
 		plugins: {
-			js,
+			js: jseslint,
 			import: importPlugin,
 			"local-rules": {
 				rules: {
@@ -22,7 +34,6 @@ export default defineConfig([
 				}
 			}
 		},
-		extends: ["js/recommended"],
 		rules: {
 			"local-rules/prefer-three-webgpu": "warn",
 			"import/no-duplicates": ["warn", { "prefer-inline": true }],
@@ -56,46 +67,6 @@ export default defineConfig([
 					ignoreTemplateLiterals: true,
 					ignoreRegExpLiterals: true
 				}
-			]
-		},
-		languageOptions: { globals: globals.browser },
-		settings: {
-			jsdoc: {
-				structuredTags: {
-					remarks: {}
-				}
-			}
-		}
-	},
-	{
-		files: ["**/*.{ts,mts,cts}"],
-		plugins: { jsdoc },
-		extends: [
-			...tseslint.configs.strictTypeChecked,
-			...tseslint.configs.stylisticTypeChecked,
-			jsdoc.configs["flat/recommended-typescript"]
-		],
-		rules: {
-			"@typescript-eslint/consistent-type-definitions": ["warn", "type"],
-			"@typescript-eslint/consistent-type-imports": [
-				"warn",
-				{
-					prefer: "type-imports",
-					fixStyle: "inline-type-imports"
-				}
-			],
-			"no-restricted-syntax": [
-				"warn",
-				{
-					selector:
-						":matches(PropertyDefinition, MethodDefinition) > PrivateIdentifier.key",
-					message: "Use `private` instead"
-				}
-			],
-			"@typescript-eslint/no-unused-vars": "warn",
-			"@typescript-eslint/explicit-function-return-type": [
-				"warn",
-				{ allowExpressions: true }
 			],
 			"jsdoc/require-description": "warn",
 			"jsdoc/require-jsdoc": [
@@ -122,12 +93,56 @@ export default defineConfig([
 			"jsdoc/check-tag-names": "warn",
 			// If as a user of this library you would like error types,
 			// please open an issue
-			"jsdoc/require-throws-type": "off"
+			"jsdoc/require-throws-type": "off",
+
+			// TypeScript config
+			"@typescript-eslint/consistent-type-definitions": ["warn", "type"],
+			"@typescript-eslint/consistent-type-imports": [
+				"warn",
+				{
+					prefer: "type-imports",
+					fixStyle: "inline-type-imports"
+				}
+			],
+			"no-restricted-syntax": [
+				"warn",
+				{
+					selector:
+						":matches(PropertyDefinition, MethodDefinition) > PrivateIdentifier.key",
+					message: "Use `private` instead"
+				}
+			],
+			"@typescript-eslint/no-unused-vars": "warn",
+			"@typescript-eslint/explicit-function-return-type": [
+				"warn",
+				{ allowExpressions: true }
+			]
 		},
+		languageOptions: { globals: { ...globals.browser, ...globals.node } },
+		settings: {
+			jsdoc: {
+				structuredTags: {
+					remarks: {}
+				}
+			}
+		}
+	},
+	...sveslint.configs.recommended.map((config) => ({
+		...config,
+		files: ["**/*.svelte", "**/*.svelte.ts", "**/*.svelte.js"]
+	})),
+	prettier,
+	...sveslint.configs.prettier.map((config) => ({
+		...config,
+		files: ["**/*.svelte", "**/*.svelte.ts", "**/*.svelte.js"]
+	})),
+	{
+		files: ["**/*.{ts,mts,cts}"],
 		languageOptions: {
 			parser: tseslint.parser,
 			parserOptions: {
-				project: true
+				projectService: true,
+				tsconfigRootDir: import.meta.dirname
 			}
 		}
 	},
@@ -162,5 +177,18 @@ export default defineConfig([
 		plugins: { css },
 		language: "css/css",
 		extends: ["css/recommended"]
+	},
+	{
+		files: ["**/*.svelte", "**/*.svelte.ts", "**/*.svelte.js"],
+		languageOptions: {
+			parserOptions: {
+				projectService: true,
+				extraFileExtensions: [".svelte"],
+				parser: tseslint.parser
+			}
+		},
+		rules: {
+			"svelte/no-navigation-without-resolve": "off"
+		}
 	}
-]);
+);

@@ -1,6 +1,6 @@
 {
 	"entryPoints": ["src"],
-	"out": "docs",
+	"out": "docs/static/typedocs",
 	"plugin": ["typedoc-plugin-markdown"],
 	"expandParameters": true,
 	"excludeExternals": true,

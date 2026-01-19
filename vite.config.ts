@@ -1,24 +1,11 @@
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import basicSsl from "@vitejs/plugin-basic-ssl";
-import { threeMinifier } from "@yushijinhun/three-minifier-rollup";
 import { defineConfig } from "vite";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig(({ command }) => {
-	if (command === "serve") {
-		return {
-			root: "demo",
-			plugins: [basicSsl(), threeMinifier()],
-			resolve: {
-				alias: {
-					$lib: resolve(__dirname, "src"),
-					$demo: resolve(__dirname, "demo")
-				}
-			}
-		};
-	} else {
+export default defineConfig(() => {
+	{
 		return {
 			build: {
 				emptyOutDir: false,

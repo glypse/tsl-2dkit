@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@font-face {
+	font-family: "Fustat";
+	src: url("$lib/assets/fonts/Fustat[wght].woff2") format("woff2");
+	font-weight: 200 800;
+	font-display: swap;
+	font-style: normal;
+	font-feature-settings: "ss06";
+}
+
+* {
+	/* eslint-disable-next-line css/no-invalid-properties */
+	font-family: "Fustat", var(--font-sans);
+}
+
+#controls {
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	z-index: 10;
+	background: rgba(0, 0, 0, 0.5);
+	padding: 10px;
+	border-radius: 5px;
+	color: white;
+}
+
+/* eslint-disable-next-line css/use-baseline */
+:fullscreen #controls {
+	display: none;
+}

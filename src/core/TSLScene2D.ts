@@ -308,6 +308,88 @@ export class TSLScene2D extends TSLContext2D {
 	}
 
 	/**
+	 * Dispose of all GPU resources, DOM elements, and cleanup event listeners.
+	 * This should be called when the TSLScene2D instance is no longer needed
+	 * to prevent memory leaks.
+	 */
+	dispose(): void {
+		// Stop any ongoing rendering
+		this.stopAnimationLoop();
+
+		// Dispose of stats if present
+		if (this.stats) {
+			// Stats.js doesn't have a dispose method, but we can remove it from DOM
+			const statsDom = this.stats.dom;
+			if (statsDom.parentNode) {
+				statsDom.parentNode.removeChild(statsDom);
+			}
+			this.stats = undefined;
+		}
+
+		// Dispose of the node graph
+		if (this._currentColorNode) {
+			this._disposeNodeGraph(this._currentColorNode);
+			this._currentColorNode = null;
+		}
+
+		// Dispose of registered textures
+		for (const texture of this.UpdatableTextures) {
+			texture.dispose();
+		}
+		this.UpdatableTextures.clear();
+
+		// Dispose of feedback textures
+		for (const feedbackTexture of this.FeedbackTextures) {
+			feedbackTexture.dispose();
+		}
+		this.FeedbackTextures.clear();
+
+		// Dispose of Three.js objects
+		if (this.planeGeometry) {
+			this.planeGeometry.dispose();
+			this.planeGeometry = null;
+		}
+
+		this.material.dispose();
+
+		if (this.textureObj) {
+			this.textureObj.dispose();
+			this.textureObj = null;
+		}
+
+		if (this.planeMesh) {
+			this.planeMesh = null; // Scene will handle disposal
+		}
+
+		if (this.sceneObj) {
+			// Dispose of all objects in the scene
+			while (this.sceneObj.children.length > 0) {
+				const child = this.sceneObj.children[0];
+				this.sceneObj.remove(child);
+				if ("dispose" in child && typeof child.dispose === "function") {
+					(child.dispose as () => void)();
+				}
+			}
+			this.sceneObj = null;
+		}
+
+		// Dispose renderer
+		if (this.rendererObj) {
+			this.rendererObj.dispose();
+			this.rendererObj = null;
+		}
+
+		// Clear references
+		this.canvasEl = null;
+		this.cameraObj = null;
+
+		// Clear static reference if this was the current scene
+		if (TSLScene2D._currentScene === this) {
+			TSLScene2D._currentScene = null;
+		}
+	}
+
+	/**
 	 * Resume the continuous animation loop. Only relevant in continuous render
 	 * mode.
 	 */

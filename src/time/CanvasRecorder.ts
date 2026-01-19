@@ -221,14 +221,6 @@ export class CanvasRecorder {
 			duration !== undefined ? Math.ceil(duration * fps) : undefined;
 		const frameDuration = 1 / fps;
 
-		const durationStr =
-			duration !== undefined ? `${String(duration)}s` : "indefinite";
-		const framesStr = totalFrames !== undefined ? String(totalFrames) : "∞";
-
-		console.log(
-			`CanvasRecorder: Starting recording (${String(fps)}fps, ${durationStr}, ${framesStr} frames, ${format})`
-		);
-
 		// Stop the real-time animation loop
 		this.canvas2d.stopAnimationLoop();
 
@@ -294,23 +286,6 @@ export class CanvasRecorder {
 
 					this.frameCount++;
 
-					// Log progress periodically
-					if (this.frameCount % 30 === 0) {
-						if (totalFrames !== undefined) {
-							const progress = Math.round(
-								(this.frameCount / totalFrames) * 100
-							);
-							console.log(
-								`CanvasRecorder: Progress ${String(progress)}%`
-							);
-						} else {
-							const elapsed = this.frameCount / fps;
-							console.log(
-								`CanvasRecorder: Recording ${elapsed.toFixed(1)}s`
-							);
-						}
-					}
-
 					// Yield to prevent blocking
 					if (this.frameCount % 10 === 0) {
 						await new Promise((r) => {
@@ -341,10 +316,6 @@ export class CanvasRecorder {
 				if (!this.stopRequested || this.frameCount > 0) {
 					this.downloadBlob(blob, filename, format);
 				}
-
-				console.log(
-					`CanvasRecorder: Recording complete. ${String(this.frameCount)} frames, ${(blob.size / 1024 / 1024).toFixed(2)} MB`
-				);
 
 				// Cleanup
 				this.cleanup();

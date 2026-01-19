@@ -177,6 +177,26 @@ export class TSLPassNode extends TempNode {
 			TSLPassNode._currentPass = null;
 		}
 	}
+
+	/**
+	 * Dispose of all resources held by this pass, including registered textures.
+	 * This should be called when the TSLPassNode is no longer needed to prevent
+	 * memory leaks.
+	 */
+	dispose(): void {
+		// Dispose of all registered updatable textures
+		for (const texture of this._updatableTextures) {
+			if ("dispose" in texture && typeof texture.dispose === "function") {
+				(texture.dispose as () => void)();
+			}
+		}
+		this._updatableTextures.clear();
+
+		// Clear static reference if this was the current pass
+		if (TSLPassNode._currentPass === this) {
+			TSLPassNode._currentPass = null;
+		}
+	}
 }
 
 /**

@@ -48,7 +48,6 @@ export class UniformSlider {
 
 		container.appendChild(this.label);
 		container.appendChild(this.input);
-		container.appendChild(document.createElement("br"));
 
 		this.input.addEventListener("input", () => {
 			uniformNode.value = parseFloat(this.input.value);

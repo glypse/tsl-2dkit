@@ -39,7 +39,9 @@ const noTSLScene2DErr = new Error(
  */
 export type RenderMode = "on-demand" | "continuous";
 
-const canvasNotInitializedErr = new Error("Canvas not initialized");
+function throwCanvasNotInitializedError(methodName: string): never {
+	throw new Error(`[${methodName}] Canvas not initialized`);
+}
 
 /**
  * A 2D scene handler that simplifies creating shader-based 2D graphics with
@@ -519,7 +521,7 @@ export class TSLScene2D extends TSLContext2D {
 	 * @throws Error - If canvas is not initialized
 	 */
 	get canvasElement(): HTMLCanvasElement {
-		if (!this.canvasEl) throw canvasNotInitializedErr;
+		if (!this.canvasEl) throwCanvasNotInitializedError("canvasElement");
 		return this.canvasEl;
 	}
 
@@ -530,7 +532,7 @@ export class TSLScene2D extends TSLContext2D {
 	 * @throws Error - If texture is not initialized
 	 */
 	get texture(): CanvasTexture {
-		if (!this.textureObj) throw canvasNotInitializedErr;
+		if (!this.textureObj) throwCanvasNotInitializedError("texture");
 		return this.textureObj;
 	}
 
@@ -541,7 +543,7 @@ export class TSLScene2D extends TSLContext2D {
 	 * @throws Error - If renderer is not initialized
 	 */
 	get renderer(): WebGPURenderer {
-		if (!this.rendererObj) throw canvasNotInitializedErr;
+		if (!this.rendererObj) throwCanvasNotInitializedError("renderer");
 		return this.rendererObj;
 	}
 
@@ -552,7 +554,7 @@ export class TSLScene2D extends TSLContext2D {
 	 * @throws Error - If scene is not initialized
 	 */
 	get scene(): Scene {
-		if (!this.sceneObj) throw canvasNotInitializedErr;
+		if (!this.sceneObj) throwCanvasNotInitializedError("scene");
 		return this.sceneObj;
 	}
 
@@ -563,7 +565,7 @@ export class TSLScene2D extends TSLContext2D {
 	 * @throws Error - If camera is not initialized
 	 */
 	get camera(): OrthographicCamera {
-		if (!this.cameraObj) throw canvasNotInitializedErr;
+		if (!this.cameraObj) throwCanvasNotInitializedError("camera");
 		return this.cameraObj;
 	}
 
@@ -574,7 +576,7 @@ export class TSLScene2D extends TSLContext2D {
 	 * @throws Error - If mesh is not initialized
 	 */
 	get mesh(): Mesh {
-		if (!this.planeMesh) throw canvasNotInitializedErr;
+		if (!this.planeMesh) throwCanvasNotInitializedError("mesh");
 		return this.planeMesh;
 	}
 }

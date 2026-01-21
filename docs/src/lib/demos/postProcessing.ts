@@ -4,8 +4,6 @@ import { pass, vec3, uv, sin, time, mix } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { TextTexture, tslPass } from "tsl-2dkit";
 
-const container = document.getElementById("demo-container");
-
 /**
  * TSLPass Post-Processing Demo
  *
@@ -17,8 +15,12 @@ const container = document.getElementById("demo-container");
  * 1. Scene pass (renders 3D cubes)
  * 2. TSLPass (applies a color shift effect)
  * 3. Bloom pass (adds glow to bright areas)
+ *
+ * @returns A cleanup function to dispose of all resources
  */
-export default async function (): Promise<void> {
+export default async function (): Promise<() => void> {
+	const container = document.getElementById("demo-container");
+
 	// Setup renderer
 	const renderer = new THREE.WebGPURenderer({ antialias: true });
 	renderer.setSize(window.innerWidth, window.innerHeight);
@@ -97,10 +99,12 @@ export default async function (): Promise<void> {
 
 	await textTexture.waitUntilReady();
 
-	window.addEventListener("click", () => {
+	function clickHandler(): void {
 		textTexture.parameters.text = Math.random().toFixed(4);
 		textTexture.needsUpdate = true;
-	});
+	}
+
+	renderer.domElement.addEventListener("click", clickHandler);
 
 	// Get the scene pass texture
 	const scenePassColor = scenePass.getTextureNode("output");
@@ -138,7 +142,7 @@ export default async function (): Promise<void> {
 	postProcessing.outputNode = colorShiftedScene.add(bloomPass);
 
 	// Handle resize
-	window.addEventListener("resize", () => {
+	function resizeHandler(): void {
 		const width = window.innerWidth;
 		const height = window.innerHeight;
 
@@ -147,7 +151,9 @@ export default async function (): Promise<void> {
 
 		renderer.setSize(width, height);
 		// TSLPass automatically handles size updates from renderer!
-	});
+	}
+
+	window.addEventListener("resize", resizeHandler);
 
 	// Animation loop
 	function animate(): void {
@@ -164,7 +170,7 @@ export default async function (): Promise<void> {
 		postProcessing.render();
 	}
 
-	void renderer.setAnimationLoop(animate);
+	await renderer.setAnimationLoop(animate);
 
 	// Info
 	const info = document.createElement("div");
@@ -176,4 +182,34 @@ Pipeline: Scene → TSLPass (color shift) → Bloom<br>
 Drag to rotate camera
 `;
 	container?.appendChild(info);
+
+	// Return cleanup function
+	return () => {
+		// Remove event listeners
+		window.removeEventListener("resize", resizeHandler);
+		renderer.domElement.removeEventListener("click", clickHandler);
+
+		// Stop animation loop
+		void renderer.setAnimationLoop(null);
+
+		// Dispose TSL resources
+		textTexture.dispose();
+		colorShiftedScene.dispose();
+
+		// Dispose Three.js resources
+		geometry.dispose();
+		cubes.forEach((cube) => {
+			(cube.material as THREE.Material).dispose();
+		});
+
+		// Dispose post-processing
+		postProcessing.dispose();
+
+		// Dispose renderer
+		renderer.dispose();
+
+		// Remove DOM elements
+		container?.removeChild(renderer.domElement);
+		container?.removeChild(info);
+	};
 }

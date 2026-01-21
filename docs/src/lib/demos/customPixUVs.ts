@@ -22,15 +22,17 @@ function getRelativeMousePosition(
 	};
 }
 
-const container = document.getElementById("demo-container");
-
 /**
  * Custom pixelated UVs demo
  *
  * Recreation of the first kinetic typography tutorial by Tim Rodenbröker.
  * This recreation is what started this library!
+ *
+ * @returns A cleanup function to dispose of all resources
  */
-export default async function (): Promise<void> {
+export default async function (): Promise<() => void> {
+	const container = document.getElementById("demo-container");
+
 	const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 		stats: true,
 		antialias: "none",
@@ -50,14 +52,16 @@ export default async function (): Promise<void> {
 		padding: 0
 	});
 
-	window.addEventListener("resize", () => {
+	function resizeHandler(): void {
 		scene.setSize(window.innerWidth, window.innerHeight);
 		textTexture.parameters.size = Math.min(
 			window.innerWidth,
 			window.innerHeight
 		);
 		textTexture.needsUpdate = true;
-	});
+	}
+
+	window.addEventListener("resize", resizeHandler);
 
 	const tileAmount = uniform(8);
 	const speed = uniform(1);
@@ -90,7 +94,7 @@ export default async function (): Promise<void> {
 		return compositedText;
 	});
 
-	scene.canvasElement.addEventListener("mousemove", (event) => {
+	function mousemoveHandler(event: MouseEvent): void {
 		const mouse = getRelativeMousePosition(scene.canvasElement, event);
 		waveStrength.value = lerp(0, 0.1, mouse.x);
 
@@ -99,7 +103,22 @@ export default async function (): Promise<void> {
 			textTexture.needsUpdate = true;
 			previousMouseY = mouse.y;
 		}
-	});
+	}
+
+	scene.canvasElement.addEventListener("mousemove", mousemoveHandler);
 
 	container?.appendChild(scene.canvasElement);
+
+	return () => {
+		// Remove event listeners
+		window.removeEventListener("resize", resizeHandler);
+		scene.canvasElement.removeEventListener("mousemove", mousemoveHandler);
+
+		// Remove DOM elements
+		container?.removeChild(scene.canvasElement);
+
+		// Dispose TSL-2D Kit resources
+		textTexture.dispose();
+		scene.dispose();
+	};
 }

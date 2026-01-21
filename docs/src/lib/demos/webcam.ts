@@ -5,15 +5,17 @@ import {
 	voronoi
 } from "tsl-2dkit";
 
-const container = document.getElementById("demo-container");
-
 /**
  * Webcam + Voronoi Demo
  *
  * Demonstrates using CanvasTexture with the WebRTC getUserMedia API to capture
  * webcam video and overlay a voronoi pattern.
+ *
+ * @returns A cleanup function to dispose of all resources
  */
-export default async function (): Promise<void> {
+export default async function (): Promise<() => void> {
+	const container = document.getElementById("demo-container");
+
 	// Create a canvas to draw the webcam feed
 	const videoCanvas = document.createElement("canvas");
 	videoCanvas.width = 640;
@@ -45,9 +47,11 @@ export default async function (): Promise<void> {
 	const voronoiScale = uniform(8);
 	const voronoiStrength = uniform(0.5);
 
-	window.addEventListener("resize", () => {
+	function resizeHandler(): void {
 		scene.setSize(window.innerWidth, window.innerHeight);
-	});
+	}
+
+	window.addEventListener("resize", resizeHandler);
 
 	// Start webcam
 	async function startWebcam(): Promise<void> {
@@ -189,15 +193,44 @@ export default async function (): Promise<void> {
 
 	// Scale slider
 	const scaleSlider = document.getElementById("scale") as HTMLInputElement;
-	scaleSlider.addEventListener("input", () => {
+
+	function scaleInputHandler(): void {
 		voronoiScale.value = parseFloat(scaleSlider.value);
-	});
+	}
+
+	scaleSlider.addEventListener("input", scaleInputHandler);
 
 	// Strength slider
 	const strengthSlider = document.getElementById(
 		"strength"
 	) as HTMLInputElement;
-	strengthSlider.addEventListener("input", () => {
+
+	function strengthInputHandler(): void {
 		voronoiStrength.value = parseFloat(strengthSlider.value);
-	});
+	}
+
+	strengthSlider.addEventListener("input", strengthInputHandler);
+
+	return () => {
+		// Stop webcam stream
+		if (video.srcObject) {
+			const stream = video.srcObject as MediaStream;
+			stream.getTracks().forEach((track) => {
+				track.stop();
+			});
+		}
+
+		// Remove event listeners
+		window.removeEventListener("resize", resizeHandler);
+		scaleSlider.removeEventListener("input", scaleInputHandler);
+		strengthSlider.removeEventListener("input", strengthInputHandler);
+
+		// Remove DOM elements
+		container?.removeChild(info);
+		container?.removeChild(scene.canvasElement);
+
+		// Dispose TSL-2D Kit resources
+		webcamTexture.dispose();
+		scene.dispose();
+	};
 }

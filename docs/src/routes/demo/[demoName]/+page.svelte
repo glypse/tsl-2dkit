@@ -29,6 +29,7 @@
 			}
 		} catch (e) {
 			error = `Could not load demo ${demoName} : ${String(e)}`;
+			console.error(e);
 		}
 	});
 

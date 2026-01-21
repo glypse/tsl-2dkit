@@ -1,16 +1,18 @@
 import { vec2, vec3, uniform, float, mix, smoothstep } from "three/tsl";
 import { TSLScene2D, voronoi, aspectCorrectedUV } from "tsl-2dkit";
 
-const container = document.getElementById("demo-container");
-
 /**
  * On-Demand Rendering Demo
  *
  * Demonstrates the new on-demand rendering mode where frames are only rendered
  * when explicitly requested. In this demo, rendering happens only on
  * mouse/touch movement.
+ *
+ * @returns A cleanup function to dispose of all resources
  */
-export default async function (): Promise<void> {
+export default async function (): Promise<() => void> {
+	const container = document.getElementById("demo-container");
+
 	// Scene with on-demand rendering (default mode)
 	const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 		stats: true,
@@ -29,10 +31,12 @@ export default async function (): Promise<void> {
 	let frameCount = 0;
 	const frameCounterEl = document.createElement("span");
 
-	window.addEventListener("resize", () => {
+	function resizeHandler(): void {
 		scene.setSize(window.innerWidth, window.innerHeight);
 		// setSize() automatically calls requestRender() in on-demand mode
-	});
+	}
+
+	window.addEventListener("resize", resizeHandler);
 
 	await scene.build(() => {
 		// Increment frame counter each time the node graph is evaluated
@@ -89,30 +93,32 @@ export default async function (): Promise<void> {
 		return originalRenderFrame();
 	};
 
-	// Mouse move triggers render
-	scene.canvasElement.addEventListener("mousemove", (event) => {
+	function mousemoveHandler(event: MouseEvent): void {
 		const rect = scene.canvasElement.getBoundingClientRect();
 		mouseX.value = (event.clientX - rect.left) / rect.width;
 		mouseY.value = 1 - (event.clientY - rect.top) / rect.height;
 
 		// Request a render since we changed something
 		scene.requestRender();
-	});
+	}
+
+	// Mouse move triggers render
+	scene.canvasElement.addEventListener("mousemove", mousemoveHandler);
+
+	function touchmoveHandler(event: TouchEvent): void {
+		event.preventDefault();
+		const touch = event.touches[0];
+		const rect = scene.canvasElement.getBoundingClientRect();
+		mouseX.value = (touch.clientX - rect.left) / rect.width;
+		mouseY.value = 1 - (touch.clientY - rect.top) / rect.height;
+
+		scene.requestRender();
+	}
 
 	// Touch support
-	scene.canvasElement.addEventListener(
-		"touchmove",
-		(event) => {
-			event.preventDefault();
-			const touch = event.touches[0];
-			const rect = scene.canvasElement.getBoundingClientRect();
-			mouseX.value = (touch.clientX - rect.left) / rect.width;
-			mouseY.value = 1 - (touch.clientY - rect.top) / rect.height;
-
-			scene.requestRender();
-		},
-		{ passive: false }
-	);
+	scene.canvasElement.addEventListener("touchmove", touchmoveHandler, {
+		passive: false
+	});
 
 	container?.appendChild(scene.canvasElement);
 
@@ -137,15 +143,37 @@ Frames rendered: <span id="frameCount">1</span><br>
 
 	// Scale slider
 	const scaleSlider = document.getElementById("scale") as HTMLInputElement;
-	scaleSlider.addEventListener("input", () => {
+
+	function scaleInputHandler(): void {
 		voronoiScale.value = parseFloat(scaleSlider.value);
-	});
+	}
+
+	scaleSlider.addEventListener("input", scaleInputHandler);
 
 	// Exponent slider
 	const exponentSlider = document.getElementById(
 		"exponent"
 	) as HTMLInputElement;
-	exponentSlider.addEventListener("input", () => {
+
+	function exponentInputHandler(): void {
 		exponent.value = parseFloat(exponentSlider.value);
-	});
+	}
+
+	exponentSlider.addEventListener("input", exponentInputHandler);
+
+	return () => {
+		// Remove event listeners
+		window.removeEventListener("resize", resizeHandler);
+		scene.canvasElement.removeEventListener("mousemove", mousemoveHandler);
+		scene.canvasElement.removeEventListener("touchmove", touchmoveHandler);
+		scaleSlider.removeEventListener("input", scaleInputHandler);
+		exponentSlider.removeEventListener("input", exponentInputHandler);
+
+		// Remove DOM elements
+		container?.removeChild(info);
+		container?.removeChild(scene.canvasElement);
+
+		// Dispose TSL-2D Kit resources
+		scene.dispose();
+	};
 }

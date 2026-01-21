@@ -1,14 +1,16 @@
 import { mix, color } from "three/tsl";
 import { TSLScene2D, MediaTexture, aspectCorrectedUV } from "tsl-2dkit";
 
-const container = document.getElementById("demo-container");
-
 /**
  * Media demo.
  *
  * To show the {@link MediaTexture}
+ *
+ * @returns A cleanup function to dispose of all resources
  */
-export default async function (): Promise<void> {
+export default async function (): Promise<() => void> {
+	const container = document.getElementById("demo-container");
+
 	const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 		stats: true,
 		antialias: "none"
@@ -25,9 +27,11 @@ export default async function (): Promise<void> {
 	// Wait for media to be ready before building the scene to avoid race condition
 	await mediaTexture.waitUntilReady();
 
-	window.addEventListener("resize", () => {
+	function resizeHandler(): void {
 		scene.setSize(window.innerWidth, window.innerHeight);
-	});
+	}
+
+	window.addEventListener("resize", resizeHandler);
 
 	await scene.build(() => {
 		const UV = aspectCorrectedUV(
@@ -46,4 +50,16 @@ export default async function (): Promise<void> {
 	});
 
 	container?.appendChild(scene.canvasElement);
+
+	return () => {
+		// Remove event listeners
+		window.removeEventListener("resize", resizeHandler);
+
+		// Remove DOM elements
+		container?.removeChild(scene.canvasElement);
+
+		// Dispose TSL-2D Kit resources
+		mediaTexture.dispose();
+		scene.dispose();
+	};
 }

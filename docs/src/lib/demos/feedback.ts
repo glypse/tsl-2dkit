@@ -12,20 +12,28 @@ import {
 	max
 } from "three/tsl";
 import { type Node } from "three/webgpu";
-import { TSLScene2D, aspectCorrectedUV, feedback } from "tsl-2dkit";
-
-const container = document.getElementById("demo-container");
+import {
+	type FeedbackTextureNode,
+	TSLScene2D,
+	UniformSlider,
+	aspectCorrectedUV,
+	feedback
+} from "tsl-2dkit";
 
 /**
  * FeedbackTexture Demo
  *
  * Demonstrates the ping-pong feedback loop feature. The previous frame is
  * sampled and mixed with the current frame to create a trailing/echo effect.
+ *
+ * @returns A cleanup function to dispose of all resources
  */
-export default async function (): Promise<void> {
+export default async function (): Promise<() => void> {
+	const container = document.getElementById("demo-container");
+
 	const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 		stats: true,
-		renderMode: "continuous" // Need continuous for time-based animation
+		renderMode: "continuous"
 	});
 
 	// Mouse position uniform
@@ -35,10 +43,13 @@ export default async function (): Promise<void> {
 	// Feedback decay (how much the previous frame fades)
 	const decay = uniform(0.97);
 
-	window.addEventListener("resize", () => {
+	function resizeHandler(): void {
 		scene.setSize(window.innerWidth, window.innerHeight);
-	});
+	}
 
+	window.addEventListener("resize", resizeHandler);
+
+	let trailEffect: FeedbackTextureNode;
 	await scene.build(() => {
 		const UV = aspectCorrectedUV(
 			"cover",
@@ -76,7 +87,7 @@ export default async function (): Promise<void> {
 
 		// Create feedback effect using the new API
 		// The composite function receives (current, previous) and returns the combined result
-		const trailEffect = feedback(
+		trailEffect = feedback(
 			currentFrame,
 			(current: Node, previous: Node) => {
 				// Fade the previous frame
@@ -92,21 +103,25 @@ export default async function (): Promise<void> {
 		return trailEffect.rgb;
 	});
 
-	// Track mouse position
-	scene.canvasElement.addEventListener("mousemove", (event) => {
+	function mousemoveHandler(event: MouseEvent): void {
 		const rect = scene.canvasElement.getBoundingClientRect();
 		mouseX.value = (event.clientX - rect.left) / rect.width;
 		mouseY.value = 1 - (event.clientY - rect.top) / rect.height; // Flip Y for UV coords
-	});
+	}
 
-	// Touch support
-	scene.canvasElement.addEventListener("touchmove", (event) => {
+	// Track mouse position
+	scene.canvasElement.addEventListener("mousemove", mousemoveHandler);
+
+	function touchmoveHandler(event: TouchEvent): void {
 		event.preventDefault();
 		const touch = event.touches[0];
 		const rect = scene.canvasElement.getBoundingClientRect();
 		mouseX.value = (touch.clientX - rect.left) / rect.width;
 		mouseY.value = 1 - (touch.clientY - rect.top) / rect.height;
-	});
+	}
+
+	// Touch support
+	scene.canvasElement.addEventListener("touchmove", touchmoveHandler);
 
 	container?.appendChild(scene.canvasElement);
 
@@ -117,13 +132,29 @@ export default async function (): Promise<void> {
 	info.innerHTML = `
 <strong>FeedbackTexture Demo</strong><br>
 Move mouse to draw trails<br>
-<label>Decay: <input type="range" id="decay" min="0.8" max="0.99" step="0.01" value="0.97"></label>
 `;
 	container?.appendChild(info);
 
 	// Decay slider
-	const decaySlider = document.getElementById("decay") as HTMLInputElement;
-	decaySlider.addEventListener("input", () => {
-		decay.value = parseFloat(decaySlider.value);
+	const decaySlider = new UniformSlider(info, "Decay:", decay, {
+		min: 0.8,
+		max: 1
 	});
+
+	return () => {
+		// Remove event listeners
+		window.removeEventListener("resize", resizeHandler);
+		scene.canvasElement.removeEventListener("mousemove", mousemoveHandler);
+		scene.canvasElement.removeEventListener("touchmove", touchmoveHandler);
+
+		decaySlider.dispose();
+
+		// Remove DOM elements
+		container?.removeChild(info);
+		container?.removeChild(scene.canvasElement);
+
+		// Dispose TSL-2D Kit resources
+		trailEffect.dispose();
+		scene.dispose();
+	};
 }

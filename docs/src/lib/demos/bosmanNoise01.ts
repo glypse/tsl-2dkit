@@ -11,14 +11,16 @@ import {
 	UniformSlider
 } from "tsl-2dkit";
 
-const container = document.getElementById("demo-container");
-
 /**
  * Bosman Noise demo
  *
  * Recreation of an artwork of Jerry Lee Bosman
+ *
+ * @returns A cleanup function to dispose of all resources
  */
-export default async function (): Promise<void> {
+export default async function (): Promise<() => void> {
+	const container = document.getElementById("demo-container");
+
 	// Create controls div
 	const controls = document.createElement("div");
 	controls.id = "controls";
@@ -55,9 +57,11 @@ export default async function (): Promise<void> {
 	// Use fixedTime.timeUniform instead of `time` from three/tsl
 	const time = fixedTime.timeUniform;
 
-	window.addEventListener("resize", () => {
+	function resizeHandler(): void {
 		scene.setSize(window.innerWidth, window.innerHeight);
-	});
+	}
+
+	window.addEventListener("resize", resizeHandler);
 
 	const seed = uniform(Math.random() * 100);
 
@@ -79,53 +83,104 @@ export default async function (): Promise<void> {
 	const baseNoiseStrength = uniform(0.1);
 	const maxBlur = uniform(60);
 
-	new UniformSlider(controls, "Seed:", seed, { min: 0, max: 100 });
+	const controlsToDispose = new Set<UniformSlider>();
+
+	const seedSlider = new UniformSlider(controls, "Seed:", seed, {
+		min: 0,
+		max: 100
+	});
+	controlsToDispose.add(seedSlider);
 	/* new UniformSlider(controls, "Lightness variance:", lightnessVariance, {
 	min: 0.1,
 	max: 5,
 	step: 0.1
 }); */
-	new UniformSlider(controls, "Dark:", dark, {
+	const darkSlider = new UniformSlider(controls, "Dark:", dark, {
 		min: 0,
 		max: 1
 	});
-	new UniformSlider(controls, "Light:", light, {
+	controlsToDispose.add(darkSlider);
+	const lightSlider = new UniformSlider(controls, "Light:", light, {
 		min: 0,
 		max: 1
 	});
-	new UniformSlider(controls, "Chroma variance:", chromaVariance, {
-		min: 0.1,
-		max: 5
-	});
-	new UniformSlider(controls, "Chroma max:", chromaMax, {
+	controlsToDispose.add(lightSlider);
+	const chromaVarianceSlider = new UniformSlider(
+		controls,
+		"Chroma variance:",
+		chromaVariance,
+		{
+			min: 0.1,
+			max: 5
+		}
+	);
+	controlsToDispose.add(chromaVarianceSlider);
+	const chromaMaxSlider = new UniformSlider(
+		controls,
+		"Chroma max:",
+		chromaMax,
+		{
+			min: 0,
+			max: 1
+		}
+	);
+	controlsToDispose.add(chromaMaxSlider);
+	const hueVarianceSlider = new UniformSlider(
+		controls,
+		"Hue variance:",
+		hueVariance,
+		{
+			min: 0.1,
+			max: 5
+		}
+	);
+	controlsToDispose.add(hueVarianceSlider);
+	const hueSpeedSlider = new UniformSlider(controls, "Hue speed:", hueSpeed, {
 		min: 0,
 		max: 1
 	});
-	new UniformSlider(controls, "Hue variance:", hueVariance, {
-		min: 0.1,
-		max: 5
-	});
-	new UniformSlider(controls, "Hue speed:", hueSpeed, {
-		min: 0,
-		max: 1
-	});
-	new UniformSlider(controls, "Stripe Number:", stripeNumber, {
-		min: 1,
-		max: 50
-	});
-	new UniformSlider(controls, "Displace Scale:", displaceScale, {
-		min: 0.1,
-		max: 5
-	});
-	new UniformSlider(controls, "Displace Strength:", displaceStrength, {
-		min: 0,
-		max: 5
-	});
-	new UniformSlider(controls, "Displace Speed:", displaceSpeed, {
-		min: 0,
-		max: 2
-	});
-	new UniformSlider(
+	controlsToDispose.add(hueSpeedSlider);
+	const stripeNumberSlider = new UniformSlider(
+		controls,
+		"Stripe Number:",
+		stripeNumber,
+		{
+			min: 1,
+			max: 50
+		}
+	);
+	controlsToDispose.add(stripeNumberSlider);
+	const displaceScaleSlider = new UniformSlider(
+		controls,
+		"Displace Scale:",
+		displaceScale,
+		{
+			min: 0.1,
+			max: 5
+		}
+	);
+	controlsToDispose.add(displaceScaleSlider);
+	const displaceStrengthSlider = new UniformSlider(
+		controls,
+		"Displace Strength:",
+		displaceStrength,
+		{
+			min: 0,
+			max: 5
+		}
+	);
+	controlsToDispose.add(displaceStrengthSlider);
+	const displaceSpeedSlider = new UniformSlider(
+		controls,
+		"Displace Speed:",
+		displaceSpeed,
+		{
+			min: 0,
+			max: 2
+		}
+	);
+	controlsToDispose.add(displaceSpeedSlider);
+	const noiseOverlayStepsRangeSlider = new UniformSlider(
 		controls,
 		"Noise Overlay Steps Range:",
 		noiseOverlayStepsRange,
@@ -134,15 +189,28 @@ export default async function (): Promise<void> {
 			max: 10
 		}
 	);
-	new UniformSlider(controls, "Noise Overlay Scale:", noiseOverlayScale, {
-		min: 0.1,
-		max: 10
-	});
-	new UniformSlider(controls, "Noise Overlay Speed:", noiseOverlaySpeed, {
-		min: 0,
-		max: 2
-	});
-	new UniformSlider(
+	controlsToDispose.add(noiseOverlayStepsRangeSlider);
+	const noiseOverlayScaleSlider = new UniformSlider(
+		controls,
+		"Noise Overlay Scale:",
+		noiseOverlayScale,
+		{
+			min: 0.1,
+			max: 10
+		}
+	);
+	controlsToDispose.add(noiseOverlayScaleSlider);
+	const noiseOverlaySpeedSlider = new UniformSlider(
+		controls,
+		"Noise Overlay Speed:",
+		noiseOverlaySpeed,
+		{
+			min: 0,
+			max: 2
+		}
+	);
+	controlsToDispose.add(noiseOverlaySpeedSlider);
+	const noiseOverlayStrengthSlider = new UniformSlider(
 		controls,
 		"Noise Overlay Strength:",
 		noiseOverlayStrength,
@@ -151,14 +219,22 @@ export default async function (): Promise<void> {
 			max: 3
 		}
 	);
-	new UniformSlider(controls, "Base Noise Strength:", baseNoiseStrength, {
-		min: 0,
-		max: 0.5
-	});
-	new UniformSlider(controls, "Max Blur:", maxBlur, {
+	controlsToDispose.add(noiseOverlayStrengthSlider);
+	const baseNoiseStrengthSlider = new UniformSlider(
+		controls,
+		"Base Noise Strength:",
+		baseNoiseStrength,
+		{
+			min: 0,
+			max: 0.5
+		}
+	);
+	controlsToDispose.add(baseNoiseStrengthSlider);
+	const maxBlurSlider = new UniformSlider(controls, "Max Blur:", maxBlur, {
 		min: 0,
 		max: 100
 	});
+	controlsToDispose.add(maxBlurSlider);
 
 	await scene.build(() => {
 		const gradientFn = Fn(({ t }: { t: Node }) => {
@@ -254,13 +330,14 @@ export default async function (): Promise<void> {
 
 	container?.appendChild(scene.canvasElement);
 
-	fullscreenButton.addEventListener("click", () => {
+	function fullscreenHandler(): void {
 		if (document.fullscreenElement) {
 			void document.exitFullscreen();
 		} else {
 			void document.documentElement.requestFullscreen();
 		}
-	});
+	}
+	fullscreenButton.addEventListener("click", fullscreenHandler);
 
 	const recorder = new CanvasRecorder(scene, fixedTime, {
 		fps: 60,
@@ -268,7 +345,7 @@ export default async function (): Promise<void> {
 		filename: "bosman-noise-recording"
 	});
 
-	recordButton.addEventListener("click", () => {
+	function recordHandler(): void {
 		if (recorder.isRecording) {
 			void recorder.stop();
 			recordButton.textContent = "🔴 Record";
@@ -276,9 +353,10 @@ export default async function (): Promise<void> {
 			void recorder.start();
 			recordButton.textContent = "⏹ Stop";
 		}
-	});
+	}
+	recordButton.addEventListener("click", recordHandler);
 
-	recordFixedButton.addEventListener("click", () => {
+	function recordFixedHandler(): void {
 		recordFixedButton.disabled = true;
 		recordFixedButton.textContent = "⏳ Recording...";
 
@@ -296,5 +374,26 @@ export default async function (): Promise<void> {
 				recordFixedButton.disabled = false;
 				recordFixedButton.textContent = "🎬 Record 5s @ 60fps";
 			});
-	});
+	}
+	recordFixedButton.addEventListener("click", recordFixedHandler);
+
+	return () => {
+		// Remove event listeners
+		window.removeEventListener("resize", resizeHandler);
+		fullscreenButton.removeEventListener("click", fullscreenHandler);
+		recordButton.removeEventListener("click", recordHandler);
+		recordFixedButton.removeEventListener("click", recordFixedHandler);
+
+		container?.removeChild(controls);
+		container?.removeChild(scene.canvasElement);
+
+		// Dispose tsl-2dkit resources
+		scene.dispose();
+		recorder.dispose();
+
+		// Dispose all controls
+		for (const control of controlsToDispose) {
+			control.dispose();
+		}
+	};
 }

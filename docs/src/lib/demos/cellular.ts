@@ -1,29 +1,33 @@
 import { vec2, vec3, float, time, color, mix, uniform, uv } from "three/tsl";
 import { TSLScene2D, aspectCorrectedUV, TextTexture, voronoi } from "tsl-2dkit";
 
-const container = document.getElementById("demo-container");
-
 /**
  * Cellular demo
  *
  * Recreation of an artwork by glypse
+ *
+ * @returns A cleanup function to dispose of all resources
  */
-export default async function (): Promise<void> {
+export default async function (): Promise<() => void> {
+	const container = document.getElementById("demo-container");
+
 	const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
 		stats: true,
 		antialias: "none",
 		renderMode: "continuous" // Uses time-based animation
 	});
 
-	window.addEventListener("resize", () => {
+	function resizeHandler(): void {
 		scene.setSize(window.innerWidth, window.innerHeight);
-	});
+	}
+
+	window.addEventListener("resize", resizeHandler);
 
 	const seed = uniform(Math.random() * 10000);
 
-	window.addEventListener("click", () => {
+	function clickHandler(): void {
 		seed.value = Math.random() * 10000;
-	});
+	}
 
 	const voronoiScale = uniform(4);
 	const voronoiSpeed = uniform(0.4);
@@ -126,4 +130,18 @@ export default async function (): Promise<void> {
 	});
 
 	container?.appendChild(scene.canvasElement);
+
+	scene.canvasElement.addEventListener("click", clickHandler);
+
+	return () => {
+		// Remove event listeners
+		window.removeEventListener("resize", resizeHandler);
+		scene.canvasElement.removeEventListener("click", clickHandler);
+
+		// Remove DOM elements
+		container?.removeChild(scene.canvasElement);
+
+		// Dispose TSL-2D Kit resources
+		scene.dispose();
+	};
 }

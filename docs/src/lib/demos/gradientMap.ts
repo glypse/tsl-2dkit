@@ -7,93 +7,99 @@ import {
 	type ColorStop
 } from "tsl-2dkit";
 
-const container = document.getElementById("demo-container");
-
 /**
  * Simple gradient map demo.
+ *
+ * @returns A cleanup function to dispose of all resources
  */
-export default function (): void {
-	// Create controls div
-	const controls = document.createElement("div");
-	controls.id = "controls";
-	container?.appendChild(controls);
+export default function (): Promise<() => void> {
+	return new Promise((resolve) => {
+		const container = document.getElementById("demo-container");
 
-	// Create control section for mode select
-	const controlSection = document.createElement("div");
-	controlSection.className = "control-section";
-	controls.appendChild(controlSection);
+		// Create controls div
+		const controls = document.createElement("div");
+		controls.id = "controls";
+		container?.appendChild(controls);
 
-	const modeLabel = document.createElement("label");
-	modeLabel.textContent = "Interpolation Mode: ";
-	controlSection.appendChild(modeLabel);
+		// Create control section for mode select
+		const controlSection = document.createElement("div");
+		controlSection.className = "control-section";
+		controls.appendChild(controlSection);
 
-	const modeSelect = document.createElement("select");
-	modeSelect.id = "mode-select";
-	const rgbOption = document.createElement("option");
-	rgbOption.value = "rgb";
-	rgbOption.textContent = "RGB";
-	modeSelect.appendChild(rgbOption);
-	const oklchOption = document.createElement("option");
-	oklchOption.value = "oklch";
-	oklchOption.textContent = "OKLCH";
-	modeSelect.appendChild(oklchOption);
-	modeLabel.appendChild(modeSelect);
+		const modeLabel = document.createElement("label");
+		modeLabel.textContent = "Interpolation Mode: ";
+		controlSection.appendChild(modeLabel);
 
-	// Create stops container
-	const stopsContainer = document.createElement("div");
-	stopsContainer.id = "stops-container";
-	controls.appendChild(stopsContainer);
+		const modeSelect = document.createElement("select");
+		modeSelect.id = "mode-select";
+		const rgbOption = document.createElement("option");
+		rgbOption.value = "rgb";
+		rgbOption.textContent = "RGB";
+		modeSelect.appendChild(rgbOption);
+		const oklchOption = document.createElement("option");
+		oklchOption.value = "oklch";
+		oklchOption.textContent = "OKLCH";
+		modeSelect.appendChild(oklchOption);
+		modeLabel.appendChild(modeSelect);
 
-	// Create add stop button
-	const addStopButton = document.createElement("button");
-	addStopButton.id = "add-stop";
-	addStopButton.textContent = "+ Add Stop";
-	controls.appendChild(addStopButton);
+		// Create stops container
+		const stopsContainer = document.createElement("div");
+		stopsContainer.id = "stops-container";
+		controls.appendChild(stopsContainer);
 
-	// Initialize scene
-	const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
-		renderMode: "on-demand"
-	});
+		// Create add stop button
+		const addStopButton = document.createElement("button");
+		addStopButton.id = "add-stop";
+		addStopButton.textContent = "+ Add Stop";
+		controls.appendChild(addStopButton);
 
-	window.addEventListener("resize", () => {
-		scene.setSize(window.innerWidth, window.innerHeight);
-	});
-
-	// Define local type for gradient stops with hex
-	type GradientStop = ColorStop & { hex: string };
-
-	const gradientStops: GradientStop[] = [
-		{ position: 0, color: color("#ff0000"), hex: "#ff0000" },
-		{ position: 0.5, color: color("#00ff00"), hex: "#00ff00" },
-		{ position: 1, color: color("#0000ff"), hex: "#0000ff" }
-	];
-
-	let interpolationMode: "rgb" | "oklch" = "rgb";
-
-	// Function to build the shader scene
-	function buildShaderScene(): void {
-		scene.invalidateNodeGraph();
-		void scene.build(() => {
-			const UV = aspectCorrectedUV();
-
-			// Create gradient along the longer axis
-			const isLandscape = window.innerWidth > window.innerHeight;
-			const t = isLandscape ? UV.x : UV.y;
-
-			// Create gradient function
-			const gradFn = gradient(gradientStops, interpolationMode);
-
-			// Apply gradient to the value
-			return colorLookup(t, gradFn);
+		// Initialize scene
+		const scene = new TSLScene2D(window.innerWidth, window.innerHeight, {
+			renderMode: "on-demand"
 		});
-	}
 
-	// UI Management
+		function resizeHandler(): void {
+			scene.setSize(window.innerWidth, window.innerHeight);
+		}
 
-	function createStopUI(stop: GradientStop, index: number): HTMLDivElement {
-		const stopDiv = document.createElement("div");
-		stopDiv.className = "stop-control";
-		stopDiv.style.cssText = `
+		// Define local type for gradient stops with hex
+		type GradientStop = ColorStop & { hex: string };
+
+		const gradientStops: GradientStop[] = [
+			{ position: 0, color: color("#ff0000"), hex: "#ff0000" },
+			{ position: 0.5, color: color("#00ff00"), hex: "#00ff00" },
+			{ position: 1, color: color("#0000ff"), hex: "#0000ff" }
+		];
+
+		let interpolationMode: "rgb" | "oklch" = "rgb";
+
+		// Function to build the shader scene
+		function buildShaderScene(): void {
+			scene.invalidateNodeGraph();
+			void scene.build(() => {
+				const UV = aspectCorrectedUV();
+
+				// Create gradient along the longer axis
+				const isLandscape = window.innerWidth > window.innerHeight;
+				const t = isLandscape ? UV.x : UV.y;
+
+				// Create gradient function
+				const gradFn = gradient(gradientStops, interpolationMode);
+
+				// Apply gradient to the value
+				return colorLookup(t, gradFn);
+			});
+		}
+
+		// UI Management
+
+		function createStopUI(
+			stop: GradientStop,
+			index: number
+		): HTMLDivElement {
+			const stopDiv = document.createElement("div");
+			stopDiv.className = "stop-control";
+			stopDiv.style.cssText = `
 		display: flex;
 		gap: 10px;
 		align-items: center;
@@ -103,49 +109,49 @@ export default function (): void {
 		border-radius: 4px;
 	`;
 
-		// Position slider
-		const positionLabel = document.createElement("label");
-		positionLabel.textContent = "Position:";
-		positionLabel.style.minWidth = "70px";
+			// Position slider
+			const positionLabel = document.createElement("label");
+			positionLabel.textContent = "Position:";
+			positionLabel.style.minWidth = "70px";
 
-		const positionInput = document.createElement("input");
-		positionInput.type = "range";
-		positionInput.min = "0";
-		positionInput.max = "1";
-		positionInput.step = "0.01";
-		positionInput.value = stop.position.toString();
-		positionInput.style.flex = "1";
+			const positionInput = document.createElement("input");
+			positionInput.type = "range";
+			positionInput.min = "0";
+			positionInput.max = "1";
+			positionInput.step = "0.01";
+			positionInput.value = stop.position.toString();
+			positionInput.style.flex = "1";
 
-		const positionValue = document.createElement("span");
-		positionValue.textContent = stop.position.toFixed(2);
-		positionValue.style.minWidth = "40px";
+			const positionValue = document.createElement("span");
+			positionValue.textContent = stop.position.toFixed(2);
+			positionValue.style.minWidth = "40px";
 
-		positionInput.addEventListener("input", () => {
-			const newPos = parseFloat(positionInput.value);
-			gradientStops[index].position = newPos;
-			positionValue.textContent = newPos.toFixed(2);
-			buildShaderScene();
-		});
+			positionInput.addEventListener("input", () => {
+				const newPos = parseFloat(positionInput.value);
+				gradientStops[index].position = newPos;
+				positionValue.textContent = newPos.toFixed(2);
+				buildShaderScene();
+			});
 
-		// Color picker
-		const colorLabel = document.createElement("label");
-		colorLabel.textContent = "Color:";
-		colorLabel.style.minWidth = "50px";
+			// Color picker
+			const colorLabel = document.createElement("label");
+			colorLabel.textContent = "Color:";
+			colorLabel.style.minWidth = "50px";
 
-		const colorInput = document.createElement("input");
-		colorInput.type = "color";
-		colorInput.value = stop.hex;
+			const colorInput = document.createElement("input");
+			colorInput.type = "color";
+			colorInput.value = stop.hex;
 
-		colorInput.addEventListener("input", () => {
-			gradientStops[index].hex = colorInput.value;
-			gradientStops[index].color = color(colorInput.value);
-			buildShaderScene();
-		});
+			colorInput.addEventListener("input", () => {
+				gradientStops[index].hex = colorInput.value;
+				gradientStops[index].color = color(colorInput.value);
+				buildShaderScene();
+			});
 
-		// Remove button
-		const removeButton = document.createElement("button");
-		removeButton.textContent = "×";
-		removeButton.style.cssText = `
+			// Remove button
+			const removeButton = document.createElement("button");
+			removeButton.textContent = "×";
+			removeButton.style.cssText = `
 		padding: 4px 12px;
 		font-size: 20px;
 		line-height: 1;
@@ -155,94 +161,112 @@ export default function (): void {
 		cursor: pointer;
 	`;
 
-		removeButton.addEventListener("click", () => {
-			if (gradientStops.length > 2) {
-				gradientStops.splice(index, 1);
-				rebuildUI();
-				buildShaderScene();
-			}
-		});
+			removeButton.addEventListener("click", () => {
+				if (gradientStops.length > 2) {
+					gradientStops.splice(index, 1);
+					rebuildUI();
+					buildShaderScene();
+				}
+			});
 
-		// Disable remove button if only 2 stops left
-		if (gradientStops.length <= 2) {
-			removeButton.disabled = true;
-			removeButton.style.opacity = "0.3";
-			removeButton.style.cursor = "not-allowed";
+			// Disable remove button if only 2 stops left
+			if (gradientStops.length <= 2) {
+				removeButton.disabled = true;
+				removeButton.style.opacity = "0.3";
+				removeButton.style.cursor = "not-allowed";
+			}
+
+			stopDiv.appendChild(positionLabel);
+			stopDiv.appendChild(positionInput);
+			stopDiv.appendChild(positionValue);
+			stopDiv.appendChild(colorLabel);
+			stopDiv.appendChild(colorInput);
+			stopDiv.appendChild(removeButton);
+
+			return stopDiv;
 		}
 
-		stopDiv.appendChild(positionLabel);
-		stopDiv.appendChild(positionInput);
-		stopDiv.appendChild(positionValue);
-		stopDiv.appendChild(colorLabel);
-		stopDiv.appendChild(colorInput);
-		stopDiv.appendChild(removeButton);
-
-		return stopDiv;
-	}
-
-	function rebuildUI(): void {
-		stopsContainer.innerHTML = "";
-		gradientStops.forEach((stop, index) => {
-			stopsContainer.appendChild(createStopUI(stop, index));
-		});
-	}
-
-	// Mode selector
-	modeSelect.value = interpolationMode;
-	modeSelect.addEventListener("change", () => {
-		interpolationMode = modeSelect.value as "rgb" | "oklch";
-		buildShaderScene();
-	});
-
-	// Add stop button
-	addStopButton.addEventListener("click", () => {
-		// Find a good position to insert the new stop
-		const positions = gradientStops
-			.map((s) => s.position)
-			.sort((a, b) => a - b);
-		let newPosition = 0.5;
-
-		// Find the largest gap
-		let maxGap = 0;
-		let gapPosition = 0.5;
-		for (let i = 0; i < positions.length - 1; i++) {
-			const gap = positions[i + 1] - positions[i];
-			if (gap > maxGap) {
-				maxGap = gap;
-				gapPosition = (positions[i] + positions[i + 1]) / 2;
-			}
+		function rebuildUI(): void {
+			stopsContainer.innerHTML = "";
+			gradientStops.forEach((stop, index) => {
+				stopsContainer.appendChild(createStopUI(stop, index));
+			});
 		}
-		newPosition = gapPosition;
 
-		gradientStops.push({
-			position: newPosition,
-			color: color("#ffffff"),
-			hex: "#ffffff"
-		});
+		function modeChangeHandler(): void {
+			interpolationMode = modeSelect.value as "rgb" | "oklch";
+			buildShaderScene();
+		}
 
+		// Mode selector
+		modeSelect.value = interpolationMode;
+		modeSelect.addEventListener("change", modeChangeHandler);
+
+		function addStopClickHandler(): void {
+			// Find a good position to insert the new stop
+			const positions = gradientStops
+				.map((s) => s.position)
+				.sort((a, b) => a - b);
+			let newPosition = 0.5;
+
+			// Find the largest gap
+			let maxGap = 0;
+			let gapPosition = 0.5;
+			for (let i = 0; i < positions.length - 1; i++) {
+				const gap = positions[i + 1] - positions[i];
+				if (gap > maxGap) {
+					maxGap = gap;
+					gapPosition = (positions[i] + positions[i + 1]) / 2;
+				}
+			}
+			newPosition = gapPosition;
+
+			gradientStops.push({
+				position: newPosition,
+				color: color("#ffffff"),
+				hex: "#ffffff"
+			});
+
+			rebuildUI();
+			buildShaderScene();
+		}
+
+		// Initialize UI
 		rebuildUI();
-		buildShaderScene();
+
+		// Build initial shader
+		void scene
+			.build(() => {
+				const UV = aspectCorrectedUV();
+
+				// Create gradient along the longer axis
+				const isLandscape = window.innerWidth > window.innerHeight;
+				const t = isLandscape ? UV.x : UV.y;
+
+				// Create gradient function
+				const gradFn = gradient(gradientStops, interpolationMode);
+
+				// Apply gradient to the value
+				return colorLookup(t, gradFn);
+			})
+			.then(() => {
+				container?.appendChild(scene.canvasElement);
+				resolve(() => {
+					// Remove event listeners
+					window.removeEventListener("resize", resizeHandler);
+					modeSelect.removeEventListener("change", modeChangeHandler);
+					addStopButton.removeEventListener(
+						"click",
+						addStopClickHandler
+					);
+
+					// Remove DOM elements
+					container?.removeChild(controls);
+					container?.removeChild(scene.canvasElement);
+
+					// Dispose TSL-2D Kit resources
+					scene.dispose();
+				});
+			});
 	});
-
-	// Initialize UI
-	rebuildUI();
-
-	// Build initial shader
-	void scene
-		.build(() => {
-			const UV = aspectCorrectedUV();
-
-			// Create gradient along the longer axis
-			const isLandscape = window.innerWidth > window.innerHeight;
-			const t = isLandscape ? UV.x : UV.y;
-
-			// Create gradient function
-			const gradFn = gradient(gradientStops, interpolationMode);
-
-			// Apply gradient to the value
-			return colorLookup(t, gradFn);
-		})
-		.then(() => {
-			container?.appendChild(scene.canvasElement);
-		});
 }

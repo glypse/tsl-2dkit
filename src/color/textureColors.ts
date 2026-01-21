@@ -118,3 +118,17 @@ export function rgbToOklch(r: Node, g: Node, b: Node): Node {
 
 	return vec3(L, C, h);
 }
+
+/**
+ * Computes the luminance for the given RGB color value.
+ *
+ * @param color The color value to compute the luminance for
+ * @returns The luminance
+ */
+export function luminance(color: Node): Node {
+	const t = color.x
+		.mul(0.299)
+		.add(color.y.mul(0.587))
+		.add(color.z.mul(0.114));
+	return t;
+}

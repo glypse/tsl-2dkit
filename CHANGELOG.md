@@ -1,3 +1,21 @@
+# [0.3.0](https://github.com/glypse/tsl-2dkit/compare/v0.2.0...v0.3.0) (2026-01-22)
+
+
+### Bug Fixes
+
+* **components:** remove `br` HTML element from UniformSlider ([cdea27f](https://github.com/glypse/tsl-2dkit/commit/cdea27f2e61c610c045c8acf5554778c69791cb0))
+
+
+### Features
+
+* **color:** make `colorStop` take `Node` for color parameter ([0e43d77](https://github.com/glypse/tsl-2dkit/commit/0e43d77b78db3fa5636969cb3785d3228fdae2c7))
+* **components:** add `dispose()` method to UniformSlider ([37b6d57](https://github.com/glypse/tsl-2dkit/commit/37b6d57b1dcdcc003983ca944e590e67117b7735))
+* **core:** add abstract `dispose` method on `TSLContext2D` ([61de91a](https://github.com/glypse/tsl-2dkit/commit/61de91a7bf40a130c06033fa07df55e60b1d988d))
+* **core:** add method name at the beginning of `TSLScene2D` `Canvas not initialized` error ([4e3a89a](https://github.com/glypse/tsl-2dkit/commit/4e3a89ad0c6d43d811b8007844fb54536ceaf1c0))
+* **core:** add TSLPass `dispose()` method ([f21c852](https://github.com/glypse/tsl-2dkit/commit/f21c8522384ae5d403c5cbe5d1c219126ee82222))
+* **core:** add TSLScene2D `dispose()` method ([218ef99](https://github.com/glypse/tsl-2dkit/commit/218ef99834ecbcff45a13ba8a753db0cc89c9b4b))
+* **time:** add `dispose()` method to CanvasRecorder ([8f03383](https://github.com/glypse/tsl-2dkit/commit/8f03383b2a6e111857664b938686d14755366946))
+
 # [0.2.0](https://github.com/glypse/tsl-2dkit/compare/v0.1.1...v0.2.0) (2026-01-22)
 
 

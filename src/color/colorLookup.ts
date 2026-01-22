@@ -1,6 +1,6 @@
 import type { ShaderNodeFn } from "three/src/nodes/TSL.js";
 import { clamp, Fn, mix, vec3, float, type ProxiedObject } from "three/tsl";
-import { type Node, Color } from "three/webgpu";
+import { type Node } from "three/webgpu";
 import { oklchToRgb, rgbToOklch, luminance } from "./textureColors";
 
 /**
@@ -9,8 +9,8 @@ import { oklchToRgb, rgbToOklch, luminance } from "./textureColors";
 export type ColorStop = {
 	/** Position of the stop, range [0, 1] */
 	position: number;
-	/** Color of the stop, CSS string */
-	color: string;
+	/** Color of the stop */
+	color: Node;
 };
 
 /**
@@ -69,7 +69,7 @@ export function gradient(
 	// Convert colors to Three.js Color objects
 	const colorStops = sortedStops.map((stop) => ({
 		position: stop.position,
-		color: new Color(stop.color)
+		color: stop.color
 	}));
 
 	return Fn(({ t }: { t: Node }) => {

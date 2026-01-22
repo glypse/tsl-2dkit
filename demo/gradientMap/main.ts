@@ -1,6 +1,16 @@
 import "$demo/style.css";
 
-import { TSLScene2D, aspectCorrectedUV, colorLookup, gradient } from "$lib";
+import { color } from "three/tsl";
+import {
+	TSLScene2D,
+	aspectCorrectedUV,
+	colorLookup,
+	gradient,
+	type ColorStop
+} from "$lib";
+
+// Define local type for gradient stops with hex
+type GradientStop = ColorStop & { hex: string };
 
 // Create controls div
 const controls = document.createElement("div");
@@ -48,16 +58,10 @@ window.addEventListener("resize", () => {
 	scene.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Gradient state
-type ColorStop = {
-	position: number;
-	color: string;
-};
-
-const gradientStops: ColorStop[] = [
-	{ position: 0, color: "#ff0000" },
-	{ position: 0.5, color: "#00ff00" },
-	{ position: 1, color: "#0000ff" }
+const gradientStops: GradientStop[] = [
+	{ position: 0, color: color("#ff0000"), hex: "#ff0000" },
+	{ position: 0.5, color: color("#00ff00"), hex: "#00ff00" },
+	{ position: 1, color: color("#0000ff"), hex: "#0000ff" }
 ];
 
 let interpolationMode: "rgb" | "oklch" = "rgb";
@@ -82,7 +86,7 @@ function buildShaderScene(): void {
 
 // UI Management
 
-function createStopUI(stop: ColorStop, index: number): HTMLDivElement {
+function createStopUI(stop: GradientStop, index: number): HTMLDivElement {
 	const stopDiv = document.createElement("div");
 	stopDiv.className = "stop-control";
 	stopDiv.style.cssText = `
@@ -126,10 +130,11 @@ function createStopUI(stop: ColorStop, index: number): HTMLDivElement {
 
 	const colorInput = document.createElement("input");
 	colorInput.type = "color";
-	colorInput.value = stop.color;
+	colorInput.value = stop.hex;
 
 	colorInput.addEventListener("input", () => {
-		gradientStops[index].color = colorInput.value;
+		gradientStops[index].hex = colorInput.value;
+		gradientStops[index].color = color(colorInput.value);
 		buildShaderScene();
 	});
 
@@ -207,7 +212,8 @@ addStopButton.addEventListener("click", () => {
 
 	gradientStops.push({
 		position: newPosition,
-		color: "#ffffff"
+		color: color("#ffffff"),
+		hex: "#ffffff"
 	});
 
 	rebuildUI();

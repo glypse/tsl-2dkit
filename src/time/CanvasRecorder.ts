@@ -221,14 +221,6 @@ export class CanvasRecorder {
 			duration !== undefined ? Math.ceil(duration * fps) : undefined;
 		const frameDuration = 1 / fps;
 
-		const durationStr =
-			duration !== undefined ? `${String(duration)}s` : "indefinite";
-		const framesStr = totalFrames !== undefined ? String(totalFrames) : "∞";
-
-		console.log(
-			`CanvasRecorder: Starting recording (${String(fps)}fps, ${durationStr}, ${framesStr} frames, ${format})`
-		);
-
 		// Stop the real-time animation loop
 		this.canvas2d.stopAnimationLoop();
 
@@ -294,23 +286,6 @@ export class CanvasRecorder {
 
 					this.frameCount++;
 
-					// Log progress periodically
-					if (this.frameCount % 30 === 0) {
-						if (totalFrames !== undefined) {
-							const progress = Math.round(
-								(this.frameCount / totalFrames) * 100
-							);
-							console.log(
-								`CanvasRecorder: Progress ${String(progress)}%`
-							);
-						} else {
-							const elapsed = this.frameCount / fps;
-							console.log(
-								`CanvasRecorder: Recording ${elapsed.toFixed(1)}s`
-							);
-						}
-					}
-
 					// Yield to prevent blocking
 					if (this.frameCount % 10 === 0) {
 						await new Promise((r) => {
@@ -341,10 +316,6 @@ export class CanvasRecorder {
 				if (!this.stopRequested || this.frameCount > 0) {
 					this.downloadBlob(blob, filename, format);
 				}
-
-				console.log(
-					`CanvasRecorder: Recording complete. ${String(this.frameCount)} frames, ${(blob.size / 1024 / 1024).toFixed(2)} MB`
-				);
 
 				// Cleanup
 				this.cleanup();
@@ -397,5 +368,43 @@ export class CanvasRecorder {
 		setTimeout(() => {
 			URL.revokeObjectURL(url);
 		}, 1000);
+	}
+
+	/**
+	 * Dispose of all resources held by the recorder. This stops any ongoing
+	 * recording and cleans up mediabunny resources to prevent memory leaks.
+	 */
+	dispose(): void {
+		// Stop any ongoing recording
+		if (this._state === "recording") {
+			this.cancel();
+		}
+
+		// Dispose mediabunny resources
+		if (this.output) {
+			// Check if Output has a dispose method
+			if (
+				"dispose" in this.output &&
+				typeof this.output.dispose === "function"
+			) {
+				(this.output.dispose as () => void)();
+			}
+			this.output = null;
+		}
+
+		if (this.videoSource) {
+			// Check if CanvasSource has a dispose method
+			if (
+				"dispose" in this.videoSource &&
+				typeof this.videoSource.dispose === "function"
+			) {
+				(this.videoSource.dispose as () => void)();
+			}
+			this.videoSource = null;
+		}
+
+		// Clear all references
+		this.recordingPromise = null;
+		this.recordingResolve = null;
 	}
 }

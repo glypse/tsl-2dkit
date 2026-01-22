@@ -21,6 +21,15 @@ import { type TSLScene2D, type TSLPassNode } from "./";
  */
 export abstract class TSLContext2D {
 	/**
+	 * Dispose of all resources managed by this context.
+	 *
+	 * @remarks
+	 * Implementations must dispose of all GPU resources, textures, and other
+	 * managed objects to prevent memory leaks. This includes calling dispose()
+	 * on all registered textures and clearing internal references.
+	 */
+	abstract dispose(): void;
+	/**
 	 * Internal width value in pixels.
 	 *
 	 * @description

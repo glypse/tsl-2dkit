@@ -73,13 +73,6 @@ export class MediaTexture extends UpdatableTexture {
 
 		super(initialTexture);
 
-		console.debug(
-			"[MediaTexture] Constructor called with src:",
-			typeof parameters.src === "string"
-				? parameters.src
-				: parameters.src.tagName
-		);
-
 		this.parameters = {
 			src: parameters.src,
 			anchorX: parameters.anchorX ?? "center",
@@ -95,20 +88,8 @@ export class MediaTexture extends UpdatableTexture {
 			// Check file extension
 			const ext = parameters.src.toLowerCase().split(".").pop();
 			this.isVideo = ["mp4", "webm", "ogg", "mov"].includes(ext ?? "");
-			console.debug(
-				"[MediaTexture] Source type determined from extension:",
-				ext,
-				"isVideo:",
-				this.isVideo
-			);
 		} else {
 			this.isVideo = parameters.src instanceof HTMLVideoElement;
-			console.debug(
-				"[MediaTexture] Source type determined from element:",
-				parameters.src.tagName,
-				"isVideo:",
-				this.isVideo
-			);
 		}
 
 		// Load media
@@ -127,16 +108,10 @@ export class MediaTexture extends UpdatableTexture {
 					videoElement.readyState >=
 					HTMLMediaElement.HAVE_CURRENT_DATA
 				) {
-					console.debug(
-						"[MediaTexture] Video element already has data, setting up immediately"
-					);
 					this.setupVideoElement(videoElement);
 					this.isLoaded = true;
 					this.markReady();
 				} else {
-					console.debug(
-						"[MediaTexture] Video element not ready, waiting for canplay event"
-					);
 					videoElement.addEventListener(
 						"canplay",
 						() => {
@@ -154,16 +129,10 @@ export class MediaTexture extends UpdatableTexture {
 				const imageElement = parameters.src;
 				// Check if image is already loaded
 				if (imageElement.complete && imageElement.naturalWidth > 0) {
-					console.debug(
-						"[MediaTexture] Image element already loaded, setting up immediately"
-					);
 					this.setupImageElement(imageElement);
 					this.isLoaded = true;
 					this.markReady();
 				} else {
-					console.debug(
-						"[MediaTexture] Image element not loaded, waiting for load event"
-					);
 					imageElement.addEventListener(
 						"load",
 						() => {
@@ -185,18 +154,9 @@ export class MediaTexture extends UpdatableTexture {
 	}
 
 	private createImageElement(src: string): HTMLImageElement {
-		console.debug("[MediaTexture] Creating image element for:", src);
 		const img = new Image();
 		img.crossOrigin = "anonymous";
 		img.onload = () => {
-			console.debug(
-				"[MediaTexture] Image loaded:",
-				src,
-				"dimensions:",
-				img.naturalWidth,
-				"x",
-				img.naturalHeight
-			);
 			this.setupImageElement(img);
 			this.isLoaded = true;
 			this.needsUpdate = true;
@@ -210,8 +170,6 @@ export class MediaTexture extends UpdatableTexture {
 	}
 
 	private setupImageElement(image: HTMLImageElement): void {
-		console.debug("[MediaTexture] Setting up image element");
-
 		// Replace placeholder with proper Texture for the image
 		this._texture.dispose();
 		const imageTexture = new Texture(image);
@@ -227,14 +185,9 @@ export class MediaTexture extends UpdatableTexture {
 
 		this._texture = imageTexture;
 		this.applyInterpolation();
-
-		console.debug(
-			"[MediaTexture] Replaced with Image Texture, colorSpace set to SRGB"
-		);
 	}
 
 	private createVideoElement(src: string): HTMLVideoElement {
-		console.debug("[MediaTexture] Creating video element for:", src);
 		const video = document.createElement("video");
 		video.crossOrigin = "anonymous";
 		video.playsInline = true;
@@ -242,20 +195,7 @@ export class MediaTexture extends UpdatableTexture {
 		video.loop = this.parameters.loop;
 		video.muted = this.parameters.muted;
 
-		video.addEventListener("loadedmetadata", () => {
-			console.debug(
-				"[MediaTexture] Video metadata loaded:",
-				src,
-				"dimensions:",
-				video.videoWidth,
-				"x",
-				video.videoHeight
-			);
-		});
-
 		video.addEventListener("canplay", () => {
-			console.debug("[MediaTexture] Video can play:", src);
-
 			// Only setup VideoTexture once video is ready to provide frames
 			if (!this.isLoaded) {
 				this.setupVideoElement(video);
@@ -289,12 +229,7 @@ export class MediaTexture extends UpdatableTexture {
 	}
 
 	private setupVideoElement(video: HTMLVideoElement): void {
-		console.debug("[MediaTexture] Setting up video element callbacks");
-
 		// Setup video frame callback for efficient updates
-		console.debug(
-			"[MediaTexture] Using requestVideoFrameCallback for video updates"
-		);
 		const updateVideo = (): void => {
 			this.needsUpdate = true;
 			this.requestVideoFrameCallbackId =
@@ -317,10 +252,6 @@ export class MediaTexture extends UpdatableTexture {
 
 		this._texture = videoTexture;
 		this.applyInterpolation();
-
-		console.debug(
-			"[MediaTexture] Replaced with VideoTexture, colorSpace set to SRGB"
-		);
 	}
 
 	/**
@@ -360,18 +291,11 @@ export class MediaTexture extends UpdatableTexture {
 		}
 
 		if (mediaWidth === 0 || mediaHeight === 0) {
-			console.debug(
-				"[MediaTexture] Media dimensions not ready:",
-				mediaWidth,
-				"x",
-				mediaHeight
-			);
 			return;
 		}
 
 		// Update texture with loaded media (for images only, videos handled by VideoTexture)
 		if (!this.isVideo && this._texture.image !== this.mediaElement) {
-			console.debug("[MediaTexture] Updating texture image");
 			this._texture.image = this.mediaElement;
 			this._texture.needsUpdate = true;
 		}
@@ -463,14 +387,11 @@ export class MediaTexture extends UpdatableTexture {
 	 * Pauses video playback if active.
 	 */
 	dispose(): void {
-		console.debug("[MediaTexture] Disposing");
-
 		// Cancel video frame callback if active
 		if (
 			this.requestVideoFrameCallbackId !== 0 &&
 			this.mediaElement instanceof HTMLVideoElement
 		) {
-			console.debug("[MediaTexture] Canceling video frame callback");
 			this.mediaElement.cancelVideoFrameCallback(
 				this.requestVideoFrameCallbackId
 			);
@@ -479,7 +400,6 @@ export class MediaTexture extends UpdatableTexture {
 
 		// Pause video if playing
 		if (this.isVideo && this.mediaElement instanceof HTMLVideoElement) {
-			console.debug("[MediaTexture] Pausing video");
 			this.mediaElement.pause();
 		}
 
@@ -495,7 +415,6 @@ export class MediaTexture extends UpdatableTexture {
 	 */
 	play(): Promise<void> | void {
 		if (this.isVideo && this.mediaElement instanceof HTMLVideoElement) {
-			console.debug("[MediaTexture] Playing video");
 			return this.mediaElement.play();
 		}
 		console.warn("[MediaTexture] play() called on non-video media");
@@ -504,7 +423,6 @@ export class MediaTexture extends UpdatableTexture {
 	/** Pause video playback. Only works if the media source is a video. */
 	pause(): void {
 		if (this.isVideo && this.mediaElement instanceof HTMLVideoElement) {
-			console.debug("[MediaTexture] Pausing video");
 			this.mediaElement.pause();
 		} else {
 			console.warn("[MediaTexture] pause() called on non-video media");
@@ -529,7 +447,6 @@ export class MediaTexture extends UpdatableTexture {
 	 */
 	set currentTime(time: number) {
 		if (this.isVideo && this.mediaElement instanceof HTMLVideoElement) {
-			console.debug("[MediaTexture] Setting current time to:", time);
 			this.mediaElement.currentTime = time;
 		} else {
 			console.warn(

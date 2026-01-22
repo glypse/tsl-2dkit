@@ -8,6 +8,7 @@ import { type uniform } from "three/tsl";
 export class UniformSlider {
 	private input: HTMLInputElement;
 	private label: HTMLLabelElement;
+	private eventListener: (() => void) | null = null;
 
 	/**
 	 * Creates a new UniformSlider and appends it to the specified container.
@@ -48,10 +49,31 @@ export class UniformSlider {
 
 		container.appendChild(this.label);
 		container.appendChild(this.input);
-		container.appendChild(document.createElement("br"));
 
-		this.input.addEventListener("input", () => {
+		this.eventListener = () => {
 			uniformNode.value = parseFloat(this.input.value);
-		});
+		};
+		this.input.addEventListener("input", this.eventListener);
+	}
+
+	/**
+	 * Dispose of the slider component by removing DOM elements and event listeners.
+	 * This should be called when the UniformSlider is no longer needed to prevent
+	 * memory leaks and remove UI elements from the DOM.
+	 */
+	dispose(): void {
+		// Remove event listener
+		if (this.eventListener) {
+			this.input.removeEventListener("input", this.eventListener);
+			this.eventListener = null;
+		}
+
+		// Remove DOM elements from their parent
+		if (this.label.parentNode) {
+			this.label.parentNode.removeChild(this.label);
+		}
+		if (this.input.parentNode) {
+			this.input.parentNode.removeChild(this.input);
+		}
 	}
 }

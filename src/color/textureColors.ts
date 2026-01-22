@@ -1,4 +1,4 @@
-import { vec3, atan2, cos, sin, pow, PI, sqrt } from "three/tsl";
+import { vec3, atan, cos, sin, pow, PI, sqrt } from "three/tsl";
 import { type Node } from "three/webgpu";
 
 /**
@@ -64,12 +64,18 @@ export function oklchToRgb(l: Node, c: Node, h: Node): Node {
  */
 export function rgbToOklab(r: Node, g: Node, b: Node): Node {
 	// Linear RGB to LMS
-	const l_ = r.mul(0.3).add(g.mul(0.622)).add(b.mul(0.078));
-	const m_ = r.mul(0.23).add(g.mul(0.692)).add(b.mul(0.078));
+	const l_ = r
+		.mul(0.4122214708)
+		.add(g.mul(0.5363325363))
+		.add(b.mul(0.0514459929));
+	const m_ = r
+		.mul(0.2119034982)
+		.add(g.mul(0.6806995451))
+		.add(b.mul(0.1073969566));
 	const s_ = r
-		.mul(0.24342268924)
-		.add(g.mul(0.20476744424))
-		.add(b.mul(0.55314628651));
+		.mul(0.0883024619)
+		.add(g.mul(0.2817188376))
+		.add(b.mul(0.6299787005));
 
 	// Cube root
 	const l_cbrt = l_.cbrt();
@@ -88,7 +94,7 @@ export function rgbToOklab(r: Node, g: Node, b: Node): Node {
 	const resultB = l_cbrt
 		.mul(0.0259040371)
 		.add(m_cbrt.mul(0.7827717662))
-		.sub(s_cbrt.mul(0.808649185));
+		.sub(s_cbrt.mul(0.808675766));
 
 	return vec3(L, a, resultB);
 }
@@ -108,7 +114,21 @@ export function rgbToOklch(r: Node, g: Node, b: Node): Node {
 	const ab = oklab.z;
 
 	const C = sqrt(a.mul(a).add(ab.mul(ab)));
-	const h = atan2(ab, a).mul(180).div(PI).add(360).mod(360);
+	const h = atan(ab, a).mul(180).div(PI).add(360).mod(360);
 
 	return vec3(L, C, h);
+}
+
+/**
+ * Computes the luminance for the given RGB color value.
+ *
+ * @param color The color value to compute the luminance for
+ * @returns The luminance
+ */
+export function luminance(color: Node): Node {
+	const t = color.x
+		.mul(0.299)
+		.add(color.y.mul(0.587))
+		.add(color.z.mul(0.114));
+	return t;
 }

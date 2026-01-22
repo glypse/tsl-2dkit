@@ -1,24 +1,35 @@
 import type { ShaderNodeFn } from "three/src/nodes/TSL.js";
 import { clamp, Fn, mix, vec3, float, type ProxiedObject } from "three/tsl";
 import { type Node, Color } from "three/webgpu";
-import { oklchToRgb, rgbToOklch } from "./textureColors.js";
+import { oklchToRgb, rgbToOklch, luminance } from "./textureColors";
 
 /**
- * Samples a color from a gradient using a normalized value. Takes a value
+ * Represents a color stop in a gradient.
+ */
+export type ColorStop = {
+	/** Position of the stop, range [0, 1] */
+	position: number;
+	/** Color of the stop, CSS string */
+	color: string;
+};
+
+/**
+ * Samples a color from a gradient using a normalized value. Takes a color
  * (typically between 0 and 1) and looks up the corresponding color from a
  * shader function. The value is automatically clamped to the 0-1 range before
  * sampling.
  *
- * @param value - The normalized lookup value (will be clamped to 0-1)
+ * @param color - The normalized lookup value (will be clamped to 0-1)
  * @param gradient - A shader function that takes `t` and returns a color
  * @returns A color node sampled from the gradient
  */
 export function colorLookup(
-	value: Node,
+	color: Node,
 	gradient: ShaderNodeFn<[ProxiedObject<{ t: Node }>]>
 ): Node {
-	const clampedValue = clamp(value, 0, 1);
-	return gradient({ t: clampedValue });
+	const clampedValue = clamp(color, 0, 1);
+	const t = luminance(clampedValue);
+	return gradient({ t });
 }
 
 /**
@@ -43,18 +54,13 @@ export function colorLookup(
  * const color = colorLookup(someValue, grad);
  * ```
  *
- * @param stops - Array of color stops
- * @param stops.position - Position of the stop, range [0, 1]
- * @param stops.color - Color of the stop, CSS string
+ * @param stops - Array of {@link ColorStop}
  * @param mode - Color interpolation mode
  * @default "rgb"
  * @returns A shader function that takes `t` and returns an interpolated color
  */
 export function gradient(
-	stops: {
-		position: number;
-		color: string;
-	}[],
+	stops: ColorStop[],
 	mode: "rgb" | "oklch" = "rgb"
 ): ShaderNodeFn<[ProxiedObject<{ t: Node }>]> {
 	// Sort stops by position
@@ -110,10 +116,25 @@ export function gradient(
 					float(c2.b)
 				);
 
+				// Adjust hue for colors with very low chroma
+				const lowChromaThreshold = 0.001;
+				const adjustedH1 = oklch1.y
+					.lessThan(lowChromaThreshold)
+					.select(oklch2.z, oklch1.z);
+				const adjustedH2 = oklch2.y
+					.lessThan(lowChromaThreshold)
+					.select(oklch1.z, oklch2.z);
+
 				// Interpolate in OKLCH space
 				const l = mix(oklch1.x, oklch2.x, localT);
 				const c = mix(oklch1.y, oklch2.y, localT);
-				const h = mix(oklch1.z, oklch2.z, localT);
+				// Handle hue interpolation with shortest path
+				const diff = adjustedH2.sub(adjustedH1);
+				const diffMod = diff.mod(360);
+				const shortestDiff = diffMod
+					.greaterThan(180)
+					.select(diffMod.sub(360), diffMod);
+				const h = adjustedH1.add(shortestDiff.mul(localT)).mod(360);
 
 				// Convert back to RGB
 				interpolatedColor = oklchToRgb(l, c, h);

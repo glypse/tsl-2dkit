@@ -1,3 +1,16 @@
+# [0.2.0](https://github.com/glypse/tsl-2dkit/compare/v0.1.1...v0.2.0) (2026-01-22)
+
+
+### Bug Fixes
+
+* **color:** fix improper color handling in `colorLookup()` and `gradient()` ([9dcb82e](https://github.com/glypse/tsl-2dkit/commit/9dcb82e40d555f3579d262ad54e26a5e1b8cb289))
+* **color:** fix okLab color coefficients ([b207259](https://github.com/glypse/tsl-2dkit/commit/b207259945b606ff454810a7b356b0568d787af4))
+
+
+### Features
+
+* **color:** implement custom luminance function ([a82204f](https://github.com/glypse/tsl-2dkit/commit/a82204fdfde9a2b76bfe5706331fdf8f5a0e03f9))
+
 ## <small>0.1.1 (2026-01-17)</small>
 
 - ci: add commit-msg git hook ([b58d1a8](https://github.com/glypse/tsl-2dkit/commit/b58d1a8))

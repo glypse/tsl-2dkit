@@ -12,6 +12,7 @@ permissions:
     issues: write
     pull-requests: write
     id-token: write
+    pages: write
 
 jobs:
     release:
@@ -46,7 +47,19 @@ jobs:
             - name: Build
               run: pnpm run build
 
+            - name: Build docs
+              run: pnpm --filter docs build
+
             - name: Release
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: pnpm exec semantic-release
+
+            - name: Upload pages artifact
+              uses: actions/upload-pages-artifact@v3
+              with:
+                  path: docs/build
+
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4

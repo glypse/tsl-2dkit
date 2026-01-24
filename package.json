@@ -12,7 +12,7 @@
 	"bugs": {
 		"url": "https://github.com/glypse/tsl-2dkit/issues"
 	},
-	"homepage": "https://github.com/glypse/tsl-2dkit#readme",
+	"homepage": "https://glypse.github.io/tsl-2dkit/",
 	"files": [
 		"dist"
 	],

@@ -12,7 +12,8 @@ import {
 	floor,
 	max,
 	convertToTexture,
-	exp
+	exp,
+	select
 } from "three/tsl";
 import type { Node, TextureNode } from "three/webgpu";
 
@@ -79,8 +80,10 @@ function createGaussianBlurPass(
 				condition: "<="
 			},
 			({ i }) => {
-				const weight = exp(
-					float(i).mul(float(i)).negate().div(twoSigmaSq)
+				const weight = select(
+					twoSigmaSq.equal(0),
+					float(0.00001),
+					exp(float(i).mul(float(i)).negate().div(twoSigmaSq))
 				);
 				totalWeight.addAssign(weight);
 				const offset = vec2(

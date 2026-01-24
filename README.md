@@ -49,7 +49,7 @@ document.body.appendChild(scene.canvasElement);
 
 ## Documentation
 
-Coming soon! For now, check out the demo folder for examples. All public API is _theorically_ documented.
+Coming soon! For now, check out the [demo folder](https://github.com/glypse/tsl-2dkit/tree/main/docs/src/lib/demos) for examples. All public API is _theorically_ documented.
 
 Also see:
 

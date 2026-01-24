@@ -1,3 +1,11 @@
+## [0.3.1](https://github.com/glypse/tsl-2dkit/compare/v0.3.0...v0.3.1) (2026-01-24)
+
+
+### Bug Fixes
+
+* **blur:** fix gaussian blur at 0 blur ([c00193c](https://github.com/glypse/tsl-2dkit/commit/c00193c010c7b0217e51259c17279576067bad9f))
+* **color:** correct intepolation for chroma=0 OKLch gradients ([497a500](https://github.com/glypse/tsl-2dkit/commit/497a500b6311eec1dbc5038b30eb72bbe5086870))
+
 # [0.3.0](https://github.com/glypse/tsl-2dkit/compare/v0.2.0...v0.3.0) (2026-01-22)
 
 

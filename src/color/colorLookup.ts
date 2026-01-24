@@ -120,10 +120,20 @@ export function gradient(
 				const lowChromaThreshold = 0.001;
 				const adjustedH1 = oklch1.y
 					.lessThan(lowChromaThreshold)
-					.select(oklch2.z, oklch1.z);
+					.select(
+						oklch2.y
+							.greaterThanEqual(lowChromaThreshold)
+							.select(oklch2.z, float(0)),
+						oklch1.z
+					);
 				const adjustedH2 = oklch2.y
 					.lessThan(lowChromaThreshold)
-					.select(oklch1.z, oklch2.z);
+					.select(
+						oklch1.y
+							.greaterThanEqual(lowChromaThreshold)
+							.select(oklch1.z, float(0)),
+						oklch2.z
+					);
 
 				// Interpolate in OKLCH space
 				const l = mix(oklch1.x, oklch2.x, localT);
